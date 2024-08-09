@@ -1,4 +1,3 @@
-// app/api/data/route.js or pages/api/data.js
 import { sql } from '@vercel/postgres';
 
 export async function GET() {
