@@ -13,7 +13,6 @@ const Home = () => {
       try {
         const response = await fetch('https://movie-review-site-seven.vercel.app/api/data');
         const result = await response.json();
-        console.log(result); // Log the fetched data
         setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -24,8 +23,7 @@ const Home = () => {
   }, []);
 
   // Filter the data to show items with IDs 1, 2, and 3
-  const itemsToShow = data.filter(item => [1, 2, 3].includes(item.id));
-  console.log(itemsToShow); // Log the filtered items
+  const itemsToShow = data.filter(item => [135, 136, 137, 138, 139].includes(item.id));
 
   return (
     <Container>
