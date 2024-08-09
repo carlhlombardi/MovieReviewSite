@@ -24,7 +24,7 @@ const Home = () => {
 
   // Select the last three items if data is available
   const itemsToShow = data.slice(-3);
- 
+  console.log(itemsToShow);
 
   return (
     <Container>
