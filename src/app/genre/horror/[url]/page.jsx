@@ -40,7 +40,7 @@ const Page = ({ params }) => {
   }
 
   // Destructure necessary fields from the fetched data
-  const { Film, Year, Studio, Director, Screenwriter, Producer, Total_Kills, Men, Women, Run_Time, Men_Percentage, Women_Percentage, My_Rating, Review,  image_url } = data;
+  const { film, year, studio, director, screenwriter, producer, total_kills, men, women, run_time, men_percentage, women_percentage, my_rating, review,  image_url } = data;
 
   return (
     <Container>
@@ -50,7 +50,7 @@ const Page = ({ params }) => {
             {image_url ? (
               <Image
                 src={image_url} // Use the image URL directly from the database
-                alt={Film}      // Alt text for accessibility
+                alt={film}      // Alt text for accessibility
                 width={400}
                 height={600}
               />
@@ -60,26 +60,26 @@ const Page = ({ params }) => {
           </div>
         </Col>
       <Col xs={12} md={6} className="text-center m-auto order-md-1">
-          <h1 className='mb-4'>{Film}</h1>
-          <h5>Director: {Director}</h5>
-          <h5>Screenwriter(s): {Screenwriter}</h5>
-          <h5>Producer(s): {Producer}</h5>
-          <h5>Studio: {Studio}</h5>
-          <h5>Year: {Year}</h5>
+          <h1 className='mb-4'>{film}</h1>
+          <h5>Director: {director}</h5>
+          <h5>Screenwriter(s): {screenwriter}</h5>
+          <h5>Producer(s): {producer}</h5>
+          <h5>Studio: {studio}</h5>
+          <h5>Year: {year}</h5>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-3">
           <h2 className='mb-4'>The Stats</h2>
-          <h6>Run Time: {Run_Time} Minutes</h6>
-          <h6>Total Kills: {Total_Kills} Kills</h6>
-          <h6>Men: {Men} Killed</h6>
-          <h6>Women: {Women} Killed</h6>
-          <h6>Men Percentage: {Men_Percentage}% of Deaths</h6>
-          <h6>Women Percentage: {Women_Percentage}% of Deaths</h6>
-          <h6>My Rating: {My_Rating} Stars</h6>
+          <h6>Run Time: {run_time} Minutes</h6>
+          <h6>Total Kills: {total_kills} Kills</h6>
+          <h6>Men: {men} Killed</h6>
+          <h6>Women: {women} Killed</h6>
+          <h6>Men Percentage: {men_percentage}% of Deaths</h6>
+          <h6>Women Percentage: {women_percentage}% of Deaths</h6>
+          <h6>My Rating: {my_rating} Stars</h6>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
-          <h2 className='mb-4'>Review of {Film}</h2>
-          <p>{Review}</p>
+          <h2 className='mb-4'>Review of {film}</h2>
+          <p>{review}</p>
         </Col>
       </Row>
     </Container>
