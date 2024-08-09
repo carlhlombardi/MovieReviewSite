@@ -31,8 +31,8 @@ const Home = () => {
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
           {itemsToShow.map(item => (
-            <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
-              <Link href={`/genre/horror/${encodeURIComponent(item.URL)}`}>
+            <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
+              <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
                     src={item.image_url} // Use the image URL directly from the database
