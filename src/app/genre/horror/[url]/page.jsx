@@ -53,6 +53,7 @@ const Page = ({ params }) => {
                 alt={film}      // Alt text for accessibility
                 width={400}
                 height={600}
+                layout='fill'
               />
             ) : (
               <div>No image available</div>
