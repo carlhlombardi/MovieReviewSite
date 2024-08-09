@@ -1,13 +1,13 @@
 import { sql } from '@vercel/postgres';
 
 export async function GET(req) {
-  const url = new URL(req.url, `http://${req.headers.host}`).searchParams.get('URL');
+  const url = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
 
   try {
     if (url) {
       // Query to fetch data from the `horrormovies` table where URL matches
       const result = await sql`
-        SELECT * FROM horrormovies WHERE URL = ${url};
+        SELECT * FROM horrormovies WHERE url = ${url};
       `;
 
       if (result.rows.length === 0) {
