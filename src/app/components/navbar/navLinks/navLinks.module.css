@@ -1,0 +1,28 @@
+/* links.module.css */
+.links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+  }
+  
+  .navLinks {
+    margin: 0.5rem 0;
+  }
+  
+  .active {
+    color: var(--bg);
+    background-color: white;
+    border-radius: 50px; /* Oval shape */
+    padding: 0.5rem 1rem; /* Adjust padding as needed */
+  }
+  
+  .logout {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  
