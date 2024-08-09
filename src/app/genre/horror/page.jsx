@@ -11,7 +11,7 @@ const HorrorPostPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/data');
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/data');
         const result = await response.json();
         setData(result);
       } catch (error) {
@@ -23,7 +23,7 @@ const HorrorPostPage = () => {
   }, []);
 
   // Select the first six items if data is available
-  const itemsToShow = data.slice(0, 145);
+  const itemsToShow = data.slice(0, 4);
 
   return (
     <Container>
@@ -42,7 +42,7 @@ const HorrorPostPage = () => {
         <Row>
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={6} sm={6} md={4} lg={2}>
-              <Link href={`/genre/horror/${encodeURIComponent(item.URL)}`}>
+              <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
                     src={item.image_url} // Use the image URL directly from the database
