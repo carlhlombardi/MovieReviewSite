@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import styles from "./links.module.css";
 
-const Links = () => {
+const Links = ({ handleClose }) => {
   const [activeLink, setActiveLink] = useState("/");
   const router = useRouter();
 
@@ -40,6 +40,7 @@ const Links = () => {
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
+    handleClose(); // Close the navbar
   };
 
   return (

@@ -8,8 +8,11 @@ import Image from 'next/image';
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);
 
+  const handleToggle = () => setExpanded(!expanded);
+  const handleClose = () => setExpanded(false);
+
   return (
-    <Navbar expand="lg" className="navbar-dark">
+    <Navbar expanded={expanded} expand="lg" className="navbar-dark">
       <Container>
         <Navbar.Brand href="/"> <Image
                 src={"/images/logo/logo.png"} // Use the image URL directly from the database
@@ -18,10 +21,10 @@ const NavbarComponent = () => {
                 height={16}
               />
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Nav className="ml-auto">
-            <Links />
+          <Links handleClose={handleClose} />
           </Nav>
         </Navbar.Collapse>
       </Container>
