@@ -36,7 +36,7 @@ const Home = () => {
             <Link href={`/genre/horror/${encodeURIComponent(itemToShow.url)}`}>
               <div className="image-wrapper">
                 <Image
-                  src={decodeURIComponent(itemToShow.image_url)} // Use the image URL directly from the database
+                  src={itemToShow.image_url} // Use the image URL directly from the database
                   alt={itemToShow.film}      // Alt text for accessibility
                   width={200}
                   height={300}
