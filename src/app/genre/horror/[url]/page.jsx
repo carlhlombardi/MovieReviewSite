@@ -75,7 +75,7 @@ const Page = ({ params }) => {
           <h6>Women: {women} Killed</h6>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
-          <h2 className='mb-4'>Review of {film}</h2>
+          <h3 className='mb-4'>Review of {film}</h3>
           <p>{review}</p>
           <h3>My Rating: {my_rating} Stars</h3>
         </Col>
