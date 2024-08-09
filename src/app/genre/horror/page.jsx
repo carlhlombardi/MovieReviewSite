@@ -43,7 +43,7 @@ const HorrorPostPage = () => {
       {itemsToShow.length > 0 ? (
         <Row>
           {itemsToShow.map(item => (
-            <Col key={item.row_id} xs={6} sm={6} md={4} lg={2}>
+            <Col key={item.row_id} xs={12} sm={6} md={4} lg={2}>
               <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
