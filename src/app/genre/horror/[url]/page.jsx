@@ -7,13 +7,13 @@ import Image from 'next/image';
 // Function to fetch data from the API
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`http://localhost:3000/api/data`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
     const data = await response.json();
     // Filter data to find the row that matches the URL
-    const filteredData = data.filter(item => item.URL === url);
+    const filteredData = data.filter(item => item.url === url);
     return filteredData.length > 0 ? filteredData[0] : null;
   } catch (error) {
     console.error(error);
@@ -40,7 +40,7 @@ const Page = ({ params }) => {
   }
 
   // Destructure necessary fields from the fetched data
-  const { Film, Year, Studio, Director, Screenwriter, Producer, Total_Kills, Men, Women, Run_Time, Death_Per_Minute, Men_Percentage, Women_Percentage, My_Rating, Review,  image_url } = data;
+  const { Film, Year, Studio, Director, Screenwriter, Producer, Total_Kills, Men, Women, Run_Time, Men_Percentage, Women_Percentage, My_Rating, Review,  image_url } = data;
 
   return (
     <Container>
