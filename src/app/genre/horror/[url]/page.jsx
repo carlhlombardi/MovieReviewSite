@@ -51,8 +51,8 @@ const Page = ({ params }) => {
               <Image
                 src={image_url} // Use the image URL directly from the database
                 alt={film}      // Alt text for accessibility
-                width={200}
-                height={300}
+                width={150}
+                height={250}
                 layout='fill'
               />
             ) : (
