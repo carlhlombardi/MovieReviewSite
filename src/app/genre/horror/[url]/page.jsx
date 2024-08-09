@@ -45,7 +45,7 @@ const Page = ({ params }) => {
   return (
     <Container>
       <Row>
-      <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
+      <Col xs={12} md={6} lg={4} className="text-center order-md-2 mt-5 mb-3">
           <div className="image-wrapper">
             {image_url ? (
               <Image
