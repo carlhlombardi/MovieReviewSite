@@ -11,7 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/data/route');
+        const response = await fetch('/api/data');
         const result = await response.json();
         setData(result);
       } catch (error) {
@@ -36,7 +36,7 @@ const Home = () => {
                 <div className="image-wrapper">
                   <Image
                     src={item.image_url} // Use the image URL directly from the database
-                    alt={item.Film}      // Alt text for accessibility
+                    alt={item.film}      // Alt text for accessibility
                     width={200}
                     height={300}
                   />
