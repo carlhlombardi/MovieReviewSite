@@ -23,7 +23,7 @@ const Home = () => {
   }, []);
 
   // Filter the data to show only the item with id 137
-  const itemsToShow = data.slice(0, 4);
+  const itemsToShow = data.filter(item => item.id >= 1 && item.id <= 6);
 
 
   return (
