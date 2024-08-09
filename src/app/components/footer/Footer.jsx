@@ -5,7 +5,7 @@ const Footer = () => (
   <footer className="page-footer font-small blue pt-4">
     <Container>
       <Row>
-        <Col md={6} className="text-center">
+        <Col md={6} className="text-center mb-3">
         <Image
                 src={"/images/logo/logo.png"} // Use the image URL directly from the database
                 alt={"Logo"}      // Alt text for accessibility
