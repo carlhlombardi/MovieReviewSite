@@ -15,35 +15,33 @@ const Home = () => {
         const result = await response.json();
         setData(result);
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching data:', error);
       }
     };
 
     fetchData();
   }, []);
 
-  // Select the last three items if data is available
-  const itemsToShow = data.slice(0, 139);
+  // Filter the data to show only the item with id 137
+  const itemToShow = data.find(item => item.id === 137);
 
   return (
     <Container>
-      {itemsToShow.length > 0 ? (
+      {itemToShow ? (
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
-          {itemsToShow.map(item => (
-            <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
-              <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
-                <div className="image-wrapper">
-                  <Image
-                    src={item.image_url} // Use the image URL directly from the database
-                    alt={item.film}      // Alt text for accessibility
-                    width={200}
-                    height={300}
-                  />
-                </div>
-              </Link>
-            </Col>
-          ))}
+          <Col key={itemToShow.id} xs={12} sm={6} md={4} lg={3}>
+            <Link href={`/genre/horror/${encodeURIComponent(itemToShow.url)}`}>
+              <div className="image-wrapper">
+                <Image
+                  src={itemToShow.image_url} // Use the image URL directly from the database
+                  alt={itemToShow.film}      // Alt text for accessibility
+                  width={200}
+                  height={300}
+                />
+              </div>
+            </Link>
+          </Col>
         </Row>
       ) : (
         <p>No data available.</p>
