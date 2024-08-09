@@ -73,7 +73,7 @@ const Page = ({ params }) => {
           <h6>Total Kills: {total_kills} Kills</h6>
           <h6>Men: {men} Killed</h6>
           <h6>Women: {women} Killed</h6>
-          <h3>My Rating: {my_rating} Stars</h6>
+          <h3>My Rating: {my_rating} Stars</h3>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
           <h2 className='mb-4'>Review of {film}</h2>
