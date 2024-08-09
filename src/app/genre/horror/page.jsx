@@ -23,7 +23,7 @@ const HorrorPostPage = () => {
   }, []);
 
   // Select the first six items if data is available
-  const itemsToShow = data.filter(item => item.id >= 1 && item.id <= 12);
+  const itemsToShow = data.filter(item => item.id >= 1 && item.id <= 139);
 
   return (
     <Container>
