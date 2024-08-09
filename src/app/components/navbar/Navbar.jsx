@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { Navbar, Container, Nav } from 'react-bootstrap';
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
-import { Dropdown } from 'react-bootstrap';
-import Link from 'next/link';
 
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);

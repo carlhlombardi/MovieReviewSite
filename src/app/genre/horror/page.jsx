@@ -23,7 +23,7 @@ const HorrorPostPage = () => {
   }, []);
 
   // Select the first six items if data is available
-  const itemsToShow = data.slice(0, 4);
+  const itemsToShow = data.filter(item => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(item.id));
 
   return (
     <Container>
@@ -45,7 +45,7 @@ const HorrorPostPage = () => {
               <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
-                    src={item.image_url} // Use the image URL directly from the database
+                    src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
                     alt={item.Film}      // Alt text for accessibility
                     width={200}
                     height={300}
@@ -90,11 +90,6 @@ const HorrorPostPage = () => {
           }
         }
       `}</style>
-      <Row>
-        <Col>
-        <p>Loren Ipsum</p>
-        </Col>
-      </Row>
     </Container>
   );
 };
