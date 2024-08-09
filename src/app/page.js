@@ -11,7 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/data');
+        const response = await fetch('/api/data/route');
         const result = await response.json();
         setData(result);
       } catch (error) {
