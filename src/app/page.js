@@ -30,12 +30,12 @@ const Home = () => {
       {itemToShow ? (
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
-          <Col key={itemToShow.id} xs={12} sm={6} md={4} lg={3}>
-            <Link href={`/genre/horror/${encodeURIComponent(itemToShow.url)}`}>
+          <Col key={id} xs={12} sm={6} md={4} lg={3}>
+            <Link href={`/genre/horror/${encodeURIComponent(url)}`}>
               <div className="image-wrapper">
                 <Image
-                  src={itemToShow.image_url} // Use the image URL directly from the database
-                  alt={itemToShow.film}      // Alt text for accessibility
+                  src={image_url} // Use the image URL directly from the database
+                  alt={film}      // Alt text for accessibility
                   width={200}
                   height={300}
                 />
