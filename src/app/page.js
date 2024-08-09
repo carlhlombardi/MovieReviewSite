@@ -13,6 +13,7 @@ const Home = () => {
       try {
         const response = await fetch('https://movie-review-site-seven.vercel.app/api/data');
         const result = await response.json();
+        console.log(result); // Log the fetched data
         setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -22,27 +23,29 @@ const Home = () => {
     fetchData();
   }, []);
 
-  // Filter the data to show only the item with id 137
-  const itemToShow = data.find(item => item.id === 1);
-
+  // Filter the data to show items with IDs 1, 2, and 3
+  const itemsToShow = data.filter(item => [1, 2, 3].includes(item.id));
+  console.log(itemsToShow); // Log the filtered items
 
   return (
     <Container>
-      {itemToShow ? (
+      {itemsToShow.length > 0 ? (
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
-          <Col key={itemToShow.id} xs={12} sm={6} md={4} lg={3}>
-            <Link href={`/genre/horror/${encodeURIComponent(itemToShow.url)}`}>
-              <div className="image-wrapper">
-                <Image
-                  src={decodeURIComponent(itemToShow.image_url)} // Use the image URL directly from the database
-                  alt={itemToShow.film}      // Alt text for accessibility
-                  width={200}
-                  height={300}
-                />
-              </div>
-            </Link>
-          </Col>
+          {itemsToShow.map(item => (
+            <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
+              <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
+                <div className="image-wrapper">
+                  <Image
+                    src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
+                    alt={item.film}      // Alt text for accessibility
+                    width={200}
+                    height={300}
+                  />
+                </div>
+              </Link>
+            </Col>
+          ))}
         </Row>
       ) : (
         <p>No data available.</p>
