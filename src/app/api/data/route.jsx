@@ -13,7 +13,7 @@ export async function GET(req) {
     if (movieUrl) {
       // Query to fetch data from the specified table where URL matches
       const result = await sql`
-        SELECT * FROM ${sql(table)} WHERE url = ${movieUrl};
+        SELECT * FROM ${sql(table)} WHERE url = ${url};
       `;
 
       if (result.rows.length === 0) {
