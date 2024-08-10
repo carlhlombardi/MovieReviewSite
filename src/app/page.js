@@ -38,7 +38,7 @@ const Home = () => {
       {/* Display Horror Movies */}
       {horrorItemsToShow.length > 0 && (
         <Row>
-          <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
+          <h1 className='mt-4 mb-3 text-center'>Top Reviews In Horror</h1>
           {horrorItemsToShow.map(item => (
             <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
@@ -59,7 +59,7 @@ const Home = () => {
       {/* Display Sci-Fi Movies */}
       {sciFiItemsToShow.length > 0 && (
         <Row className='mt-4'>
-          <h1 className='mb-3 text-center'>Sci-Fi Movies</h1>
+          <h1 className='mb-3 text-center'>Top Reviews In Sci-Fi</h1>
           {sciFiItemsToShow.map(item => (
             <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/sci-fi/${encodeURIComponent(item.url)}`}>
