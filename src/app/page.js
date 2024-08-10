@@ -6,14 +6,21 @@ import Image from 'next/image'; // Import the Image component
 import { Container, Row, Col } from 'react-bootstrap'; // Import Bootstrap components
 
 const Home = () => {
-  const [data, setData] = useState([]);
+  const [horrorData, setHorrorData] = useState([]);
+  const [sciFiData, setSciFiData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
-        const result = await response.json();
-        setData(result);
+        // Fetch data from horror movies endpoint
+        const horrorResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
+        const horrorResult = await horrorResponse.json();
+        setHorrorData(horrorResult);
+
+        // Fetch data from sci-fi movies endpoint
+        const sciFiResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/scifimovies');
+        const sciFiResult = await sciFiResponse.json();
+        setSciFiData(sciFiResult);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -22,21 +29,23 @@ const Home = () => {
     fetchData();
   }, []);
 
-  // Filter the data to show items with IDs 1, 2, and 3
-  const itemsToShow = data.filter(item => [135, 136, 137, 138, 139].includes(item.id));
+  // Filter and combine data
+  const horrorItemsToShow = horrorData.filter(item => [136, 137, 138, 139].includes(item.id));
+  const sciFiItemsToShow = sciFiData.slice(0, 4); // Get the first 4 sci-fi movies
 
   return (
     <Container>
-      {itemsToShow.length > 0 ? (
+      {/* Display Horror Movies */}
+      {horrorItemsToShow.length > 0 && (
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Newest Reviews In Horror</h1>
-          {itemsToShow.map(item => (
+          {horrorItemsToShow.map(item => (
             <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
-                    alt={item.film}      // Alt text for accessibility
+                    alt={item.film} // Alt text for accessibility
                     width={200}
                     height={300}
                   />
@@ -45,9 +54,29 @@ const Home = () => {
             </Col>
           ))}
         </Row>
-      ) : (
-        <p>No data available.</p>
       )}
+
+      {/* Display Sci-Fi Movies */}
+      {sciFiItemsToShow.length > 0 && (
+        <Row className='mt-4'>
+          <h1 className='mb-3 text-center'>Sci-Fi Movies</h1>
+          {sciFiItemsToShow.map(item => (
+            <Col key={item.id} xs={12} sm={6} md={4} lg={3}>
+              <Link href={`/genre/scifi/${encodeURIComponent(item.url)}`}>
+                <div className="image-wrapper">
+                  <Image
+                    src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
+                    alt={item.film} // Alt text for accessibility
+                    width={200}
+                    height={300}
+                  />
+                </div>
+              </Link>
+            </Col>
+          ))}
+        </Row>
+      )}
+
       <style jsx>{`
         .image-wrapper {
           position: relative;
