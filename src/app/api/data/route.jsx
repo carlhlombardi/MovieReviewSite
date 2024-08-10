@@ -5,7 +5,11 @@ export async function GET(req) {
   const movieUrl = url.searchParams.get('url');
   const table = url.searchParams.get('table');
 
+  console.log('Table:', table); // Debugging log
+  console.log('Movie URL:', movieUrl); // Debugging log
+
   if (!table || !['horrormovies', 'scifimovies'].includes(table)) {
+    console.error('Invalid table specified:', table); // Debugging log
     return new Response('Invalid table specified', { status: 400 });
   }
 
