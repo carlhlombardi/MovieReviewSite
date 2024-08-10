@@ -1,19 +1,13 @@
 import { sql } from '@vercel/postgres';
 
 export async function GET(req) {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const movieUrl = url.searchParams.get('url');
-  const table = url.searchParams.get('table');
-
-  if (!table || !['horrormovies', 'scifimovies'].includes(table)) {
-    return new Response('Invalid table specified', { status: 400 });
-  }
+  const url = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
 
   try {
-    if (movieUrl) {
-      // Query to fetch data from the specified table where URL matches
+    if (url) {
+      // Query to fetch data from the `horrormovies` table where URL matches
       const result = await sql`
-        SELECT * FROM ${sql(table)} WHERE url = ${url};
+        SELECT * FROM horrormovies WHERE url = ${url};
       `;
 
       if (result.rows.length === 0) {
@@ -25,9 +19,9 @@ export async function GET(req) {
         status: 200,
       });
     } else {
-      // Query to fetch all data from the specified table
+      // Query to fetch all data from the `horrormovies` table
       const result = await sql`
-        SELECT * FROM ${sql(table)};
+        SELECT * FROM horrormovies;
       `;
 
       return new Response(JSON.stringify(result.rows), {
