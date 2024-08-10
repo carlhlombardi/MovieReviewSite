@@ -18,7 +18,8 @@ const NavbarComponent = () => {
                 src={"/images/logo/logo.png"} // Use the image URL directly from the database
                 alt={"Logo"}      // Alt text for accessibility
                 width={160}
-                height={16}
+                height={80}
+                className='img-fluid'
               />
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />

@@ -9,12 +9,13 @@ const Footer = () => (
         <Image
                 src={"/images/logo/logo.png"} // Use the image URL directly from the database
                 alt={"Logo"}      // Alt text for accessibility
-                width={160}
-                height={16}
+                width={250}
+                height={125}
+                className='img-fluid'
               />
         </Col>
 
-        <Col md={3} className="mb-3 text-center">
+        <Col md={3} className="mt-3 mb-3 text-center">
           <h5 className="text-uppercase">Pages</h5>
           <ul className="list-unstyled">
             <li><a href="/">Home</a></li>
@@ -23,7 +24,7 @@ const Footer = () => (
           </ul>
         </Col>
 
-        <Col md={3} className="mb-3 text-center">
+        <Col md={3} className="mt-3 mb-3 text-center">
           <h5 className="text-uppercase">Genres</h5>
           <ul className="list-unstyled">
             <li><a href="/genre/horror">Horror</a></li>
