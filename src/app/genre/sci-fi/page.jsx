@@ -32,7 +32,7 @@ const SciFiPostPage = () => {
       <Row>
       <Col>
            <Image
-           src={"/images/hero/Horror.jpg"} // Use the image URL directly from the database
+           src={"/images/hero/SciFi.png"} // Use the image URL directly from the database
            alt={"Hero"}      // Alt text for accessibility
            width={1325}
            height={275}
