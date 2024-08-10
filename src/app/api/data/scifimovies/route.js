@@ -1,13 +1,13 @@
 import { sql } from '@vercel/postgres';
 
 export async function GET(req) {
-  const url = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
-
   try {
+    const url = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
+
     if (url) {
-      // Query to fetch data from the `horrormovies` table where URL matches
+      // Query to fetch data from the `scifimovies` table where URL matches
       const result = await sql`
-        SELECT * FROM horrormovies WHERE url = ${url};
+        SELECT * FROM scifimovies WHERE url = ${url};
       `;
 
       if (result.rows.length === 0) {
@@ -19,9 +19,9 @@ export async function GET(req) {
         status: 200,
       });
     } else {
-      // Query to fetch all data from the `horrormovies` table
+      // Query to fetch all data from the `scifimovies` table
       const result = await sql`
-        SELECT * FROM horrormovies;
+        SELECT * FROM scifimovies;
       `;
 
       return new Response(JSON.stringify(result.rows), {
