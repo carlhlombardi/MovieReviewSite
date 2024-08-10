@@ -9,8 +9,8 @@ import "./globals.css";
 const inter = Montserrat ({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Carl's Untitled Movie Review Site",
-  description: "A Website That Will Review All Movies",
+  title: "Reel Film Reviews",
+  description: "Film Reviews with a Jersey Attitude",
 };
 
 export default function RootLayout ({ children }) {
