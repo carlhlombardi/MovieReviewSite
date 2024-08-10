@@ -7,7 +7,7 @@ import Image from 'next/image';
 // Function to fetch data from the API
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/datahorrormovies`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
