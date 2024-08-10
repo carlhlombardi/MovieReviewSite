@@ -7,7 +7,7 @@ import Image from 'next/image';
 // Function to fetch data from the API
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/scifimovies`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
@@ -22,7 +22,7 @@ const fetchData = async (url) => {
 };
 
 // Page component that fetches and displays data
-const Page = ({ params }) => {
+const SciFiPage = ({ params }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ const Page = ({ params }) => {
   }
 
   // Destructure necessary fields from the fetched data
-  const { film, year, studio, director, screenwriter, producer, total_kills, men, women, run_time, my_rating, review,  image_url } = data;
+  const { film, year, studio, director, screenwriter, producer, run_time, my_rating, review,  image_url } = data;
 
   return (
     <Container>
@@ -66,13 +66,7 @@ const Page = ({ params }) => {
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
-        </Col>
-        <Col xs={12} md={6} className="text-center m-auto order-md-3">
-          <h2 className='mb-4'>The Stats</h2>
           <h6>Run Time: {run_time} Minutes</h6>
-          <h6>Total Kills: {total_kills} Kills</h6>
-          <h6>Men: {men} Killed</h6>
-          <h6>Women: {women} Killed</h6>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
           <h3 className='mb-4'>Review of {film}</h3>
@@ -84,4 +78,4 @@ const Page = ({ params }) => {
   );
 };
 
-export default Page;
+export default SciFiPage;
