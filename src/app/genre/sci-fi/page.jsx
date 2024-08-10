@@ -44,7 +44,7 @@ const SciFiPostPage = () => {
         <Row>
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
-              <Link href={`/genre/scifi/${encodeURIComponent(item.url)}`}>
+              <Link href={`/genre/sci-fi/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
