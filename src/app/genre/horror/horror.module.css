@@ -1,4 +1,4 @@
-.image-wrapper {
+.imagewrapper {
   position: relative;
   width: 100%; /* Ensure the wrapper takes full width */
   padding: 2rem; /* Aspect ratio 400x600 => 150% (height/width * 100) */

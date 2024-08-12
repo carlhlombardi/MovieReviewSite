@@ -37,7 +37,7 @@ const Links = ({ handleClose }) => {
     },
     {
       title: "Documentaries",
-      path: "/genre/documentaries",
+      path: "/genre/documentary",
     },
     {
       title: "Drama",
