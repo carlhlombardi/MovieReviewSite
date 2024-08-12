@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; // Import the Image component
 import { Container, Row, Col } from 'react-bootstrap'; // Import Bootstrap components
-import styles from "./horror.module.css";
+import styles from "./comedy.module.css";
 
-const HorrorPostPage = () => {
+const ComedyPostPage = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/data/comedymovies');
         const result = await response.json();
         setData(result);
       } catch (error) {
@@ -33,7 +33,7 @@ const HorrorPostPage = () => {
       <Row>
       <Col>
            <Image
-           src={"/images/hero/Horror.jpg"} // Use the image URL directly from the database
+           src={"/images/hero/Comedy.jpg"} // Use the image URL directly from the database
            alt={"Hero"}      // Alt text for accessibility
            width={1325}
            height={275}
@@ -45,7 +45,7 @@ const HorrorPostPage = () => {
         <Row>
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
-              <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
+              <Link href={`/genre/comedy/${encodeURIComponent(item.url)}`}>
                 <div className={styles.image-wrapper}>
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
@@ -65,4 +65,4 @@ const HorrorPostPage = () => {
   );
 };
 
-export default HorrorPostPage;
+export default ComedyPostPage;

@@ -24,6 +24,26 @@ const Links = ({ handleClose }) => {
       path: "/contact",
     },
     {
+      title: "Action",
+      path: "/genre/action",
+    },
+    {
+      title: "Classic",
+      path: "/genre/classic",
+    },
+    {
+      title: "Comedy",
+      path: "/genre/comedy",
+    },
+    {
+      title: "Documentaries",
+      path: "/genre/documentaries",
+    },
+    {
+      title: "Drama",
+      path: "/genre/drama",
+    },
+    {
       title: "Horror",
       path: "/genre/horror",
     },

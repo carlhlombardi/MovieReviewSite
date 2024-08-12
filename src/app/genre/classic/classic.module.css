@@ -1,0 +1,31 @@
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 2rem; /* Aspect ratio 400x600 => 150% (height/width * 100) */
+    overflow: hidden; /* Hide overflow to maintain the aspect ratio */
+    display: flex;
+    justify-content: center; /* Center image horizontally */
+    align-items: center; /* Center image vertically */
+  }
+
+  .image-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    object-fit: cover; /* Cover the area while maintaining aspect ratio */
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .custom-col {
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .custom-col {
+      justify-content: center;
+    }
+}

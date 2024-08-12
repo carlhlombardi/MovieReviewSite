@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; // Import the Image component
 import { Container, Row, Col } from 'react-bootstrap'; // Import Bootstrap components
+import styles from "./sci-fi.module.css";
 
 const SciFiPostPage = () => {
   const [data, setData] = useState([]);
@@ -36,7 +37,7 @@ const SciFiPostPage = () => {
            alt={"Hero"}      // Alt text for accessibility
            width={1325}
            height={275}
-           className="horror-hero img-fluid" // Add a class for fluid image
+           className="img-fluid" // Add a class for fluid image
          />
         </Col>
       </Row>
@@ -45,7 +46,7 @@ const SciFiPostPage = () => {
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/sci-fi/${encodeURIComponent(item.url)}`}>
-                <div className="image-wrapper">
+                <div className={styles.image-wrapper}>
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
                     alt={item.Film}      // Alt text for accessibility
@@ -60,38 +61,6 @@ const SciFiPostPage = () => {
       ) : (
         <p>No data available.</p>
       )}
-      <style jsx>{`
-        .image-wrapper {
-          position: relative;
-          width: 100%; /* Ensure the wrapper takes full width */
-          padding: 2rem; /* Aspect ratio 400x600 => 150% (height/width * 100) */
-          overflow: hidden; /* Hide overflow to maintain the aspect ratio */
-          display: flex;
-          justify-content: center; /* Center image horizontally */
-          align-items: center; /* Center image vertically */
-        }
-
-        .image-wrapper img {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover; /* Cover the area while maintaining aspect ratio */
-        }
-
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .custom-col {
-            justify-content: center;
-          }
-        }
-
-        @media (max-width: 767px) {
-          .custom-col {
-            justify-content: center;
-          }
-        }
-      `}</style>
     </Container>
   );
 };
