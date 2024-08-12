@@ -46,7 +46,7 @@ const ClassicPage = ({ params }) => {
     <Container>
       <Row>
       <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
-          <div className="image-wrapper">
+          <div className="imagewrapper">
             {image_url ? (
               <Image
                 src={image_url} // Use the image URL directly from the database

@@ -46,7 +46,7 @@ const ComedyPostPage = () => {
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/comedy/${encodeURIComponent(item.url)}`}>
-                <div className={styles.image-wrapper}>
+                <div className={styles.imagewrapper}>
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
                     alt={item.Film}      // Alt text for accessibility
