@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Navbar, Container } from 'react-bootstrap';
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
+import styles from "./documentary.module.css";
 
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);
@@ -23,7 +24,7 @@ const NavbarComponent = () => {
             className='img-fluid'
           />
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
+        <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} className= {styles.hamburger} />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Links handleClose={handleClose} expanded={expanded} />
         </Navbar.Collapse>
