@@ -62,12 +62,13 @@ const Links = ({ handleClose, expanded }) => {
         show={dropdownOpen}
         onClick={handleDropdownToggle}
         className={styles.navDropdown}
+        drop="end" // Ensures dropdown appears below the button
       >
         {genreLinks.map((link) => (
           <NavDropdown.Item
             key={link.title}
             href={link.path}
-            className={activeLink === link.path ? styles.active : ""}
+            className={activeLink === link.path ? styles.activeDropdownItem : ""}
             onClick={() => handleLinkClick(link.path)}
           >
             {link.title}
