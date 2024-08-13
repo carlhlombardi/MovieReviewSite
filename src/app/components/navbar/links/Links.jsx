@@ -8,7 +8,6 @@ import styles from "./links.module.css";
 
 const Links = ({ handleClose, expanded }) => {
   const [activeLink, setActiveLink] = useState("/");
-  const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
   const links = [
@@ -31,7 +30,7 @@ const Links = ({ handleClose, expanded }) => {
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
-    handleClose(); // Close the navbar
+    handleClose(); // Close the navbar on mobile
   };
 
   // Separate genre links for dropdown
@@ -53,9 +52,9 @@ const Links = ({ handleClose, expanded }) => {
       <NavDropdown
         title="Genre"
         id="genre-dropdown"
-        show={expanded && showDropdown}
-        onClick={() => setShowDropdown(!showDropdown)}
-        onSelect={() => setShowDropdown(false)}
+        show={expanded && !expanded} // Control visibility based on expanded state
+        onClick={() => setExpanded(!expanded)} // Toggle the dropdown
+        onSelect={() => handleClose()} // Close the dropdown on selection
       >
         {genreLinks.map((link) => (
           <NavDropdown.Item
