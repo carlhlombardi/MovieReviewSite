@@ -6,7 +6,7 @@
     gap: 1rem;
   }
 
-  #basic-nav-dropdown {
+  .nav-dropdown {
     color: white;
     background-color: var(--bg);
   }
