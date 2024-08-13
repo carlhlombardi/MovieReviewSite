@@ -8,7 +8,7 @@ import styles from "./horror.module.css";
 
 const HorrorPostPage = () => {
   const [data, setData] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('id'); // Default sort by title
+  const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
 
   useEffect(() => {
     const fetchData = async () => {
