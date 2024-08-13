@@ -8,26 +8,14 @@ import styles from "./links.module.css";
 
 const Links = ({ handleClose, expanded }) => {
   const [activeLink, setActiveLink] = useState("/");
-  const [dropdownOpen, setDropdownOpen] = useState(false); // State to manage dropdown visibility
   const router = useRouter();
 
-  const links = [
-    { title: "Home", path: "/" },
-    { title: "About", path: "/about" },
-    { title: "Contact", path: "/contact" },
-    { title: "Action", path: "/genre/action" },
-    { title: "Classic", path: "/genre/classic" },
-    { title: "Comedy", path: "/genre/comedy" },
-    { title: "Documentaries", path: "/genre/documentary" },
-    { title: "Drama", path: "/genre/drama" },
-    { title: "Horror", path: "/genre/horror" },
-    { title: "Sci-Fi", path: "/genre/sci-fi" },
-  ];
-
+  // Update activeLink on mount
   useEffect(() => {
     setActiveLink(window.location.pathname);
   }, []);
 
+  // Handle navigation link click
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
@@ -37,12 +25,6 @@ const Links = ({ handleClose, expanded }) => {
   // Separate genre links for dropdown
   const genreLinks = links.filter((link) => link.path.startsWith("/genre"));
   const otherLinks = links.filter((link) => !link.path.startsWith("/genre"));
-
-  // Toggle dropdown visibility
-  const handleDropdownToggle = (e) => {
-    e.preventDefault();
-    setDropdownOpen(!dropdownOpen);
-  };
 
   return (
     <Nav className={styles.links}>
@@ -57,24 +39,21 @@ const Links = ({ handleClose, expanded }) => {
 
       {/* Dropdown for Genre */}
       <NavDropdown
-  title="Genre"
-  id="genre-dropdown"
-  show={dropdownOpen}
-  onToggle={() => setDropdownOpen(!dropdownOpen)}
-  className={styles.navDropdown}
->
-  {genreLinks.map((link) => (
-    <NavDropdown.Item
-      key={link.title}
-      href={link.path}
-      className={activeLink === link.path ? styles.active : ""}
-      onClick={() => handleLinkClick(link.path)}
-    >
-      {link.title}
-    </NavDropdown.Item>
-  ))}
-</NavDropdown>
-
+        title="Genre"
+        id="genre-dropdown"
+        className={styles.navDropdown}
+      >
+        {genreLinks.map((link) => (
+          <NavDropdown.Item
+            key={link.title}
+            href={link.path}
+            className={activeLink === link.path ? styles.active : ""}
+            onClick={() => handleLinkClick(link.path)}
+          >
+            {link.title}
+          </NavDropdown.Item>
+        ))}
+      </NavDropdown>
     </Nav>
   );
 };

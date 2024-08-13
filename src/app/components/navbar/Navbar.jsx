@@ -24,7 +24,7 @@ const NavbarComponent = () => {
           />
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
-        <Navbar.Collapse id="basic-navbar-nav">
+        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Links handleClose={handleClose} expanded={expanded} />
         </Navbar.Collapse>
       </Container>
