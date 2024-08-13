@@ -7,11 +7,13 @@
     color: white;
   }
 
-  .nav-dropdown {
+  .nav-Dropdown {
     color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  }
+
+  .nav-Dropdown .active {
+    color: white;
+    text-align: center;
     background-color: var(--bg);
   }
 
