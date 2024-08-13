@@ -8,6 +8,7 @@ import styles from "./action.module.css";
 
 const ActionPostPage = () => {
   const [data, setData] = useState([]);
+  const [sortCriteria, setSortCriteria] = useState('title'); // Default sort by title
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,27 +24,57 @@ const ActionPostPage = () => {
     fetchData();
   }, []);
 
-  // Select the first six items if data is available
-  const itemsToShow = data
+  // Handle sorting
+  const sortedItems = data
     .filter(item => item.id >= 1 && item.id <= 139)
-    .sort((a, b) => a.id - b.id);
+    .sort((a, b) => {
+      if (sortCriteria === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortCriteria === 'year') {
+        return a.year - b.year;
+      }
+      if (sortCriteria === 'studio') {
+        return a.studio.localeCompare(b.studio);
+      }
+      if (sortCriteria === 'my_rating') {
+        return b.my_rating - a.my_rating; // Highest rating first
+      }
+      return 0;
+    });
+
+  // Handle dropdown change
+  const handleSortChange = (event) => {
+    setSortCriteria(event.target.value);
+  };
 
   return (
     <Container>
       <Row>
-      <Col>
-           <Image
-           src={"/images/hero/Action.jpg"} // Use the image URL directly from the database
-           alt={"Hero"}      // Alt text for accessibility
-           width={1325}
-           height={275}
-           className="img-fluid" // Add a class for fluid image
-         />
+        <Col>
+          <Image
+            src={"/images/hero/Action.jpg"} // Use the image URL directly from the database
+            alt={"Hero"}      // Alt text for accessibility
+            width={1325}
+            height={275}
+            className="img-fluid" // Add a class for fluid image
+          />
         </Col>
       </Row>
-      {itemsToShow.length > 0 ? (
+      <Row className="mb-3">
+        <Col>
+          <label htmlFor="sort">Sort by:</label>
+          <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
+            <option value="title">Title</option>
+            <option value="year">Year</option>
+            <option value="studio">Studio</option>
+            <option value="my_rating">Rating</option>
+          </select>
+        </Col>
+      </Row>
+      {sortedItems.length > 0 ? (
         <Row>
-          {itemsToShow.map(item => (
+          {sortedItems.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/action/${encodeURIComponent(item.url)}`}>
                 <div className={styles.imagewrapper}>

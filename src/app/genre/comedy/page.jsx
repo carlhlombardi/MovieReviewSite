@@ -25,8 +25,17 @@ const ComedyPostPage = () => {
 
   // Select the first six items if data is available
   const itemsToShow = data
-    .filter(item => item.id >= 1 && item.id <= 139)
-    .sort((a, b) => a.id - b.id);
+  .filter(item => item.id >= 1 && item.id <= 139)
+  .sort((a, b) => {
+    if (a.title < b.title) {
+      return -1;
+    }
+    if (a.title > b.title) {
+      return 1;
+    }
+    return 0;
+  });
+
 
   return (
     <Container>
