@@ -52,9 +52,8 @@ const Links = ({ handleClose, expanded }) => {
       <NavDropdown
         title="Genre"
         id="genre-dropdown"
-        show={expanded && !expanded} // Control visibility based on expanded state
-        onClick={() => setExpanded(!expanded)} // Toggle the dropdown
-        onSelect={() => handleClose()} // Close the dropdown on selection
+        show={expanded && !expanded} // Adjust show prop as needed
+        onClick={(e) => e.stopPropagation()} // Prevent closing the dropdown
       >
         {genreLinks.map((link) => (
           <NavDropdown.Item
