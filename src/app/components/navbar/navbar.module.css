@@ -7,3 +7,8 @@
     color: white;
     text-align: center;
 }
+
+.hamburger {
+    background-color: var(--bg);
+    color: white;
+}
