@@ -8,6 +8,7 @@ import styles from "./classic.module.css";
 
 const ClassicPostPage = () => {
   const [data, setData] = useState([]);
+  const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,18 +24,30 @@ const ClassicPostPage = () => {
     fetchData();
   }, []);
 
-  // Select the first six items if data is available
-  const itemsToShow = data
-  .filter(item => item.id >= 1 && item.id <= 139)
-  .sort((a, b) => {
-    if (a.title < b.title) {
-      return -1;
-    }
-    if (a.title > b.title) {
-      return 1;
-    }
-    return 0;
-  });
+ // Handle sorting
+ const sortedItems = data
+ .filter(item => item.id >= 1 && item.id <= 139)
+ .sort((a, b) => {
+   if (sortCriteria === 'film') {
+     return a.film.localeCompare(b.film);
+   }
+   if (sortCriteria === 'year') {
+     return a.year - b.year;
+   }
+   if (sortCriteria === 'studio') {
+     return a.studio.localeCompare(b.studio);
+   }
+   if (sortCriteria === 'my_rating') {
+     return b.my_rating - a.my_rating; // Highest rating first
+   }
+   return 0;
+ });
+
+// Handle dropdown change
+const handleSortChange = (event) => {
+ setSortCriteria(event.target.value);
+};
+
 
 
   return (
@@ -50,7 +63,18 @@ const ClassicPostPage = () => {
          />
         </Col>
       </Row>
-      {itemsToShow.length > 0 ? (
+      <Row className="mb-3">
+        <Col>
+          <label htmlFor="sort">Sort by:</label>
+          <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
+            <option value="title">Title</option>
+            <option value="year">Year</option>
+            <option value="studio">Studio</option>
+            <option value="my_rating">Rating</option>
+          </select>
+        </Col>
+      </Row>
+      {sortedItems.length > 0 ? (
         <Row>
           {itemsToShow.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
