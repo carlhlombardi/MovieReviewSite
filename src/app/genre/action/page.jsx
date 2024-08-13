@@ -8,7 +8,7 @@ import styles from "./action.module.css";
 
 const ActionPostPage = () => {
   const [data, setData] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('title'); // Default sort by title
+  const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,8 +28,8 @@ const ActionPostPage = () => {
   const sortedItems = data
     .filter(item => item.id >= 1 && item.id <= 139)
     .sort((a, b) => {
-      if (sortCriteria === 'title') {
-        return a.title.localeCompare(b.title);
+      if (sortCriteria === 'film') {
+        return a.film.localeCompare(b.film);
       }
       if (sortCriteria === 'year') {
         return a.year - b.year;
