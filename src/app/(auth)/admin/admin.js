@@ -1,3 +1,5 @@
+"use client"; // Ensure this is at the top
+
 import { useState, useEffect } from 'react';
 
 export default function AdminPage() {

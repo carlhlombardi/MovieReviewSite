@@ -1,3 +1,5 @@
+"use client"; // Ensure this is at the top
+
 import { getCsrfToken } from 'next-auth/react';
 import { useState } from 'react';
 
