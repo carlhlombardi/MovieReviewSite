@@ -1,3 +1,5 @@
+@import 'bootstrap/dist/css/bootstrap.css';
+
 :root {
     --bg: #0d0c22;
     --bgSoft: #2d2b42;

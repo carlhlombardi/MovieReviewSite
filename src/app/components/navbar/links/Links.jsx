@@ -10,6 +10,20 @@ const Links = ({ handleClose, expanded }) => {
   const [activeLink, setActiveLink] = useState("/");
   const router = useRouter();
 
+  // Define the links array
+  const links = [
+    { title: "Home", path: "/" },
+    { title: "About", path: "/about" },
+    { title: "Contact", path: "/contact" },
+    { title: "Action", path: "/genre/action" },
+    { title: "Classic", path: "/genre/classic" },
+    { title: "Comedy", path: "/genre/comedy" },
+    { title: "Documentaries", path: "/genre/documentary" },
+    { title: "Drama", path: "/genre/drama" },
+    { title: "Horror", path: "/genre/horror" },
+    { title: "Sci-Fi", path: "/genre/sci-fi" },
+  ];
+
   // Update activeLink on mount
   useEffect(() => {
     setActiveLink(window.location.pathname);
