@@ -1,0 +1,9 @@
+.dropdown-menu {
+    background-color: var(--bg);
+    color: white;
+}
+
+.dropdown-item, .dropdown-item:hover {
+    color: white;
+    text-align: center;
+}

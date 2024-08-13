@@ -8,6 +8,7 @@
 
   #basic-nav-dropdown {
     color: white;
+    background-color: var(--bg);
   }
 
 .logout {
