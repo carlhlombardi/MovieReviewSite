@@ -26,6 +26,7 @@ const HorrorPostPage = () => {
 
   // Handle sorting
   const sortedItems = data
+    .filter(item => item.id >= 1 && item.id <= 160)
     .sort((a, b) => {
       if (sortCriteria === 'film') {
         return a.film.localeCompare(b.film);
