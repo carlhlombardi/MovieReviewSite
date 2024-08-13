@@ -7,18 +7,3 @@
     color: white;
   }
 
-.navDropdown {
-  color: white;
-  background-color: var(--bg);
-}
-
-a.dropdown-item {
-  color: white;
-}
-
-@media (max-width: 767px) {
-  .navDropdown {
-    position: relative; /* Ensure dropdown is positioned correctly */
-    left: 0; /* Adjust if needed */
-  }
-}
