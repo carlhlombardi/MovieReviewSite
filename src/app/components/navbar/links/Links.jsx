@@ -8,6 +8,7 @@ import styles from "./links.module.css";
 
 const Links = ({ handleClose, expanded }) => {
   const [activeLink, setActiveLink] = useState("/");
+  const [dropdownOpen, setDropdownOpen] = useState(false); // State to manage dropdown visibility
   const router = useRouter();
 
   const links = [
@@ -37,6 +38,12 @@ const Links = ({ handleClose, expanded }) => {
   const genreLinks = links.filter((link) => link.path.startsWith("/genre"));
   const otherLinks = links.filter((link) => !link.path.startsWith("/genre"));
 
+  // Toggle dropdown visibility
+  const handleDropdownToggle = (e) => {
+    e.preventDefault();
+    setDropdownOpen(!dropdownOpen);
+  };
+
   return (
     <Nav className={styles.links}>
       {otherLinks.map((link) => (
@@ -52,8 +59,9 @@ const Links = ({ handleClose, expanded }) => {
       <NavDropdown
         title="Genre"
         id="genre-dropdown"
-        show={expanded && !expanded} // Adjust show prop as needed
-        onClick={(e) => e.stopPropagation()} // Prevent closing the dropdown
+        show={dropdownOpen}
+        onClick={handleDropdownToggle}
+        className={styles.navDropdown}
       >
         {genreLinks.map((link) => (
           <NavDropdown.Item
