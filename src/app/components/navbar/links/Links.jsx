@@ -57,23 +57,24 @@ const Links = ({ handleClose, expanded }) => {
 
       {/* Dropdown for Genre */}
       <NavDropdown
-        title="Genre"
-        id="genre-dropdown"
-        show={dropdownOpen}
-        onClick={handleDropdownToggle}
-        className={styles.navDropdown}
-      >
-        {genreLinks.map((link) => (
-          <NavDropdown.Item
-            key={link.title}
-            href={link.path}
-            className={activeLink === link.path ? styles.active : ""}
-            onClick={() => handleLinkClick(link.path)}
-          >
-            {link.title}
-          </NavDropdown.Item>
-        ))}
-      </NavDropdown>
+  title="Genre"
+  id="genre-dropdown"
+  show={dropdownOpen}
+  onToggle={() => setDropdownOpen(!dropdownOpen)}
+  className={styles.navDropdown}
+>
+  {genreLinks.map((link) => (
+    <NavDropdown.Item
+      key={link.title}
+      href={link.path}
+      className={activeLink === link.path ? styles.active : ""}
+      onClick={() => handleLinkClick(link.path)}
+    >
+      {link.title}
+    </NavDropdown.Item>
+  ))}
+</NavDropdown>
+
     </Nav>
   );
 };
