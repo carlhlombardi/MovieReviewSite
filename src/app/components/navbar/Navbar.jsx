@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Navbar, Container } from 'react-bootstrap';
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
-import styles from "./documentary.module.css";
+import styles from "./navbar.module.css";
 
 const NavbarComponent = () => {
   const [expanded, setExpanded] = useState(false);
