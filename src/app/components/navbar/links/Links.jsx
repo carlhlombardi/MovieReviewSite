@@ -6,51 +6,22 @@ import { useRouter } from "next/navigation";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import styles from "./links.module.css";
 
-const Links = ({ handleClose }) => {
+const Links = ({ handleClose, expanded }) => {
   const [activeLink, setActiveLink] = useState("/");
+  const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
   const links = [
-    {
-      title: "Home",
-      path: "/",
-    },
-    {
-      title: "About",
-      path: "/about",
-    },
-    {
-      title: "Contact",
-      path: "/contact",
-    },
-    {
-      title: "Action",
-      path: "/genre/action",
-    },
-    {
-      title: "Classic",
-      path: "/genre/classic",
-    },
-    {
-      title: "Comedy",
-      path: "/genre/comedy",
-    },
-    {
-      title: "Documentaries",
-      path: "/genre/documentary",
-    },
-    {
-      title: "Drama",
-      path: "/genre/drama",
-    },
-    {
-      title: "Horror",
-      path: "/genre/horror",
-    },
-    {
-      title: "Sci-Fi",
-      path: "/genre/sci-fi",
-    },
+    { title: "Home", path: "/" },
+    { title: "About", path: "/about" },
+    { title: "Contact", path: "/contact" },
+    { title: "Action", path: "/genre/action" },
+    { title: "Classic", path: "/genre/classic" },
+    { title: "Comedy", path: "/genre/comedy" },
+    { title: "Documentaries", path: "/genre/documentary" },
+    { title: "Drama", path: "/genre/drama" },
+    { title: "Horror", path: "/genre/horror" },
+    { title: "Sci-Fi", path: "/genre/sci-fi" },
   ];
 
   useEffect(() => {
@@ -64,8 +35,8 @@ const Links = ({ handleClose }) => {
   };
 
   // Separate genre links for dropdown
-  const genreLinks = links.filter(link => link.path.startsWith("/genre"));
-  const otherLinks = links.filter(link => !link.path.startsWith("/genre"));
+  const genreLinks = links.filter((link) => link.path.startsWith("/genre"));
+  const otherLinks = links.filter((link) => !link.path.startsWith("/genre"));
 
   return (
     <Nav className={styles.links}>
@@ -77,9 +48,15 @@ const Links = ({ handleClose }) => {
           onClick={() => handleLinkClick(link.path)}
         />
       ))}
-      
+
       {/* Dropdown for Genre */}
-      <NavDropdown title="Genre" id="genre-dropdown" onClick={handleClose}>
+      <NavDropdown
+        title="Genre"
+        id="genre-dropdown"
+        show={expanded && showDropdown}
+        onClick={() => setShowDropdown(!showDropdown)}
+        onSelect={() => setShowDropdown(false)}
+      >
         {genreLinks.map((link) => (
           <NavDropdown.Item
             key={link.title}
