@@ -28,9 +28,6 @@ const DocumentaryPostPage = () => {
   const sortedItems = data
     .filter(item => item.id >= 1 && item.id <= 139)
     .sort((a, b) => {
-      if (sortCriteria === 'film') {
-        return a.film.localeCompare(b.film);
-      }
       if (sortCriteria === 'year') {
         return a.year - b.year;
       }
@@ -65,7 +62,6 @@ const DocumentaryPostPage = () => {
         <Col>
           <label htmlFor="sort">Sort by:</label>
           <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
-            <option value="title">Title</option>
             <option value="year">Year</option>
             <option value="studio">Studio</option>
             <option value="my_rating">Rating</option>
@@ -74,7 +70,7 @@ const DocumentaryPostPage = () => {
       </Row>
       {sortedItems.length > 0 ? (
         <Row>
-          {itemsToShow.map(item => (
+          {sortedItems.map(item => (
             <Col key={item.row_id} xs={12} sm={6} md={4} lg={3}>
               <Link href={`/genre/documentary/${encodeURIComponent(item.url)}`}>
                 <div className={styles.imagewrapper}>
