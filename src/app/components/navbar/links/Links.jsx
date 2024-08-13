@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Nav } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Nav, NavDropdown } from "react-bootstrap";
 import { useRouter } from "next/navigation";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import styles from "./links.module.css";
@@ -63,9 +63,13 @@ const Links = ({ handleClose }) => {
     handleClose(); // Close the navbar
   };
 
+  // Separate genre links for dropdown
+  const genreLinks = links.filter(link => link.path.startsWith("/genre"));
+  const otherLinks = links.filter(link => !link.path.startsWith("/genre"));
+
   return (
     <Nav className={styles.links}>
-      {links.map((link) => (
+      {otherLinks.map((link) => (
         <NavLinks
           key={link.title}
           item={link}
@@ -73,6 +77,20 @@ const Links = ({ handleClose }) => {
           onClick={() => handleLinkClick(link.path)}
         />
       ))}
+      
+      {/* Dropdown for Genre */}
+      <NavDropdown title="Genre" id="genre-dropdown" onClick={handleClose}>
+        {genreLinks.map((link) => (
+          <NavDropdown.Item
+            key={link.title}
+            href={link.path}
+            className={activeLink === link.path ? styles.active : ""}
+            onClick={() => handleLinkClick(link.path)}
+          >
+            {link.title}
+          </NavDropdown.Item>
+        ))}
+      </NavDropdown>
     </Nav>
   );
 };
