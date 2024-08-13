@@ -28,6 +28,9 @@ const SciFiPostPage = () => {
    const sortedItems = data
    .filter(item => item.id >= 1 && item.id <= 139)
    .sort((a, b) => {
+     if (sortCriteria === 'film') {
+       return a.film.localeCompare(b.film);
+     }
      if (sortCriteria === 'year') {
        return a.year - b.year;
      }
@@ -63,6 +66,7 @@ const SciFiPostPage = () => {
         <Col>
           <label htmlFor="sort">Sort by:</label>
           <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
+            <option value="title">Title</option>
             <option value="year">Year</option>
             <option value="studio">Studio</option>
             <option value="my_rating">Rating</option>
