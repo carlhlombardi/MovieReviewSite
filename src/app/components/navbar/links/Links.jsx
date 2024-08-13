@@ -1,48 +1,71 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Nav, NavDropdown } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Nav } from "react-bootstrap";
 import { useRouter } from "next/navigation";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import styles from "./links.module.css";
 
-const Links = ({ handleClose, expanded }) => {
+const Links = ({ handleClose }) => {
   const [activeLink, setActiveLink] = useState("/");
   const router = useRouter();
 
-  // Define the links array
   const links = [
-    { title: "Home", path: "/" },
-    { title: "About", path: "/about" },
-    { title: "Contact", path: "/contact" },
-    { title: "Action", path: "/genre/action" },
-    { title: "Classic", path: "/genre/classic" },
-    { title: "Comedy", path: "/genre/comedy" },
-    { title: "Documentaries", path: "/genre/documentary" },
-    { title: "Drama", path: "/genre/drama" },
-    { title: "Horror", path: "/genre/horror" },
-    { title: "Sci-Fi", path: "/genre/sci-fi" },
+    {
+      title: "Home",
+      path: "/",
+    },
+    {
+      title: "About",
+      path: "/about",
+    },
+    {
+      title: "Contact",
+      path: "/contact",
+    },
+    {
+      title: "Action",
+      path: "/genre/action",
+    },
+    {
+      title: "Classic",
+      path: "/genre/classic",
+    },
+    {
+      title: "Comedy",
+      path: "/genre/comedy",
+    },
+    {
+      title: "Documentaries",
+      path: "/genre/documentary",
+    },
+    {
+      title: "Drama",
+      path: "/genre/drama",
+    },
+    {
+      title: "Horror",
+      path: "/genre/horror",
+    },
+    {
+      title: "Sci-Fi",
+      path: "/genre/sci-fi",
+    },
   ];
 
-  // Update activeLink on mount
   useEffect(() => {
     setActiveLink(window.location.pathname);
   }, []);
 
-  // Handle navigation link click
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
-    handleClose(); // Close the navbar on mobile
+    handleClose(); // Close the navbar
   };
-
-  // Separate genre links for dropdown
-  const genreLinks = links.filter((link) => link.path.startsWith("/genre"));
-  const otherLinks = links.filter((link) => !link.path.startsWith("/genre"));
 
   return (
     <Nav className={styles.links}>
-      {otherLinks.map((link) => (
+      {links.map((link) => (
         <NavLinks
           key={link.title}
           item={link}
@@ -50,24 +73,6 @@ const Links = ({ handleClose, expanded }) => {
           onClick={() => handleLinkClick(link.path)}
         />
       ))}
-
-      {/* Dropdown for Genre */}
-      <NavDropdown
-        title="Genre"
-        id="genre-dropdown"
-        className={styles.navDropdown}
-      >
-        {genreLinks.map((link) => (
-          <NavDropdown.Item
-            key={link.title}
-            href={link.path}
-            className={activeLink === link.path ? styles.active : ""}
-            onClick={() => handleLinkClick(link.path)}
-          >
-            {link.title}
-          </NavDropdown.Item>
-        ))}
-      </NavDropdown>
     </Nav>
   );
 };
