@@ -27,8 +27,13 @@ const Footer = () => (
         <Col md={3} className="mt-3 mb-3 text-center">
           <h5 className="text-uppercase">Genres</h5>
           <ul className="list-unstyled">
-            <li><a href="/genre/horror">Horror</a></li>
-            <li><a href="/genre/sci-fi">Sci-Fi</a></li>
+           <li><a href="/genre/action">Action</a></li>
+           <li><a href="/genre/sci-fi">Classic</a></li>
+           <li><a href="/genre/comedy">Comedy</a></li>
+           <li><a href="/genre/documentary">Documentary</a></li>
+           <li><a href="/genre/drama">Drama</a></li>
+           <li><a href="/genre/horror">Horror</a></li>
+           <li><a href="/genre/sci-fi">Sci-Fi</a></li>
           </ul>
         </Col>
       </Row>
