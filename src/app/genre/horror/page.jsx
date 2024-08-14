@@ -9,6 +9,7 @@ import styles from "./horror.module.css";
 const HorrorPostPage = () => {
   const [data, setData] = useState([]);
   const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
+  const [sortedItems, setSortedItems] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,49 +25,50 @@ const HorrorPostPage = () => {
     fetchData();
   }, []);
 
-  // Handle sorting
-  const sortedItems = data
-  .filter(item => item.id >= 1 && item.id <= 139)
-  .sort((a, b) => {
-    if (sortCriteria === 'film') {
-      return a.film.localeCompare(b.film);
-    }
-      if (sortCriteria === 'year') {
-        return a.year - b.year;
-      }
-      if (sortCriteria === 'studio') {
-        return a.studio.localeCompare(b.studio);
-      }
-      if (sortCriteria === 'my_rating') {
-        return b.my_rating - a.my_rating; // Highest rating first
-      }
-      return 0;
-    });
+  useEffect(() => {
+    const sorted = data
+      .filter(item => item.id >= 1 && item.id <= 139)
+      .sort((a, b) => {
+        if (sortCriteria === 'film') {
+          return a.film.localeCompare(b.film); 
+        }
+        if (sortCriteria === 'year') {
+          return a.year - b.year;
+        }
+        if (sortCriteria === 'studio') {
+          return a.studio.localeCompare(b.studio);
+        }
+        if (sortCriteria === 'my_rating') {
+          return b.my_rating - a.my_rating; // Highest rating first
+        }
+        return 0;
+      });
+    setSortedItems(sorted);
+  }, [sortCriteria, data]);
 
   // Handle dropdown change
   const handleSortChange = (event) => {
     setSortCriteria(event.target.value);
   };
 
-
   return (
     <Container>
       <Row>
-      <Col>
-           <Image
-           src={"/images/hero/Horror.jpg"} // Use the image URL directly from the database
-           alt={"Hero"}      // Alt text for accessibility
-           width={1325}
-           height={275}
-           className="img-fluid" // Add a class for fluid image
-         />
+        <Col>
+          <Image
+            src={"/images/hero/Horror.jpg"} // Use the image URL directly from the database
+            alt={"Hero"}      // Alt text for accessibility
+            width={1325}
+            height={275}
+            className="img-fluid" // Add a class for fluid image
+          />
         </Col>
       </Row>
       <Row className="mb-3">
         <Col>
           <label htmlFor="sort">Sort by:</label>
           <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
-            <option value="title">Title</option>
+            <option value="film">Title</option>
             <option value="year">Year</option>
             <option value="studio">Studio</option>
             <option value="my_rating">Rating</option>
@@ -81,7 +83,7 @@ const HorrorPostPage = () => {
                 <div className={styles.imagewrapper}>
                   <Image
                     src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
-                    alt={item.Film}      // Alt text for accessibility
+                    alt={item.film}      // Alt text for accessibility
                     width={200}
                     height={300}
                   />
