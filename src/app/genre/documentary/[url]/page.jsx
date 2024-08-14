@@ -40,7 +40,7 @@ const DocumentaryPage = ({ params }) => {
   }
 
   // Destructure necessary fields from the fetched data
-  const { film, year, studio, director, writer, producer, run_time, my_rating, review,  image_url } = data;
+  const { film, year, studio, director, screenwriters , producer, run_time, my_rating, review,  image_url } = data;
 
   return (
     <Container>
@@ -62,7 +62,7 @@ const DocumentaryPage = ({ params }) => {
       <Col xs={12} md={6} className="text-center m-auto order-md-1">
           <h1 className='mb-4'>{film}</h1>
           <h5>Director: {director}</h5>
-          <h5>Screenwriter(s): {writer}</h5>
+          <h5>Screenwriter(s): {screenwriters}</h5>
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>

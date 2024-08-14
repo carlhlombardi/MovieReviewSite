@@ -40,7 +40,7 @@ const ComedyPage = ({ params }) => {
   }
 
   // Destructure necessary fields from the fetched data
-  const { film, year, studio, director, screenwriters, producers, run_time, my_rating, review,  image_url } = data;
+  const { film, year, studio, director, screenwriters, producer, run_time, my_rating, review,  image_url } = data;
 
   return (
     <Container>
@@ -63,7 +63,7 @@ const ComedyPage = ({ params }) => {
           <h1 className='mb-4'>{film}</h1>
           <h5>Director: {director}</h5>
           <h5>Screenwriter(s): {screenwriters}</h5>
-          <h5>Producer(s): {producers}</h5>
+          <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
           <h6>Run Time: {run_time} Minutes</h6>

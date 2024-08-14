@@ -8,7 +8,7 @@ import styles from "./drama.module.css";
 
 const DramaPostPage = () => {
   const [data, setData] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
+  const [sortCriteria, setSortCriteria] = useState('id'); // Default sort by id
   const [sortedItems, setSortedItems] = useState([]);
 
   useEffect(() => {
@@ -69,8 +69,8 @@ const DramaPostPage = () => {
       <label>Sort by:</label>
       <div className="d-flex flex-wrap">
         <Button
-          variant={sortCriteria === "title" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "title" } })}
+          variant={sortCriteria === "film" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "film" } })}
           className="m-1"
         >
           Title

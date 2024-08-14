@@ -8,7 +8,8 @@ import styles from "./comedy.module.css";
 
 const ComedyPostPage = () => {
   const [data, setData] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('film'); // Default sort by title
+  const [sortCriteria, setSortCriteria] = useState('id'); // Default sort by id
+  const [sortedItems, setSortedItems] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,24 +25,26 @@ const ComedyPostPage = () => {
     fetchData();
   }, []);
 
-  // Handle sorting
-  const sortedItems = data
-    .filter(item => item.id >= 1 && item.id <= 139)
-    .sort((a, b) => {
-      if (sortCriteria === 'film') {
-        return a.film.localeCompare(b.film);
-      }
-      if (sortCriteria === 'year') {
-        return a.year - b.year;
-      }
-      if (sortCriteria === 'studio') {
-        return a.studio.localeCompare(b.studio);
-      }
-      if (sortCriteria === 'my_rating') {
-        return b.my_rating - a.my_rating; // Highest rating first
-      }
-      return 0;
-    });
+  useEffect(() => {
+    const sorted = data
+      .filter(item => item.id >= 1 && item.id <= 160)
+      .sort((a, b) => {
+        if (sortCriteria === 'film') {
+          return a.film.localeCompare(b.film); 
+        }
+        if (sortCriteria === 'year') {
+          return a.year - b.year;
+        }
+        if (sortCriteria === 'studio') {
+          return a.studio.localeCompare(b.studio);
+        }
+        if (sortCriteria === 'my_rating') {
+          return b.my_rating - a.my_rating; // Highest rating first
+        }
+        return 0;
+      });
+    setSortedItems(sorted);
+  }, [sortCriteria, data]);
 
   // Handle dropdown change
   const handleSortChange = (event) => {
@@ -68,8 +71,8 @@ const ComedyPostPage = () => {
       <label>Sort by:</label>
       <div className="d-flex flex-wrap">
         <Button
-          variant={sortCriteria === "title" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "title" } })}
+          variant={sortCriteria === "film" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "film" } })}
           className="m-1"
         >
           Title
