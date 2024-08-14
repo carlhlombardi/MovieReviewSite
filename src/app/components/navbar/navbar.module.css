@@ -26,6 +26,7 @@
     font-size: 2rem;
     cursor: pointer;
     margin-left: auto;
+    font-weight: 500;
     margin-right: .5rem; /* Move the button to the right */
     padding: 0;
 }
