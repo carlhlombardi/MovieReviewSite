@@ -19,18 +19,13 @@
     transition: all 0.3s;
 }
 
-.navbar-toggler.collapsed .bar:nth-child(1) {
-    transform: rotate(45deg) translate(5px, 5px);
-}
-
-.navbar-toggler.collapsed .bar:nth-child(2) {
-    opacity: 0;
-}
-
-.navbar-toggler.collapsed .bar:nth-child(3) {
-    transform: rotate(-45deg) translate(5px, -5px);
-}
-
-.offcanvas {
-    background-color: var(--bg);
+.closebtn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: .5rem; /* Move the button to the right */
+    padding: 0;
 }
