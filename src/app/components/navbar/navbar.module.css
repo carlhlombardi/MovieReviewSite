@@ -31,6 +31,6 @@
     transform: rotate(-45deg) translate(5px, -5px);
 }
 
-.NavBackground {
+.offcanvas {
     background-color: var(--bg);
 }

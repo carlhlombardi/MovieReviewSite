@@ -31,7 +31,7 @@ const NavbarComponent = () => {
                     <span className={styles.bar}></span>
     </span>
     </button>
-    <Offcanvas show={show} onHide={handleClose} backdropClassName={styles.NavBackground}>
+    <Offcanvas show={show} onHide={handleClose}>
     <Offcanvas.Header closeButton />
     <Links handleClose={handleClose}  className={styles.NavLinks} />
   </Offcanvas>
