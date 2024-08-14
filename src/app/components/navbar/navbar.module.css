@@ -30,3 +30,7 @@
 .navbar-toggler.collapsed .bar:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -5px);
 }
+
+.NavBackground {
+    background-color: var(--bg);
+}
