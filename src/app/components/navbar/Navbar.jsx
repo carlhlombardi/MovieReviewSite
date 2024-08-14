@@ -33,7 +33,7 @@ const NavbarComponent = () => {
     </button>
     <Offcanvas show={show} onHide={handleClose}>
     <Offcanvas.Header closeButton />
-    <Links handleClose={handleClose}  className={styles.NavLinks} />
+    <Links handleClose={handleClose} />
   </Offcanvas>
   </Container>
 </Navbar>
