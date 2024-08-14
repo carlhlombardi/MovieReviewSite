@@ -1,0 +1,32 @@
+.navbartoggler {
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.navbartogglericon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 20px;
+}
+
+.bar {
+    width: 30px;
+    height: 2px;
+    background-color: white;
+    transition: all 0.3s;
+}
+
+.navbar-toggler.collapsed .bar:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.navbar-toggler.collapsed .bar:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-toggler.collapsed .bar:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
