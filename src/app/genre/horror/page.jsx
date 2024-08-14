@@ -27,7 +27,7 @@ const HorrorPostPage = () => {
 
   useEffect(() => {
     const sorted = data
-      .filter(item => item.id >= 1 && item.id <= 139)
+      .filter(item => item.id >= 1 && item.id <= 160)
       .sort((a, b) => {
         if (sortCriteria === 'film') {
           return a.film.localeCompare(b.film); 
