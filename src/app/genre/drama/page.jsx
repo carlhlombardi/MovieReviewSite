@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; // Import the Image component
-import { Container, Row, Col } from 'react-bootstrap'; // Import Bootstrap components
+import { Container, Row, Col, Button  } from 'react-bootstrap'; // Import Bootstrap components
 import styles from "./drama.module.css";
 
 const DramaPostPage = () => {
@@ -65,15 +65,39 @@ const DramaPostPage = () => {
         </Col>
       </Row>
       <Row className="mb-3">
-        <Col>
-          <label htmlFor="sort">Sort by:</label>
-          <select id="sort" value={sortCriteria} onChange={handleSortChange} className="form-select">
-            <option value="title">Title</option>
-            <option value="year">Year</option>
-            <option value="studio">Studio</option>
-            <option value="my_rating">Rating</option>
-          </select>
-        </Col>
+      <Col xs={12} sm={6}>
+      <label>Sort by:</label>
+      <div className="d-flex flex-wrap">
+        <Button
+          variant={sortCriteria === "title" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "title" } })}
+          className="m-1"
+        >
+          Title
+        </Button>
+        <Button
+          variant={sortCriteria === "year" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "year" } })}
+          className="m-1"
+        >
+          Year
+        </Button>
+        <Button
+          variant={sortCriteria === "studio" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "studio" } })}
+          className="m-1"
+        >
+          Studio
+        </Button>
+        <Button
+          variant={sortCriteria === "my_rating" ? "primary" : "secondary"}
+          onClick={() => handleSortChange({ target: { value: "my_rating" } })}
+          className="m-1"
+        >
+          Rating
+        </Button>
+      </div>
+    </Col>
       </Row>
       {sortedItems.length > 0 ? (
         <Row>

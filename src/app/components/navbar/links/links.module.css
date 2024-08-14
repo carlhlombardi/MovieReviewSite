@@ -51,11 +51,12 @@
     width: 100%;
     text-align: center;
     padding: 5px 10px;
+    font-size: 1.25rem;
   }
   
   .genreSidebar .active {
-    background-color: #007bff;
-    color: white;
+    background-color: white !important; /* Slightly lighter blue on hover/focus/active */
+    color: var(--bg) !important;
   }
   
   .dropdownMenu {
@@ -64,7 +65,7 @@
   
   .dropdownItem {
     color: white !important; /* White text */
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin: auto;
   }
   
