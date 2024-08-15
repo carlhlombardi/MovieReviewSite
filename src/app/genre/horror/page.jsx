@@ -64,39 +64,40 @@ const HorrorPostPage = () => {
           />
         </Col>
       </Row>
-      <Row className="mb-3">
-      <Col xs={12} sm={6}>
+      <Row className="mb-3 text-center">
+      <Col>
       <label>Sort by:</label>
-      <div className="d-flex flex-wrap">
-        <Button
-          variant={sortCriteria === "film" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "film" } })}
-          className="m-1"
-        >
-          Title
-        </Button>
-        <Button
-          variant={sortCriteria === "year" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "year" } })}
-          className="m-1"
-        >
-          Year
-        </Button>
-        <Button
-          variant={sortCriteria === "studio" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "studio" } })}
-          className="m-1"
-        >
-          Studio
-        </Button>
-        <Button
-          variant={sortCriteria === "my_rating" ? "primary" : "secondary"}
-          onClick={() => handleSortChange({ target: { value: "my_rating" } })}
-          className="m-1"
-        >
-          Rating
-        </Button>
-      </div>
+      <div className="dx-flex flex-wrap">
+  <Button
+    variant={sortCriteria === "film" ? "primary" : "secondary"}
+    onClick={() => handleSortChange({ target: { value: "film" } })}
+    className={`m-1 transparent-button ${sortCriteria === "film" ? "active" : ""}`}
+  >
+    Title
+  </Button>
+  <Button
+    variant={sortCriteria === "year" ? "primary" : "secondary"}
+    onClick={() => handleSortChange({ target: { value: "year" } })}
+    className={`m-1 transparent-button ${sortCriteria === "year" ? "active" : ""}`}
+  >
+    Year
+  </Button>
+  <Button
+    variant={sortCriteria === "studio" ? "primary" : "secondary"}
+    onClick={() => handleSortChange({ target: { value: "studio" } })}
+    className={`m-1 transparent-button ${sortCriteria === "studio" ? "active" : ""}`}
+  >
+    Studio
+  </Button>
+  <Button
+    variant={sortCriteria === "my_rating" ? "primary" : "secondary"}
+    onClick={() => handleSortChange({ target: { value: "my_rating" } })}
+    className={`m-1 transparent-button ${sortCriteria === "my_rating" ? "active" : ""}`}
+  >
+    Rating
+  </Button>
+</div>
+
     </Col>
       </Row>
       {sortedItems.length > 0 ? (
