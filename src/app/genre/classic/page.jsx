@@ -56,7 +56,7 @@ const ClassicPostPage = () => {
   return (
     <Container>
       <Row>
-      <Col xs={12} sm={6} md={4} lg={3}>
+      <Col>
            <Image
            src={"/images/hero/Classic.jpg"} // Use the image URL directly from the database
            alt={"Hero"}      // Alt text for accessibility
