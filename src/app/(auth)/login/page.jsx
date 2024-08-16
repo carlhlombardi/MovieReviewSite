@@ -1,4 +1,4 @@
-"use client"; // Ensure this is at the top
+"use client";
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -15,16 +15,25 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
+      // Send login request to the server
       const response = await axios.post('/api/auth/login', { username, password });
+
+      // Extract token from the response
       const { token } = response.data;
 
-      // Store the token in localStorage
-      localStorage.setItem('token', token);
+      if (token) {
+        // Store the token in localStorage
+        localStorage.setItem('token', token);
 
-      // Redirect to homepage or dashboard
-      router.push('/profile');
+        // Redirect to profile page or dashboard
+        router.push('/profile');
+      } else {
+        throw new Error('Token not found in response');
+      }
+
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
+      console.error('Login error:', err);
     }
   };
 
