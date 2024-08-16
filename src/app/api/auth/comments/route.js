@@ -12,10 +12,10 @@ export async function GET(request) {
 
   try {
     const result = await sql`
-      SELECT id, userName, text, createdAt
+      SELECT id, username, text, createdat
       FROM comments
       WHERE movieUrl = ${movieUrl}
-      ORDER BY createdAt DESC;
+      ORDER BY createdat DESC;
     `;
 
     return new Response(
@@ -63,9 +63,9 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO comments (movieUrl, userName, text, createdAt)
+      INSERT INTO comments (url, username, text, createdat)
       VALUES (${url}, ${user.username}, ${text}, NOW())
-      RETURNING id, userName, text, createdAt;
+      RETURNING id, username, text, createdat;
     `;
 
     return new Response(

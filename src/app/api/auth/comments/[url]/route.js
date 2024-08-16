@@ -32,7 +32,7 @@ export async function DELETE(request) {
     }
 
     const commentResult = await sql`
-      SELECT userName
+      SELECT username
       FROM comments
       WHERE id = ${id};
     `;

@@ -92,6 +92,8 @@ const Page = ({ params }) => {
           <p>{review}</p>
           <h3>My Rating: {my_rating} Stars</h3>
         </Col>
+        </Row>
+        <Row>
         <Col xs={12} className="mt-5">
           <Comments movieUrl={params.url} />
         </Col>
