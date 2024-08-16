@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '@vercel/postgres';  // Ensure @vercel/postgres is installed and correctly configured
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
