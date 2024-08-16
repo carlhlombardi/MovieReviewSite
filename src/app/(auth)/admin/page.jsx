@@ -24,7 +24,7 @@ export default function AdminPage() {
         }
 
         // Verify admin status
-        const adminRes = await axios.get('/api/auth/verify-admin', {
+        const adminRes = await axios.get('/api/auth/admin', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
