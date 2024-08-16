@@ -15,10 +15,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      await axios.post('/api/auth/login', { username, password });
-      const token = jwt.sign({ userId: user.id, isAdmin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
-console.log('Generated token:', token);
- // Redirect to homepage or dashboard
+      const response = await axios.post('/api/auth/login', { username, password });
+      const { token } = response.data;
+
+      // Store the token in localStorage
+      localStorage.setItem('token', token);
+
+      // Redirect to homepage or dashboard
+      router.push('/profile');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
     }
