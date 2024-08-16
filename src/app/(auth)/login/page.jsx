@@ -30,9 +30,10 @@ export default function LoginPage() {
       } else {
         throw new Error('Token not found in response');
       }
-
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred');
+      // Handle different types of errors
+      const errorMessage = err.response?.data?.message || 'An error occurred';
+      setError(errorMessage);
       console.error('Login error:', err);
     }
   };
