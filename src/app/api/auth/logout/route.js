@@ -1,17 +1,24 @@
 import { serialize } from 'cookie';
 
-export default function handler(req, res) {
-  if (req.method === 'POST') {
-    res.setHeader('Set-Cookie', serialize('token', '', {
+export async function POST(request) {
+  try {
+    // Set the cookie with the expiration time to effectively log out the user
+    const headers = new Headers();
+    headers.append('Set-Cookie', serialize('token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: -1,
       path: '/',
     }));
-    res.status(200).json({ message: 'Logged out successfully' });
-  } else {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+
+    // Return a successful response
+    return new Response(JSON.stringify({ message: 'Logged out successfully' }), {
+      status: 200,
+      headers
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return new Response(JSON.stringify({ message: 'An error occurred' }), { status: 500 });
   }
 }
