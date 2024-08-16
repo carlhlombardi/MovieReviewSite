@@ -20,13 +20,24 @@ export default async function handler(req, res) {
 
       const user = result.rows[0];
 
+      if (!user) {
+        console.error('User not found');
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
       // Check if the user exists and the password is correct
-      if (!user || !(await bcrypt.compare(password, user.password))) {
+      const isPasswordMatch = await bcrypt.compare(password, user.password);
+      if (!isPasswordMatch) {
+        console.error('Password does not match');
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       // Generate JWT token
-      const token = jwt.sign({ userId: user.id, isAdmin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign(
+        { userId: user.id, isAdmin: user.is_admin },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
 
       // Respond with the token
       return res.status(200).json({ token });
@@ -39,5 +50,7 @@ export default async function handler(req, res) {
     // Handle methods other than POST
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
+    console.log('JWT_SECRET:', process.env.JWT_SECRET);
+    console.log('Database result:', result);
   }
 }
