@@ -16,7 +16,9 @@ export default function LoginPage() {
     setError('');
     try {
       await axios.post('/api/auth/login', { username, password });
-      router.push('/'); // Redirect to homepage or dashboard
+      const token = jwt.sign({ userId: user.id, isAdmin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+console.log('Generated token:', token);
+ // Redirect to homepage or dashboard
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
     }
