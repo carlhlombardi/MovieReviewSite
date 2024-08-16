@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Table } from 'react-bootstrap';
+import { Alert, Spinner, Table, Button } from 'react-bootstrap';
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -37,6 +37,27 @@ export default function AdminPage() {
     fetchUsers();
   }, [router]);
 
+  const handleApprove = async (userId, approved) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      await axios.post('/api/admin', { userId, approved }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, approved } : user
+      ));
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred');
+    }
+  };
+
   if (isLoading) return <Spinner animation="border" />;
 
   return (
@@ -50,6 +71,7 @@ export default function AdminPage() {
             <th>Username</th>
             <th>Email</th>
             <th>Approved</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -59,6 +81,14 @@ export default function AdminPage() {
               <td>{user.username}</td>
               <td>{user.email}</td>
               <td>{user.approved ? 'Yes' : 'No'}</td>
+              <td>
+                <Button
+                  variant={user.approved ? "danger" : "success"}
+                  onClick={() => handleApprove(user.id, !user.approved)}
+                >
+                  {user.approved ? 'Disapprove' : 'Approve'}
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>

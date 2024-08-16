@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
 
@@ -15,8 +14,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      const response = await axios.post('/api/auth/login', { username, password });
-      const { token } = response.data;
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'An error occurred');
+      }
+
+      const data = await response.json();
+      const { token } = data;
 
       if (token) {
         localStorage.setItem('token', token);
@@ -25,7 +37,7 @@ export default function LoginPage() {
         throw new Error('Token not found in response');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred');
+      setError(err.message);
     }
   };
 
