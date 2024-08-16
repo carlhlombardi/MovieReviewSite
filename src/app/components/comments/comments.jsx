@@ -46,7 +46,9 @@ const deleteComment = async (id, movieUrl, token) => {
         }
       });
       if (!response.ok) {
-        throw new Error('Failed to delete comment');
+        const errorData = await response.json();
+        console.error('Error deleting comment:', errorData);
+        throw new Error(`Failed to delete comment: ${errorData.message}`);
       }
       return true;
     } catch (error) {
@@ -54,7 +56,6 @@ const deleteComment = async (id, movieUrl, token) => {
       return false;
     }
   };
-  
 
 // Comments component
 const Comments = ({ movieUrl }) => {
