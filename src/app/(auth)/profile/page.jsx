@@ -21,7 +21,7 @@ export default function ProfilePage() {
           return;
         }
 
-        const response = await axios.get('/api/profile', {
+        const response = await axios.get('https://movie-review-site-seven.vercel.app/api/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
