@@ -11,27 +11,19 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       try {
-        // Make sure the URL matches the API route exactly
-        const response = await fetch('/api/auth/logout', { method: 'POST' });
-
-        // Check if the response is okay
-        if (!response.ok) {
-          throw new Error('Logout failed');
-        }
-
-        // Remove token from localStorage
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+        });
         localStorage.removeItem('token');
-
-        // Redirect to login page
         router.push('/login');
       } catch (error) {
         console.error('Logout failed:', error);
-        // Handle logout error if needed
       }
     };
-
+  
     logout();
   }, [router]);
+  
 
   return (
     <div className="container mt-5">
