@@ -1,21 +1,20 @@
-import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
+import { sql } from '@vercel/postgres';
 
-export async function GET(req) {
+export async function GET(request) {
+  const authHeader = request.headers.get('Authorization');
+  const token = authHeader?.split(' ')[1]; // Extract token from "Bearer <token>"
+
+  if (!token) {
+    return new Response(
+      JSON.stringify({ message: 'Unauthorized' }),
+      { status: 401 }
+    );
+  }
+
   try {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
-
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'No token provided' }),
-        { status: 401 }
-      );
-    }
-
-    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Fetch user profile based on the userId from the token
+    
     const result = await sql`
       SELECT username, email
       FROM users
@@ -33,13 +32,13 @@ export async function GET(req) {
 
     return new Response(
       JSON.stringify(user),
-      { headers: { 'Content-Type': 'application/json' }, status: 200 }
+      { status: 200 }
     );
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.error('Token verification error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ message: 'Invalid token' }),
+      { status: 401 }
     );
   }
 }

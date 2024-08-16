@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button } from 'react-bootstrap';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -17,18 +17,18 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('https://movie-review-site-seven.vercel.app/login');
+          router.push('/login');
           return;
         }
 
-        const response = await axios.get('https://movie-review-site-seven.vercel.app/profile', {
+        const response = await axios.get('/api/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         setProfile(response.data);
       } catch (err) {
         setError(err.response?.data?.message || 'An error occurred');
-        router.push('https://movie-review-site-seven.vercel.app/login');
+        router.push('/login');
       } finally {
         setIsLoading(false);
       }
@@ -37,17 +37,32 @@ export default function ProfilePage() {
     fetchProfile();
   }, [router]);
 
-  if (isLoading) return <Spinner animation="border" />;
+  if (isLoading) {
+    return (
+      <div className="container mt-5 text-center">
+        <h2>Loading your profile...</h2>
+        <Spinner animation="border" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">
-      <h2>Profile</h2>
+      <h2>Welcome back, {profile?.username}!</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {profile && (
-        <div>
-          <p><strong>Username:</strong> {profile.username}</p>
-          <p><strong>Email:</strong> {profile.email}</p>
-        </div>
+        <Card>
+          <Card.Header as="h5">Profile Details</Card.Header>
+          <Card.Body>
+            <Card.Title>{profile.username}</Card.Title>
+            <Card.Text>
+              <strong>Email:</strong> {profile.email}
+            </Card.Text>
+            <Button variant="primary" onClick={() => router.push('/edit-profile')}>
+              Edit Profile
+            </Button>
+          </Card.Body>
+        </Card>
       )}
     </div>
   );
