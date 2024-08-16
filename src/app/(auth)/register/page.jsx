@@ -1,3 +1,5 @@
+"use client"; // Ensure this is at the top
+
 import { useState } from 'react';
 import axios from 'axios';
 import { Form, Button, Alert } from 'react-bootstrap';
