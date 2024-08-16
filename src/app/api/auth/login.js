@@ -32,10 +32,11 @@ export default async function handler(req, res) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      // Generate JWT token
+      // Generate JWT token with expiration time
       const token = jwt.sign(
         { userId: user.id, isAdmin: user.is_admin },
         process.env.JWT_SECRET,
+        { expiresIn: '1h' } // Expire in 1 hour
       );
 
       // Respond with the token
@@ -43,15 +44,11 @@ export default async function handler(req, res) {
 
     } catch (error) {
       console.error('Error logging in:', error);
-      console.log('JWT_SECRET:', process.env.JWT_SECRET);
-      console.log('Database result:', result);
       return res.status(500).json({ message: 'An error occurred' });
     }
   } else {
     // Handle methods other than POST
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
-    console.log('JWT_SECRET:', process.env.JWT_SECRET);
-    console.log('Database result:', result);
   }
 }
