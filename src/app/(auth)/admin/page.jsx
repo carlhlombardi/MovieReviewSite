@@ -21,7 +21,7 @@ export default function AdminPage() {
           return;
         }
 
-        const response = await axios.get('/api/admin', {
+        const response = await axios.get('https://movie-review-site-seven.vercel.app/api/admin', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -46,7 +46,7 @@ export default function AdminPage() {
         return;
       }
 
-      await axios.post('/api/admin', { userId, approved }, {
+      await axios.post('https://movie-review-site-seven.vercel.app/api/admin', { userId, approved }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

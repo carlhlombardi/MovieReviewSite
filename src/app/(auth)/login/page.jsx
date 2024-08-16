@@ -12,8 +12,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(''); // Clear any existing error
+
     try {
+      // Make POST request to the login endpoint
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login', {
         method: 'POST',
         headers: {
@@ -22,22 +24,25 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
+      // Check if the response is okay
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'An error occurred');
       }
 
+      // Parse the response data
       const data = await response.json();
       const { token } = data;
 
+      // Check if the token is present
       if (token) {
         localStorage.setItem('token', token);
-        router.push('/profile');
+        router.push('/profile'); // Redirect to profile page
       } else {
         throw new Error('Token not found in response');
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message); // Set error message for display
     }
   };
 

@@ -10,7 +10,7 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       try {
-        await fetch('/api/auth/logout', { method: 'POST' });
+        await fetch('https://movie-review-site-seven.vercel.app/api/auth/logout', { method: 'POST' });
         localStorage.removeItem('token');
         router.push('/login');
       } catch (error) {

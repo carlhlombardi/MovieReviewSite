@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
     setError('');
     setMessage('');
     try {
-      await axios.post('/api/auth/forgot-password', { email });
+      await axios.post('https://movie-review-site-seven.vercel.app/api/auth/forgot-password', { email });
       setMessage('Password reset instructions have been sent to your email.');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
