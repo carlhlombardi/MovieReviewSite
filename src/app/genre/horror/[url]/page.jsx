@@ -20,16 +20,37 @@ const fetchData = async (url) => {
   }
 };
 
+const checkUserLoggedIn = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return false;
+    }
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to check login status', error);
+    return false;
+  }
+};
+
 const Page = ({ params }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchDataAsync = async () => {
       try {
         const result = await fetchData(params.url);
         setData(result);
+
+        // Check if the user is logged in
+        const loggedIn = await checkUserLoggedIn();
+        setIsLoggedIn(loggedIn);
       } catch (err) {
         setError('Failed to load data');
         console.error(err);
@@ -92,10 +113,14 @@ const Page = ({ params }) => {
           <p>{review}</p>
           <h3>My Rating: {my_rating} Stars</h3>
         </Col>
-        </Row>
-        <Row>
+      </Row>
+      <Row>
         <Col xs={12} className="mt-5">
-          <Comments movieUrl={params.url} />
+          {isLoggedIn ? (
+            <Comments movieUrl={params.url} />
+          ) : (
+            <Alert variant="info">Please log in to view and post comments.</Alert>
+          )}
         </Col>
       </Row>
     </Container>
