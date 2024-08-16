@@ -14,7 +14,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login/route.js', {
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login' {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
