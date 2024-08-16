@@ -36,7 +36,6 @@ export default async function handler(req, res) {
       const token = jwt.sign(
         { userId: user.id, isAdmin: user.is_admin },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' }
       );
 
       // Respond with the token
@@ -44,6 +43,8 @@ export default async function handler(req, res) {
 
     } catch (error) {
       console.error('Error logging in:', error);
+      console.log('JWT_SECRET:', process.env.JWT_SECRET);
+      console.log('Database result:', result);
       return res.status(500).json({ message: 'An error occurred' });
     }
   } else {
