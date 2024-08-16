@@ -3,48 +3,43 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(req) {
   try {
-    const token = req.headers.get('Authorization')?.split(' ')[1];
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-      return new Response(JSON.stringify({ error: 'No token provided' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 401,
-      });
+      return new Response(
+        JSON.stringify({ message: 'No token provided' }),
+        { status: 401 }
+      );
     }
 
-    // Verify token and decode user info
+    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decoded) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
-    const { username } = decoded;
-
-    // Fetch user details from the database
+    // Fetch user profile based on the userId from the token
     const result = await sql`
-      SELECT username FROM users WHERE username = ${username};
+      SELECT username, email
+      FROM users
+      WHERE id = ${decoded.userId};
     `;
 
-    if (result.rowCount === 0) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 404,
-      });
+    const user = result.rows[0];
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
     }
 
-    return new Response(JSON.stringify(result.rows[0]), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify(user),
+      { headers: { 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (error) {
-    console.error('Error fetching user info:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error('Error fetching profile:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 }

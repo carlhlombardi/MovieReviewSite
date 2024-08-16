@@ -1,4 +1,4 @@
-"use client"; // Ensure this is at the top
+"use client";
 
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Image, Alert, Spinner } from 'react-bootstrap';
@@ -14,10 +14,10 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('token'); // Adjust based on your token storage method
+        const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('/login'); // Redirect to login if no token is found
+          router.push('/login');
           return;
         }
 
@@ -31,7 +31,7 @@ export default function ProfilePage() {
           setUser(response.data);
         } else {
           setError('Failed to fetch user data');
-          router.push('/login'); // Redirect if the user is not authorized
+          router.push('/login');
         }
       } catch (err) {
         setError('An error occurred while fetching user data');
@@ -52,7 +52,7 @@ export default function ProfilePage() {
     return <Alert variant="danger">{error}</Alert>;
   }
 
-  const defaultAvatar = "/default-avatar.png"; // Path to your default avatar image
+  const defaultAvatar = "/default-avatar.png";
 
   return (
     <Container className="mt-5">
