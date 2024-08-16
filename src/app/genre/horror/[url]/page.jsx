@@ -59,11 +59,14 @@ const Page = ({ params }) => {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!newComment) return;
+      if (!newComment.trim()) return; // Prevent empty comments
 
       const token = localStorage.getItem('token');
-      if (token) {
-        const response = await axios.post('/api/comments', { url: params.url, text: newComment }, { headers: { Authorization: `Bearer ${token}` } });
+      if (token && user) {
+        const response = await axios.post('/api/comments', 
+          { url: params.url, text: newComment },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setComments([...comments, response.data]);
         setNewComment('');
       }

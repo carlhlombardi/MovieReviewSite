@@ -1,68 +1,83 @@
 import { sql } from '@vercel/postgres';
 
-// Fetch comments
-export async function GET(req) {
+export async function GET(request) {
+  const url = new URL(request.url);
+  const movieUrl = url.searchParams.get('url');
+
+  if (!movieUrl) {
+    return new Response(
+      JSON.stringify({ message: 'Movie URL is required' }),
+      { status: 400 }
+    );
+  }
+
   try {
-    const url = new URL(req.url).searchParams.get('url');
     const result = await sql`
-      SELECT * FROM comments WHERE url = ${url};
+      SELECT id, userName, text, createdAt
+      FROM comments
+      WHERE movieUrl = ${movieUrl}
+      ORDER BY createdAt DESC;
     `;
-    return new Response(JSON.stringify(result.rows), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    });
+
+    return new Response(
+      JSON.stringify(result.rows),
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Error fetching comments:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error('Fetch comments error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch comments' }),
+      { status: 500 }
+    );
   }
 }
 
-// Add a comment
-export async function POST(req) {
+
+export async function POST(request) {
   try {
-    const { url, text } = await req.json();
-    const token = req.headers.get('Authorization')?.split(' ')[1];
-    
-    if (!url || !text || !token) {
-      return new Response(JSON.stringify({ error: 'Missing parameters' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 400,
-      });
+    const { url, text } = await request.json();
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
     }
 
-    // Fetch user info based on token
-    const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
 
-    if (userRes.status !== 200) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 401,
-      });
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
     }
 
-    const user = await userRes.json();
-
-    // Insert the comment into the database
     const result = await sql`
-      INSERT INTO comments (url, text, userName, createdAt)
-      VALUES (${url}, ${text}, ${user.username}, NOW())
-      RETURNING *;
+      INSERT INTO comments (movieUrl, userName, text, createdAt)
+      VALUES (${url}, ${user.username}, ${text}, NOW())
+      RETURNING id, userName, text, createdAt;
     `;
 
-    return new Response(JSON.stringify(result.rows[0]), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 201,
-    });
+    return new Response(
+      JSON.stringify(result.rows[0]),
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error adding comment:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error('Add comment error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to add comment' }),
+      { status: 500 }
+    );
   }
 }
