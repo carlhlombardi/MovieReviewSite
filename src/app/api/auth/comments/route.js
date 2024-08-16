@@ -1,7 +1,6 @@
 import { sql } from '@vercel/postgres';
 
 export async function GET(request) {
-  const url = new URL(request.url);
   const movieUrl = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
 
   if (!movieUrl) {
