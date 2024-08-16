@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
 
 export default function LoginPage() {
