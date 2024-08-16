@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ListGroup, Button, Alert, Spinner } from 'react-bootstrap';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation'; // Import from 'next/navigation'
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -18,6 +18,10 @@ export default function AdminPage() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token'); // Adjust based on your token storage method
+
+        if (!token) {
+          throw new Error('No token found');
+        }
 
         // Verify admin status
         const adminRes = await axios.get('/api/auth/verify-admin', {
