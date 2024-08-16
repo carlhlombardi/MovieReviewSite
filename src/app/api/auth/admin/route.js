@@ -5,27 +5,26 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const token = req.headers.authorization?.split(' ')[1];
-      
+
       if (!token) {
-        return res.status(401).json({ isAdmin: false });
+        return res.status(401).json({ message: 'Unauthorized' });
       }
-      
-      // Verify the token
+
       const decoded = verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId;
-      
-      // Check if user is an admin
+
+      if (!decoded.isAdmin) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
       const result = await sql`
-        SELECT is_admin
-        FROM users
-        WHERE id = ${userId};
+        SELECT id, username, email, approved
+        FROM users;
       `;
-      
-      const isAdmin = result.rows[0]?.is_admin || false;
-      
-      res.status(200).json({ isAdmin });
+
+      res.status(200).json(result.rows);
     } catch (error) {
-      res.status(401).json({ isAdmin: false });
+      console.error('Admin fetch error:', error);
+      res.status(500).json({ message: 'An error occurred' });
     }
   } else {
     res.setHeader('Allow', ['GET']);

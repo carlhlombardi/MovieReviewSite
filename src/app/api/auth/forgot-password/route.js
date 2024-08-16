@@ -1,55 +1,55 @@
 import { sql } from '@vercel/postgres';
-import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  service: 'Gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    try {
+      const { email } = req.body;
 
-export async function POST(req) {
-  try {
-    const { email } = await req.json();
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
 
-    if (!email) {
-      return new Response(JSON.stringify({ message: 'Email is required' }), { status: 400 });
+      const result = await sql`
+        SELECT id
+        FROM users
+        WHERE email = ${email};
+      `;
+
+      const user = result.rows[0];
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Generate a password reset token
+      const resetToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+      // Send reset token to the user's email
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail', // Use your email service provider
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const resetUrl = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
+      await transporter.sendMail({
+        to: email,
+        subject: 'Password Reset',
+        html: `<p>To reset your password, click <a href="${resetUrl}">here</a>.</p>`
+      });
+
+      res.status(200).json({ message: 'Password reset instructions have been sent to your email.' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: 'An error occurred' });
     }
-
-    const result = await sql`
-      SELECT id, username
-      FROM users
-      WHERE email = ${email};
-    `;
-
-    const user = result.rows[0];
-
-    if (!user) {
-      return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
-    }
-
-    const tempPassword = crypto.randomBytes(8).toString('hex');
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-    await sql`
-      UPDATE users
-      SET password = ${hashedPassword}
-      WHERE id = ${user.id};
-    `;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Password Reset',
-      text: `Your new password is: ${tempPassword}`,
-    });
-
-    return new Response(JSON.stringify({ message: 'Password reset email sent' }), { headers: { 'Content-Type': 'application/json' }, status: 200 });
-  } catch (error) {
-    console.error('Error handling password reset:', error);
-    return new Response(JSON.stringify({ error: error.message }), { headers: { 'Content-Type': 'application/json' }, status: 500 });
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

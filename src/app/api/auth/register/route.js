@@ -1,24 +1,29 @@
 import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
 
-export async function POST(req) {
-  try {
-    const { username, email, password } = await req.json();
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    try {
+      const { username, password } = req.body;
 
-    if (!username || !email || !password) {
-      return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await sql`
+        INSERT INTO users (username, password)
+        VALUES (${username}, ${hashedPassword});
+      `;
+
+      res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: 'An error occurred' });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await sql`
-      INSERT INTO users (username, email, password, is_admin)
-      VALUES (${username}, ${email}, ${hashedPassword}, false);
-    `;
-
-    return new Response(JSON.stringify({ message: 'Account created successfully' }), { headers: { 'Content-Type': 'application/json' }, status: 201 });
-  } catch (error) {
-    console.error('Error creating account:', error);
-    return new Response(JSON.stringify({ error: error.message }), { headers: { 'Content-Type': 'application/json' }, status: 500 });
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

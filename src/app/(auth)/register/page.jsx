@@ -1,23 +1,22 @@
-"use client"; // Ensure this is at the top
+"use client";
 
 import { useState } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
 
-export default function CreateAccountPage() {
+export default function RegisterPage() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setMessage('');
     try {
-      await axios.post('/api/auth/register', { username, email, password });
-      setMessage('Account created successfully');
+      await axios.post('/api/auth/register', { username, password });
+      router.push('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
     }
@@ -25,8 +24,7 @@ export default function CreateAccountPage() {
 
   return (
     <div className="container mt-5">
-      <h2>Create Account</h2>
-      {message && <Alert variant="success">{message}</Alert>}
+      <h2>Register</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="formUsername">
@@ -36,16 +34,6 @@ export default function CreateAccountPage() {
             placeholder="Enter username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </Form.Group>
-        <Form.Group controlId="formEmail">
-          <Form.Label>Email address</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </Form.Group>
@@ -59,9 +47,7 @@ export default function CreateAccountPage() {
             required
           />
         </Form.Group>
-        <Button variant="primary" type="submit">
-          Create Account
-        </Button>
+        <Button variant="primary" type="submit">Register</Button>
       </Form>
     </div>
   );

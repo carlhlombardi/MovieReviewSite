@@ -15,26 +15,17 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     try {
-      // Send login request to the server
       const response = await axios.post('/api/auth/login', { username, password });
-
-      // Extract token from the response
       const { token } = response.data;
 
       if (token) {
-        // Store the token in localStorage
         localStorage.setItem('token', token);
-
-        // Redirect to profile page or dashboard
         router.push('/profile');
       } else {
         throw new Error('Token not found in response');
       }
     } catch (err) {
-      // Handle different types of errors
-      const errorMessage = err.response?.data?.message || 'An error occurred';
-      setError(errorMessage);
-      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'An error occurred');
     }
   };
 
@@ -63,9 +54,7 @@ export default function LoginPage() {
             required
           />
         </Form.Group>
-        <Button variant="primary" type="submit">
-          Login
-        </Button>
+        <Button variant="primary" type="submit">Login</Button>
       </Form>
     </div>
   );

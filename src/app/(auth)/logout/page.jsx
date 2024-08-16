@@ -1,8 +1,7 @@
-// Ensure this file is located at /pages/logout/page.js or similar location
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import from 'next/navigation'
+import { useRouter } from 'next/navigation';
 import { Spinner } from 'react-bootstrap';
 
 export default function LogoutPage() {
@@ -11,19 +10,15 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       try {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-        });
+        await fetch('/api/auth/logout', { method: 'POST' });
         localStorage.removeItem('token');
         router.push('/login');
       } catch (error) {
-        console.error('Logout failed:', error);
+        console.error('Logout error:', error);
       }
     };
-  
     logout();
   }, [router]);
-  
 
   return (
     <div className="container mt-5">

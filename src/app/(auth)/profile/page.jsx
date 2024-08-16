@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Image, Alert, Spinner } from 'react-bootstrap';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { Alert, Spinner } from 'react-bootstrap';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
 
@@ -21,53 +21,34 @@ export default function ProfilePage() {
           return;
         }
 
-        const response = await axios.get('/api/auth/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await axios.get('/api/profile', {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (response.status === 200) {
-          setUser(response.data);
-        } else {
-          setError('Failed to fetch user data');
-          router.push('/login');
-        }
+        setProfile(response.data);
       } catch (err) {
-        setError('An error occurred while fetching user data');
-        console.error(err);
+        setError(err.response?.data?.message || 'An error occurred');
+        router.push('/login');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchProfile();
   }, [router]);
 
-  if (isLoading) {
-    return <Spinner animation="border" />;
-  }
-
-  if (error) {
-    return <Alert variant="danger">{error}</Alert>;
-  }
-
-  const defaultAvatar = "/default-avatar.png";
+  if (isLoading) return <Spinner animation="border" />;
 
   return (
-    <Container className="mt-5">
-      <Row>
-        <Col className="text-center">
-          <Image
-            src={defaultAvatar}
-            alt="Default Avatar"
-            width={150}
-            height={150}
-            roundedCircle
-          />
-          <h2 className="mt-3">{user?.username}</h2>
-        </Col>
-      </Row>
-    </Container>
+    <div className="container mt-5">
+      <h2>Profile</h2>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {profile && (
+        <div>
+          <p><strong>Username:</strong> {profile.username}</p>
+          <p><strong>Email:</strong> {profile.email}</p>
+        </div>
+      )}
+    </div>
   );
 }

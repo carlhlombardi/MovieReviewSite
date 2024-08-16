@@ -1,4 +1,4 @@
-"use client"; // Ensure this is at the top
+"use client";
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -11,11 +11,11 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
     setError('');
+    setMessage('');
     try {
       await axios.post('/api/auth/forgot-password', { email });
-      setMessage('Password reset email sent');
+      setMessage('Password reset instructions have been sent to your email.');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
     }
@@ -24,8 +24,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="container mt-5">
       <h2>Forgot Password</h2>
-      {message && <Alert variant="success">{message}</Alert>}
       {error && <Alert variant="danger">{error}</Alert>}
+      {message && <Alert variant="success">{message}</Alert>}
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="formEmail">
           <Form.Label>Email address</Form.Label>
@@ -37,9 +37,7 @@ export default function ForgotPasswordPage() {
             required
           />
         </Form.Group>
-        <Button variant="primary" type="submit">
-          Reset Password
-        </Button>
+        <Button variant="primary" type="submit">Send Reset Link</Button>
       </Form>
     </div>
   );
