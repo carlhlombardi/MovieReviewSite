@@ -17,18 +17,18 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('/login');
+          router.push('https://movie-review-site-seven.vercel.app/login');
           return;
         }
 
-        const response = await axios.get('https://movie-review-site-seven.vercel.app/api/profile', {
+        const response = await axios.get('https://movie-review-site-seven.vercel.app/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         setProfile(response.data);
       } catch (err) {
         setError(err.response?.data?.message || 'An error occurred');
-        router.push('/login');
+        router.push('https://movie-review-site-seven.vercel.app/login');
       } finally {
         setIsLoading(false);
       }

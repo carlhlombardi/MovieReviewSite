@@ -12,7 +12,7 @@ export default function LogoutPage() {
       try {
         await fetch('https://movie-review-site-seven.vercel.app/api/auth/logout', { method: 'POST' });
         localStorage.removeItem('token');
-        router.push('/login');
+        router.push('https://movie-review-site-seven.vercel.app/login');
       } catch (error) {
         console.error('Logout error:', error);
       }

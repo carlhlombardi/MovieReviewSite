@@ -16,7 +16,7 @@ export default function RegisterPage() {
     setError('');
     try {
       await axios.post('https://movie-review-site-seven.vercel.app/api/auth/register', { username, password });
-      router.push('/login');
+      router.push('https://movie-review-site-seven.vercel.app/login');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
     }

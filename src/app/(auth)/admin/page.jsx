@@ -17,7 +17,7 @@ export default function AdminPage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('/login');
+          router.push('https://movie-review-site-seven.vercel.app/login');
           return;
         }
 
@@ -28,7 +28,7 @@ export default function AdminPage() {
         setUsers(response.data);
       } catch (err) {
         setError(err.response?.data?.message || 'An error occurred');
-        router.push('/login');
+        router.push('https://movie-review-site-seven.vercel.app/login');
       } finally {
         setIsLoading(false);
       }
@@ -42,7 +42,7 @@ export default function AdminPage() {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        router.push('/login');
+        router.push('https://movie-review-site-seven.vercel.app/login');
         return;
       }
 

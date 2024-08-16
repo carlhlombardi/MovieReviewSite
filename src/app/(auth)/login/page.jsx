@@ -37,7 +37,7 @@ export default function LoginPage() {
       // Check if the token is present
       if (token) {
         localStorage.setItem('token', token);
-        router.push('/profile'); // Redirect to profile page
+        router.push('https://movie-review-site-seven.vercel.app/profile'); // Redirect to profile page
       } else {
         throw new Error('Token not found in response');
       }
