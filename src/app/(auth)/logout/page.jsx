@@ -1,4 +1,5 @@
-"use client"; // Ensure this is at the top
+// Ensure this file is located at /pages/logout/page.js or similar location
+"use client";
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // Import from 'next/navigation'
@@ -10,8 +11,13 @@ export default function LogoutPage() {
   useEffect(() => {
     const logout = async () => {
       try {
-        // Call your logout API
-        await fetch('/api/auth/logout', { method: 'POST' });
+        // Make sure the URL matches the API route exactly
+        const response = await fetch('/api/auth/logout', { method: 'POST' });
+
+        // Check if the response is okay
+        if (!response.ok) {
+          throw new Error('Logout failed');
+        }
 
         // Remove token from localStorage
         localStorage.removeItem('token');
