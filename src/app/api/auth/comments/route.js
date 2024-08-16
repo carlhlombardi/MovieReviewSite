@@ -3,17 +3,18 @@ import jwt from 'jsonwebtoken';
 
 // Handler to get comments for a specific movie
 export async function GET(request) {
-  const url = new URL(request.url);
-  const movieUrl = url.searchParams.get('url');
-
-  if (!movieUrl) {
-    return new Response(
-      JSON.stringify({ message: 'Movie URL is required' }),
-      { status: 400 }
-    );
-  }
-
   try {
+    // Extract URL from query parameters
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+
+    if (!movieUrl) {
+      return new Response(
+        JSON.stringify({ message: 'Movie URL is required' }),
+        { status: 400 }
+      );
+    }
+
     const result = await sql`
       SELECT id, username, text, createdat
       FROM comments
@@ -33,6 +34,7 @@ export async function GET(request) {
     );
   }
 }
+
 
 // Handler to add a new comment
 export async function POST(request) {

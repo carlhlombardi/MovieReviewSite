@@ -4,15 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 
 // Helper functions for API calls
-const fetchComments = async (url) => {
+const fetchComments = async (movieUrl) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${url}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching comments:', error);
     return [];
   }
 };
@@ -32,26 +32,28 @@ const postComment = async (url, text, token) => {
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    console.error('Error posting comment:', error);
     return null;
   }
 };
 
-const deleteComment = async (id, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!response.ok) {
-      throw new Error('Failed to delete comment');
+const deleteComment = async (id, movieUrl, token) => {
+    try {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${id}?url=${encodeURIComponent(movieUrl)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+      return true;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      return false;
     }
-    return true;
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-};
+  };
 
 // Comments component
 const Comments = ({ movieUrl }) => {
@@ -80,7 +82,7 @@ const Comments = ({ movieUrl }) => {
         setComments(commentsData);
       } catch (err) {
         setError('Failed to load comments');
-        console.error(err);
+        console.error('Error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -104,7 +106,7 @@ const Comments = ({ movieUrl }) => {
       }
     } catch (err) {
       setError('Failed to submit comment');
-      console.error(err);
+      console.error('Error:', err);
     }
   };
 
@@ -112,16 +114,17 @@ const Comments = ({ movieUrl }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const success = await deleteComment(commentId, token);
+        const success = await deleteComment(commentId, movieUrl, token);
         if (success) {
           setComments(comments.filter(comment => comment.id !== commentId));
         }
       }
     } catch (err) {
       setError('Failed to delete comment');
-      console.error(err);
+      console.error('Error:', err);
     }
   };
+  
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -148,9 +151,9 @@ const Comments = ({ movieUrl }) => {
       <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
-            <strong>{comment.userName}</strong> - {new Date(comment.createdAt).toLocaleDateString()}
+            <strong>{comment.username}</strong> - {new Date(comment.createdat).toLocaleDateString()}
             <p>{comment.text}</p>
-            {user && user.username === comment.userName && (
+            {user && user.username === comment.username && (
               <Button
                 variant="danger"
                 onClick={() => handleDeleteComment(comment.id)}
