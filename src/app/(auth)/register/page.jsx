@@ -16,7 +16,7 @@ export default function CreateAccountPage() {
     setError('');
     setMessage('');
     try {
-      await axios.post('/api/auth/create-account', { username, email, password });
+      await axios.post('/api/auth/register', { username, email, password });
       setMessage('Account created successfully');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred');
