@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 
+// Helper functions for API calls
 const fetchComments = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${url}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${url}`);
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
     }
@@ -18,7 +19,7 @@ const fetchComments = async (url) => {
 
 const postComment = async (url, text, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/comments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,9 +37,9 @@ const postComment = async (url, text, token) => {
   }
 };
 
-const deleteComment = async (commentId, token) => {
+const deleteComment = async (id, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${commentId}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -52,6 +53,7 @@ const deleteComment = async (commentId, token) => {
   }
 };
 
+// Comments component
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
