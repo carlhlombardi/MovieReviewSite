@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       }
 
       const result = await sql`
-        SELECT id, password, is_admin
+        SELECT id, password
         FROM users
         WHERE username = ${username};
       `;
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       }
 
       const token = jwt.sign(
-        { userId: user.id, isAdmin: user.is_admin },
+        { userId: user.id },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
       );
@@ -36,6 +36,6 @@ export default async function handler(req, res) {
     }
   } else {
     res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 }
