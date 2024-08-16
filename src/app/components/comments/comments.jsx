@@ -39,7 +39,7 @@ const postComment = async (url, text, token) => {
 
 const deleteComment = async (id, movieUrl, token) => {
     try {
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${id}?url=${encodeURIComponent(movieUrl)}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -54,6 +54,7 @@ const deleteComment = async (id, movieUrl, token) => {
       return false;
     }
   };
+  
 
 // Comments component
 const Comments = ({ movieUrl }) => {

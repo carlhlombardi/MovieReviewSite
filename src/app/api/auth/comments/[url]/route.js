@@ -3,10 +3,10 @@ import jwt from 'jsonwebtoken';
 
 export async function DELETE(request) {
   try {
-    // Extract the comment ID and movie URL from the URL path
+    // Extract the comment ID and movie URL from the query parameters
     const url = new URL(request.url);
-    const id = url.pathname.split('/').pop(); // Extract comment ID
-    const movieUrl = url.searchParams.get('url'); // Extract movie URL
+    const id = url.searchParams.get('id');
+    const movieUrl = url.searchParams.get('url');
 
     if (!id || !movieUrl) {
       return new Response(
