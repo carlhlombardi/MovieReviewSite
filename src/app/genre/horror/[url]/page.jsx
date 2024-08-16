@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Image from 'next/image';
-import axios from 'axios';
 
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`/api/data/horrormovies`);
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
@@ -17,6 +16,73 @@ const fetchData = async (url) => {
   } catch (error) {
     console.error(error);
     return null;
+  }
+};
+
+const fetchUser = async (token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+const fetchComments = async (url) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments?url=${url}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+const postComment = async (url, text, token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ url, text })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to submit comment');
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+const deleteComment = async (commentId, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete comment');
+    }
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
   }
 };
 
@@ -38,13 +104,13 @@ const Page = ({ params }) => {
         const token = localStorage.getItem('token');
         if (token) {
           // Fetch user information
-          const userResponse = await axios.get('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
-          setUser(userResponse.data);
+          const userData = await fetchUser(token);
+          setUser(userData);
         }
         
         // Fetch comments
-        const commentsResponse = await axios.get(`/api/comments?url=${params.url}`);
-        setComments(commentsResponse.data);
+        const commentsData = await fetchComments(params.url);
+        setComments(commentsData);
       } catch (err) {
         setError('Failed to load data');
         console.error(err);
@@ -63,12 +129,11 @@ const Page = ({ params }) => {
 
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await axios.post('/api/comments', 
-          { url: params.url, text: newComment },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setComments([...comments, response.data]);
-        setNewComment('');
+        const response = await postComment(params.url, newComment, token);
+        if (response) {
+          setComments([...comments, response]);
+          setNewComment('');
+        }
       }
     } catch (err) {
       setError('Failed to submit comment');
@@ -80,8 +145,10 @@ const Page = ({ params }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await axios.delete(`/api/comments/${commentId}`, { headers: { Authorization: `Bearer ${token}` } });
-        setComments(comments.filter(comment => comment.id !== commentId));
+        const success = await deleteComment(commentId, token);
+        if (success) {
+          setComments(comments.filter(comment => comment.id !== commentId));
+        }
       }
     } catch (err) {
       setError('Failed to delete comment');
