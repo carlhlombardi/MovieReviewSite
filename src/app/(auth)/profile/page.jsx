@@ -21,7 +21,7 @@ export default function ProfilePage() {
           return;
         }
 
-        const response = await axios.get('/api/auth/me', {
+        const response = await axios.get('/api/auth/profile', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
