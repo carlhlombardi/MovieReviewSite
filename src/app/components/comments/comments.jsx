@@ -6,7 +6,7 @@ import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 // Helper functions for API calls
 const fetchComments = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${url}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${url}`);
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
     }
@@ -19,7 +19,7 @@ const fetchComments = async (url) => {
 
 const postComment = async (url, text, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/comments', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ const postComment = async (url, text, token) => {
 
 const deleteComment = async (id, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${id}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
