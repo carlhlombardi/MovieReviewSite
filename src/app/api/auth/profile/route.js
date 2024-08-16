@@ -13,12 +13,15 @@ export async function GET(request) {
   }
 
   try {
+    // Verify the token and extract user ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+    const userId = decoded.userId;
+
+    // Query the database for the user by userId
     const result = await sql`
       SELECT username, email
       FROM users
-      WHERE id = ${decoded.userId};
+      WHERE id = ${userId};
     `;
 
     const user = result.rows[0];
@@ -30,6 +33,7 @@ export async function GET(request) {
       );
     }
 
+    // Respond with user data
     return new Response(
       JSON.stringify(user),
       { status: 200 }

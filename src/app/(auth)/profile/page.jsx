@@ -17,7 +17,7 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('/login');
+          router.push('https://movie-review-site-seven.vercel.app/login');
           return;
         }
 
