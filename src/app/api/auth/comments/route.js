@@ -1,7 +1,10 @@
 import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken';
 
+// Handler to get comments for a specific movie
 export async function GET(request) {
-  const movieUrl = new URL(req.url, `http://${req.headers.host}`).searchParams.get('url');
+  const url = new URL(request.url);
+  const movieUrl = url.searchParams.get('url');
 
   if (!movieUrl) {
     return new Response(
@@ -14,7 +17,7 @@ export async function GET(request) {
     const result = await sql`
       SELECT id, username, text, createdat
       FROM comments
-      WHERE movieUrl = ${movieUrl}
+      WHERE url = ${movieUrl}
       ORDER BY createdat DESC;
     `;
 
@@ -31,7 +34,7 @@ export async function GET(request) {
   }
 }
 
-
+// Handler to add a new comment
 export async function POST(request) {
   try {
     const { url, text } = await request.json();

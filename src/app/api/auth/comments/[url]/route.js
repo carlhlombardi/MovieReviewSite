@@ -2,7 +2,11 @@ import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
 export async function DELETE(request) {
-  const id = request.url.split('/').pop();
+  // Extract the comment ID from the URL path
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+  
+  // Extract the authorization token from the headers
   const authHeader = request.headers.get('Authorization');
   const token = authHeader?.split(' ')[1];
 
@@ -14,9 +18,11 @@ export async function DELETE(request) {
   }
 
   try {
+    // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
+    // Retrieve the username associated with the token
     const userResult = await sql`
       SELECT username
       FROM users
@@ -31,6 +37,7 @@ export async function DELETE(request) {
       );
     }
 
+    // Retrieve the comment to ensure it belongs to the user
     const commentResult = await sql`
       SELECT username
       FROM comments
@@ -38,13 +45,14 @@ export async function DELETE(request) {
     `;
     const comment = commentResult.rows[0];
 
-    if (!comment || comment.userName !== user.username) {
+    if (!comment || comment.username !== user.username) {
       return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 403 }
       );
     }
 
+    // Delete the comment from the database
     await sql`
       DELETE FROM comments
       WHERE id = ${id};
