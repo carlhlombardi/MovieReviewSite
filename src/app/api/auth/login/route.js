@@ -23,6 +23,8 @@ export async function POST(req) {
     }
 
     const token = jwt.sign({ userId: user.id, isAdmin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log('Generated token:', token);
+    
 
     return new Response(JSON.stringify({ token }), { headers: { 'Content-Type': 'application/json' }, status: 200 });
   } catch (error) {
