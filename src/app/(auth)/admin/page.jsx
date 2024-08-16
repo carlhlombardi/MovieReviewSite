@@ -5,29 +5,76 @@ import axios from 'axios';
 import { ListGroup, Button, Alert, Spinner } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 
-export default function AdminPage({ initialUsers, isAdmin }) {
-  const [users, setUsers] = useState(initialUsers);
+export default function AdminPage() {
+  const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAdmin) {
-      router.push('/login'); // Redirect non-admin users
-    }
-  }, [isAdmin, router]);
+    // Fetch admin status and users on mount
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Adjust based on your token storage method
+
+        // Verify admin status
+        const adminRes = await axios.get('/api/auth/verify-admin', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (adminRes.status !== 200 || !adminRes.data.isAdmin) {
+          setIsAdmin(false);
+          router.push('/login'); // Redirect non-admin users
+          return;
+        }
+
+        setIsAdmin(true);
+
+        // Fetch users
+        const usersRes = await axios.get('/api/auth/users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setUsers(usersRes.data);
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router]);
 
   const approveUser = async (userId) => {
     try {
-      await axios.post('/api/auth/approve-user', { userId });
+      const token = localStorage.getItem('token'); // Adjust based on your token storage method
+
+      await axios.post('/api/auth/approve-user', { userId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       setUsers(users.map(user => (user.id === userId ? { ...user, approved: true } : user)));
     } catch (error) {
       setError('Failed to approve user');
     }
   };
 
-  if (!isAdmin) {
+  if (isLoading) {
     return <Spinner animation="border" />;
+  }
+
+  if (!isAdmin) {
+    return null; // Optionally, you can display a message or redirect
   }
 
   return (
@@ -52,34 +99,4 @@ export default function AdminPage({ initialUsers, isAdmin }) {
       </ListGroup>
     </div>
   );
-}
-
-// Server-side rendering to check for admin status
-export async function getServerSideProps(context) {
-  const token = context.req.cookies.token;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-admin`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (res.status !== 200) {
-    return { props: { initialUsers: [], isAdmin: false } };
-  }
-
-  const data = await res.json();
-
-  if (!data.isAdmin) {
-    return { props: { initialUsers: [], isAdmin: false } };
-  }
-
-  const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/users`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const users = await usersRes.json();
-
-  return { props: { initialUsers: users, isAdmin: true } };
 }
