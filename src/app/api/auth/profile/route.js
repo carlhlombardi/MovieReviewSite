@@ -27,12 +27,13 @@ export async function GET(request) {
     }
 
     const id = decoded.id;
+    console.log('User ID:', id);
 
     // Query the database for the user by id
     const result = await sql`
       SELECT username, email
       FROM users
-      WHERE id = ${decoded.id};
+      WHERE id = ${id};
     `;
 
     const user = result.rows[0];
