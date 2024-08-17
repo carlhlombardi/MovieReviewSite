@@ -24,20 +24,19 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      // Check if the response is okay
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'An error occurred');
       }
 
-      // Parse the response data
       const data = await response.json();
-      const { token } = data;
+      const { token, username, email } = data;
 
-      // Check if the token is present
       if (token) {
         localStorage.setItem('token', token);
-        router.push('https://movie-review-site-seven.vercel.app/profile'); // Redirect to profile page
+        localStorage.setItem('username', username); // Store username
+        localStorage.setItem('email', email); // Store email
+        router.push('/profile'); // Redirect to profile page
       } else {
         throw new Error('Token not found in response');
       }

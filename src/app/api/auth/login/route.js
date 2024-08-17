@@ -14,7 +14,7 @@ export async function POST(request) {
 
     // Query the database for the user
     const result = await sql`
-      SELECT id, password
+      SELECT id, password, email
       FROM users
       WHERE username = ${username};
     `;
@@ -28,7 +28,7 @@ export async function POST(request) {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
