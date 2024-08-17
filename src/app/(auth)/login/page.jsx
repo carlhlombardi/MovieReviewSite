@@ -1,34 +1,78 @@
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(''); // Clear any existing error
+"use client";
 
-  try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Form, Button, Alert } from 'react-bootstrap';
 
-    // Check if the response is JSON
-    const contentType = response.headers.get('Content-Type');
-    if (!response.ok || !contentType || !contentType.includes('application/json')) {
-      const errorText = await response.text(); // Read response as text if not JSON
-      throw new Error(`Unexpected response format: ${errorText}`);
+export default function LoginPage() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); // Clear any existing error
+
+    try {
+      // Make POST request to the login endpoint
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      // Check if the response is okay
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'An error occurred');
+      }
+
+      // Parse the response data
+      const data = await response.json();
+      const { token } = data;
+
+      // Check if the token is present
+      if (token) {
+        localStorage.setItem('token', token);
+        router.push('https://movie-review-site-seven.vercel.app/profile'); // Redirect to profile page
+      } else {
+        throw new Error('Token not found in response');
+      }
+    } catch (err) {
+      setError(err.message); // Set error message for display
     }
+  };
 
-    // Parse the response data
-    const data = await response.json();
-    const { token } = data;
-
-    if (token) {
-      localStorage.setItem('token', token);
-      router.push('/profile'); // Use relative path
-    } else {
-      throw new Error('Token not found in response');
-    }
-  } catch (err) {
-    setError(err.message); // Set error message for display
-  }
-};
+  return (
+    <div className="container mt-5">
+      <h2>Login</h2>
+      {error && <Alert variant="danger">{error}</Alert>}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group controlId="formUsername">
+          <Form.Label>Username</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </Form.Group>
+        <Form.Group controlId="formPassword">
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Form.Group>
+        <Button variant="primary" type="submit">Login</Button>
+      </Form>
+    </div>
+  );
+}
