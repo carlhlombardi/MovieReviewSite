@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       const adminResult = await sql`
         SELECT is_admin
         FROM users
-        WHERE id = ${decoded.userId};
+        WHERE id = ${id};
       `;
       
       if (!adminResult.rows[0]?.is_admin) {

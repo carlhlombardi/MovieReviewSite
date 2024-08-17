@@ -13,15 +13,15 @@ export async function GET(request) {
   }
 
   try {
-    // Verify the token and extract user ID
+    // Verify the token and extract id
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    const id = decoded.id;
 
-    // Query the database for the user by userId
+    // Query the database for the user by id
     const result = await sql`
       SELECT username, email
       FROM users
-      WHERE id = ${userId};
+      WHERE id = ${id};
     `;
 
     const user = result.rows[0];
