@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Alert, Spinner, Card, Button } from 'react-bootstrap';
 
@@ -16,23 +17,17 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          router.push('/login');
+          router.push('https://movie-review-site-seven.vercel.app/login');
           return;
         }
 
-        const response = await fetch('https://movie-review-site-seven.vercel.app/profile', {
+        const response = await axios.get('https://movie-review-site-seven.vercel.app/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'An error occurred');
-        }
-
-        const data = await response.json();
-        setProfile(data);
+        setProfile(response.data);
       } catch (err) {
-        setError(err.message || 'An error occurred');
+        setError(err.response?.data?.message || 'An error occurred');
         router.push('/login');
       } finally {
         setIsLoading(false);
