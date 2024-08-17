@@ -15,6 +15,15 @@ export async function GET(request) {
   try {
     // Verify the token and extract id
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!decoded || !decoded.id) {
+      // Token is invalid or does not contain an ID
+      return new Response(
+        JSON.stringify({ message: 'Invalid token' }),
+        { status: 401 }
+      );
+    }
+
     const id = decoded.id;
 
     // Query the database for the user by id
