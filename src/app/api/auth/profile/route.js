@@ -6,7 +6,6 @@ export async function GET(request) {
   const token = authHeader?.split(' ')[1]; // Extract token from "Bearer <token>"
 
   if (!token) {
-    console.log('No token provided');
     return new Response(
       JSON.stringify({ message: 'Unauthorized' }),
       { status: 401 }
@@ -14,30 +13,18 @@ export async function GET(request) {
   }
 
   try {
-    // Verify the token and extract id
+    // Verify the token and extract user ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded Token:', decoded);
+    const userId = decoded.userId;
 
-    if (!decoded || !decoded.id) {
-      console.log('Invalid token or missing ID');
-      return new Response(
-        JSON.stringify({ message: 'Invalid token' }),
-        { status: 401 }
-      );
-    }
-
-    const id = decoded.id;
-    console.log('User ID:', id);
-
-    // Query the database for the user by id
+    // Query the database for the user by userId
     const result = await sql`
       SELECT username, email
       FROM users
-      WHERE id = ${id};
+      WHERE id = ${userId};
     `;
 
     const user = result.rows[0];
-    console.log('User from DB:', user);
 
     if (!user) {
       return new Response(
