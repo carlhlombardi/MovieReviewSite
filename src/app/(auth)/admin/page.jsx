@@ -8,13 +8,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const res = await fetch('https://movie-review-site-seven.vercel.app/api/users');
+      const res = await fetch('https://movie-review-site-seven.vercel.app/api/auth/users');
       const data = await res.json();
       setUsers(data);
     };
 
     const fetchComments = async () => {
-      const res = await fetch('https://movie-review-site-seven.vercel.app/api/comments');
+      const res = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments');
       const data = await res.json();
       setComments(data);
     };
@@ -24,7 +24,7 @@ export default function AdminPage() {
   }, []);
 
   const approveUser = async (id) => {
-    await fetch('https://movie-review-site-seven.vercel.app/api/admin/approve-user', {
+    await fetch('https://movie-review-site-seven.vercel.app/api/admin/auth/approve-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -33,7 +33,7 @@ export default function AdminPage() {
   };
 
   const approveComment = async (id) => {
-    await fetch('https://movie-review-site-seven.vercel.app/api/admin/approve-comment', {
+    await fetch('https://movie-review-site-seven.vercel.app/api/admin/auth/approve-comment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),

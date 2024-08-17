@@ -20,7 +20,7 @@ export default function ProfilePage() {
           return;
         }
 
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/profile', {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
