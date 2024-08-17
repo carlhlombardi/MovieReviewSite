@@ -2,12 +2,13 @@ import { verify } from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
+  if (req.method === 'POST') {
     try {
       const token = req.headers.authorization?.split(' ')[1];
+      const { userId } = req.body;
       
-      if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+      if (!token || !userId) {
+        return res.status(400).json({ message: 'Bad Request' });
       }
       
       // Verify the token
@@ -24,18 +25,19 @@ export default async function handler(req, res) {
         return res.status(403).json({ message: 'Forbidden' });
       }
       
-      // Fetch all users
-      const result = await sql`
-        SELECT id, username, email, approved
-        FROM users;
+      // Approve the user
+      await sql`
+        UPDATE comments
+        SET approved = true
+        WHERE id = ${id};
       `;
       
-      res.status(200).json(result.rows);
+      res.status(200).json({ message: 'User approved' });
     } catch (error) {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   } else {
-    res.setHeader('Allow', ['GET']);
+    res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
