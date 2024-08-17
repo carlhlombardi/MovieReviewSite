@@ -14,6 +14,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
+        console.log('Token:', token);
 
         if (!token) {
           router.push('/login');
@@ -24,16 +25,20 @@ export default function ProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        console.log('Response Status:', response.status);
         if (!response.ok) {
           const errorData = await response.json();
+          console.log('Error Data:', errorData);
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
 
         const data = await response.json();
+        console.log('Profile Data:', data);
         setProfile(data);
       } catch (err) {
+        console.error('Fetch Error:', err);
         setError('An error occurred');
         router.push('/login');
       } finally {
