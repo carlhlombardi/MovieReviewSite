@@ -66,15 +66,14 @@ export async function POST(request) {
       );
     }
 
-    // Insert comment with 'approved' set to false
     const result = await sql`
-      INSERT INTO comments (url, username, text, createdat, approved)
-      VALUES (${url}, ${user.username}, ${text}, NOW(), false)
+      INSERT INTO comments (url, username, text, createdat)
+      VALUES (${url}, ${user.username}, ${text}, NOW())
       RETURNING id, username, text, createdat;
     `;
 
     return new Response(
-      JSON.stringify({ message: 'Your comment has been sent for approval' }),
+      JSON.stringify(result.rows[0]),
       { status: 201 }
     );
   } catch (error) {
