@@ -14,7 +14,6 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        console.log('Token:', token);
 
         if (!token) {
           router.push('/login');
