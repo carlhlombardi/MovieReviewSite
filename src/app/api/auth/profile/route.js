@@ -32,7 +32,7 @@ export async function GET(request) {
     const result = await sql`
       SELECT username, email
       FROM users
-      WHERE id = ${id};
+      WHERE id = ${decoded.id};
     `;
 
     const user = result.rows[0];
