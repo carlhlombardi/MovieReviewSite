@@ -30,3 +30,11 @@
     margin-right: .5rem; /* Move the button to the right */
     padding: 0;
 }
+
+.logbutton{
+    display: block; /* Show on desktop */
+    border: 2px solid white;
+    padding: 5px;
+    border-radius: 5px;
+    color: white;
+}

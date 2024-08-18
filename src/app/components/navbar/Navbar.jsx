@@ -68,11 +68,11 @@ const NavbarComponent = () => {
         <div className="d-none d-lg-flex">
           <Links />
           {user ? (
-            <button className={styles.navbartoggler} type="button" onClick={handleLogout}>Logout</button>
+            <button className={styles.logbutton} type="button" onClick={handleLogout}>Logout</button>
           ) : (
             <>
-              <button className={styles.navbartoggler} type="button" onClick={handleLogin}>Login</button>
-              <button className={styles.navbartoggler} type="button" onClick={handleRegister}>Register</button>
+              <button className={styles.logbutton} type="button" onClick={handleLogin}>Login</button>
+              <button className={styles.logbutton} type="button" onClick={handleRegister}>Register</button>
             </>
           )}
         </div>
@@ -84,11 +84,11 @@ const NavbarComponent = () => {
         <Offcanvas.Body>
           <Links handleClose={() => setShow(false)} />
           {user ? (
-            <button className={styles.navbartoggler} type="button" onClick={handleLogout}>Logout</button>
+            <button className={styles.logbutton} type="button" onClick={handleLogout}>Logout</button>
           ) : (
             <>
-              <button className={styles.navbartoggler} type="button" onClick={handleLogin}>Login</button>
-              <button className={styles.navbartoggler} type="button" onClick={handleRegister}>Register</button>
+              <button className={styles.logbutton} type="button" onClick={handleLogin}>Login</button>
+              <button className={styles.logbutton} type="button" onClick={handleRegister}>Register</button>
             </>
           )}
         </Offcanvas.Body>
