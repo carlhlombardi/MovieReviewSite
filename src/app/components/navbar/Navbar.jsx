@@ -1,34 +1,54 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
+import { Navbar, Container, Offcanvas, Button } from 'react-bootstrap';
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
 import styles from './navbar.module.css';
-import { useRouter } from 'next/navigation'; // For navigation in Next.js
+import { useRouter } from 'next/navigation';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
   const [user, setUser] = useState(null); // State to manage user authentication
   const router = useRouter();
 
-  useEffect(() => {
+  // Function to fetch user data
+  const fetchUserData = async () => {
     const token = localStorage.getItem('token');
-
     if (token) {
-      fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(response => response.json())
-        .then(data => setUser(data.username))
-        .catch(() => {
-          localStorage.removeItem('token');
-          setUser(null);
+      try {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        const data = await response.json();
+        setUser(data.username);
+      } catch (error) {
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     } else {
       setUser(null);
     }
+  };
+
+  // Fetch user data when the component mounts
+  useEffect(() => {
+    fetchUserData();
   }, []);
+
+  // Fetch user data when navigating to the profile page or on page load
+  useEffect(() => {
+    const handleRouteChange = () => {
+      fetchUserData();
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Cleanup the event listener
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
