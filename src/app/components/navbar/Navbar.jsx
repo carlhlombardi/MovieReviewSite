@@ -39,7 +39,7 @@ const NavbarComponent = () => {
     }
   };
 
-  // Fetch user data when the component mounts or token changes
+  // Fetch user data when the component mounts
   useEffect(() => {
     fetchUserData();
   }, []);
