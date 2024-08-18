@@ -16,7 +16,7 @@ const NavbarComponent = () => {
     const token = localStorage.getItem('token');
 
     if (token) {
-      fetch('/api/profile', {
+      fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(response => response.json())
