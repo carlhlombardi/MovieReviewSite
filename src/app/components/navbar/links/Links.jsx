@@ -47,6 +47,14 @@ const Links = ({ handleClose, user, onLogout }) => {
     setShowDropdown(!showDropdown);
   };
 
+  const handleLogin = () => {
+    router.push('/login'); // Redirect to the login page
+  };
+
+  const handleRegister = () => {
+    router.push('/register'); // Redirect to the registration page
+  };
+
   return (
     <Nav className={styles.links}>
       {links.map((link) => (
@@ -79,6 +87,16 @@ const Links = ({ handleClose, user, onLogout }) => {
           ))}
         </Dropdown.Menu>
       </Dropdown>
+      <div className={styles.authButtons}>
+        {user ? (
+          <Button variant="outline-danger" onClick={onLogout} className={styles.authButton}>Logout</Button>
+        ) : (
+          <>
+            <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
+            <Button variant="outline-secondary" onClick={handleRegister} className={styles.authButton}>Register</Button>
+          </>
+        )}
+      </div>
     </Nav>
   );
 };
