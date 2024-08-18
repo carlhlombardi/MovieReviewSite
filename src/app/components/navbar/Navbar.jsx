@@ -58,10 +58,6 @@ const NavbarComponent = () => {
     router.push('/'); // Redirect to home or a specific page after logout
   };
 
-  const handleSuccessfulLogin = (username) => {
-    setUser(username); // Update user state on successful login
-  };
-
 
   return (
     <Navbar expand="lg" className="navbar-dark">
