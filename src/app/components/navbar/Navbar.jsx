@@ -44,21 +44,6 @@ const NavbarComponent = () => {
     fetchUserData();
   }, []);
 
-  const handleLogin = () => {
-    router.push('/login'); // Redirect to the login page
-  };
-
-  const handleRegister = () => {
-    router.push('/register'); // Redirect to the registration page
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    router.push('/'); // Redirect to home or a specific page after logout
-  };
-
-
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
