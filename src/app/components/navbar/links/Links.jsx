@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Nav, Dropdown, Button } from "react-bootstrap";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import GenreSidebar from "@/app/components/navbar/genreSidebar/genreSidebar.jsx";
 import styles from "./links.module.css";
@@ -57,13 +57,25 @@ const Links = ({ handleClose }) => {
     };
 
     fetchUserData(); // Only run this once on component mount
-    setActiveLink(window.location.pathname);
-  }, []); // Empty dependency array to ensure this effect only runs once
+
+    // Update activeLink based on route changes
+    const handleRouteChange = (url) => {
+      setActiveLink(url);
+    };
+
+    // Listen to route changes
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Clean up event listener on component unmount
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router]);
 
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
-    handleClose(); // Close the navbar
+    handleClose(); // Close the navbar if it's a mobile view
   };
 
   const toggleGenreSidebar = () => {
