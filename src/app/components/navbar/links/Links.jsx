@@ -31,8 +31,8 @@ const Links = ({ handleClose }) => {
   ];
 
   useEffect(() => {
-    // Check if user is authenticated when the component mounts
-    const checkUserAuthentication = async () => {
+    // Function to fetch user data
+    const fetchUserData = async () => {
       const token = localStorage.getItem("token");
       if (token) {
         try {
@@ -56,7 +56,7 @@ const Links = ({ handleClose }) => {
       }
     };
 
-    checkUserAuthentication();
+    fetchUserData();
     setActiveLink(window.location.pathname);
   }, []);
 
@@ -86,6 +86,10 @@ const Links = ({ handleClose }) => {
     localStorage.removeItem('token');
     setUser(null);
     router.push('/'); // Redirect to home or a specific page after logout
+  };
+
+  const handleSuccessfulLogin = (username) => {
+    setUser(username); // Update user state on successful login
   };
 
   return (
