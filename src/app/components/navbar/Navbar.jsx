@@ -82,16 +82,6 @@ const NavbarComponent = () => {
         </div>
         <div className="d-none d-lg-flex">
           <Links />
-          <div className={styles.authButtons}>
-        {user ? (
-          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
-        ) : (
-          <>
-            <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
-            <Button variant="outline-secondary" onClick={handleRegister} className={styles.authButton}>Register</Button>
-          </>
-        )}
-      </div>
         </div>
       </Container>
       <Offcanvas show={show} onHide={() => setShow(false)} placement="end" className="custom-offcanvas">
@@ -100,16 +90,6 @@ const NavbarComponent = () => {
         </Offcanvas.Header>
         <Offcanvas.Body>
           <Links handleClose={() => setShow(false)} />
-          <div className={styles.authButtons}>
-        {user ? (
-          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
-        ) : (
-          <>
-            <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
-            <Button variant="outline-secondary" onClick={handleRegister} className={styles.authButton}>Register</Button>
-          </>
-        )}
-      </div>
         </Offcanvas.Body>
       </Offcanvas>
     </Navbar>
