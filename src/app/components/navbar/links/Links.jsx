@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Nav, Dropdown, Button } from "react-bootstrap";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import GenreSidebar from "@/app/components/navbar/genreSidebar/genreSidebar.jsx";
 import styles from "./links.module.css";
@@ -11,7 +11,6 @@ const Links = ({ handleClose }) => {
   const [activeLink, setActiveLink] = useState("/");
   const [showGenreSidebar, setShowGenreSidebar] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [user, setUser] = useState(null); // State to manage user authentication
   const router = useRouter();
 
   const links = [
@@ -31,51 +30,13 @@ const Links = ({ handleClose }) => {
   ];
 
   useEffect(() => {
-    // Function to fetch user data
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.username);
-          } else {
-            localStorage.removeItem('token');
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user data:', error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    };
-
-    fetchUserData(); // Only run this once on component mount
-
-    // Update activeLink based on route changes
-    const handleRouteChange = (url) => {
-      setActiveLink(url);
-    };
-
-    // Listen to route changes
-    router.events.on('routeChangeComplete', handleRouteChange);
-
-    // Clean up event listener on component unmount
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router]);
+    setActiveLink(window.location.pathname);
+  }, []);
 
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
-    handleClose(); // Close the navbar if it's a mobile view
+    handleClose(); // Close the navbar
   };
 
   const toggleGenreSidebar = () => {
@@ -84,20 +45,6 @@ const Links = ({ handleClose }) => {
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
-  };
-
-  const handleLogin = () => {
-    router.push('/login'); // Redirect to the login page
-  };
-
-  const handleRegister = () => {
-    router.push('/register'); // Redirect to the registration page
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    router.push('/'); // Redirect to home or a specific page after logout
   };
 
   return (
@@ -111,7 +58,7 @@ const Links = ({ handleClose }) => {
         />
       ))}
       <div className={styles.genreButtonWrapper}>
-        <div onClick={toggleGenreSidebar} className={styles.dropdownToggle}>
+      <div onClick={toggleGenreSidebar} className={styles.dropdownToggle} >
           Genres
         </div>
       </div>
@@ -132,16 +79,6 @@ const Links = ({ handleClose }) => {
           ))}
         </Dropdown.Menu>
       </Dropdown>
-      <div className={styles.authButtons}>
-        {user ? (
-          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
-        ) : (
-          <>
-            <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
-            <Button variant="outline-secondary" onClick={handleRegister} className={styles.authButton}>Register</Button>
-          </>
-        )}
-      </div>
     </Nav>
   );
 };

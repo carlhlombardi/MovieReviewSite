@@ -1,83 +1,49 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Navbar, Container, Offcanvas, Button } from 'react-bootstrap';
-import Links from '@/app/components/navbar/links/Links'; // Import the Links component
+import React, { useState } from 'react';
+import { Navbar, Container,  Offcanvas, Nav } from 'react-bootstrap';
+import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
 import styles from './navbar.module.css';
-import { useRouter } from 'next/navigation';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const [user, setUser] = useState(null); // State to manage user authentication
-  const router = useRouter();
 
-  // Function to fetch user data
-  const fetchUserData = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.username);
-        } else {
-          // Handle unauthorized responses
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } catch (error) {
-        // Handle errors
-        console.error('Failed to fetch user data:', error);
-        localStorage.removeItem('token');
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-  };
-
-  // Fetch user data when the component mounts or token changes
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
   return (
     <Navbar expand="lg" className="navbar-dark">
-      <Container>
+    <Container>
         <Navbar.Brand href="/">
-          <Image
-            src="/images/logo/logo.png" // Use the image URL directly from the database
-            alt="Logo" // Alt text for accessibility
-            width={160}
-            height={80}
-            className="img-fluid"
-          />
+            <Image
+                src="/images/logo/logo.png" // Use the image URL directly from the database
+                alt="Logo" // Alt text for accessibility
+                width={160}
+                height={80}
+                className="img-fluid"
+            />
         </Navbar.Brand>
         <div className="d-lg-none">
-          <button className={styles.navbartoggler} type="button" onClick={() => setShow(true)}>
-            <span className={styles.navbartogglericon}>
-              <span className={styles.bar}></span>
-              <span className={styles.bar}></span>
-              <span className={styles.bar}></span>
-            </span>
-          </button>
+            <button className={styles.navbartoggler} type="button" onClick={handleShow}>
+                <span className={styles.navbartogglericon}>
+                    <span className={styles.bar}></span>
+                    <span className={styles.bar}></span>
+                    <span className={styles.bar}></span>
+                </span>
+            </button>
         </div>
         <div className="d-none d-lg-flex">
-          <Links />
+            <Links handleClose={handleClose} />
         </div>
-      </Container>
-      <Offcanvas show={show} onHide={() => setShow(false)} placement="end" className="custom-offcanvas">
+    </Container>
+    <Offcanvas show={show} onHide={handleClose} placement="end" className="custom-offcanvas">
         <Offcanvas.Header>
-          <button className={styles.closebtn} type="button" onClick={() => setShow(false)}>X</button>
+            <button className={styles.closebtn} type="button" onClick={handleClose}>X</button>
         </Offcanvas.Header>
-        <Offcanvas.Body>
-          <Links handleClose={() => setShow(false)} />
-        </Offcanvas.Body>
-      </Offcanvas>
-    </Navbar>
+        <Links handleClose={handleClose} />
+    </Offcanvas>
+</Navbar>
   );
 };
 
