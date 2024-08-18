@@ -56,9 +56,9 @@ const Links = ({ handleClose }) => {
       }
     };
 
-    fetchUserData();
+    fetchUserData(); // Only run this once on component mount
     setActiveLink(window.location.pathname);
-  }, []);
+  }, []); // Empty dependency array to ensure this effect only runs once
 
   const handleLinkClick = (path) => {
     setActiveLink(path);
@@ -86,10 +86,6 @@ const Links = ({ handleClose }) => {
     localStorage.removeItem('token');
     setUser(null);
     router.push('/'); // Redirect to home or a specific page after logout
-  };
-
-  const handleSuccessfulLogin = (username) => {
-    setUser(username); // Update user state on successful login
   };
 
   return (
