@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const [user, setUser] = useState(null); // State to manage user authentication
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   // Function to fetch user data
@@ -36,30 +36,19 @@ const NavbarComponent = () => {
     fetchUserData();
   }, []);
 
-  // Fetch user data when navigating to the profile page or on page load
-  useEffect(() => {
-    const handleRouteChange = () => {
-      fetchUserData();
-    };
-
-    router.events.on('routeChangeComplete', handleRouteChange);
-
-    // Cleanup the event listener
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router]);
-
+  // Function to handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
     router.push('/'); // Redirect to home or a specific page after logout
   };
 
+  // Function to handle login redirection
   const handleLogin = () => {
     router.push('/login'); // Redirect to the login page
   };
 
+  // Function to handle registration redirection
   const handleRegister = () => {
     router.push('/register'); // Redirect to the registration page
   };
