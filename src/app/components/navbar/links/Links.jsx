@@ -11,6 +11,7 @@ const Links = ({ handleClose }) => {
   const [activeLink, setActiveLink] = useState("/");
   const [showGenreSidebar, setShowGenreSidebar] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [user, setUser] = useState(null); // State to manage user authentication
   const router = useRouter();
 
   const links = [
@@ -30,6 +31,32 @@ const Links = ({ handleClose }) => {
   ];
 
   useEffect(() => {
+    // Check if user is authenticated when the component mounts
+    const checkUserAuthentication = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.username);
+          } else {
+            localStorage.removeItem('token');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    checkUserAuthentication();
     setActiveLink(window.location.pathname);
   }, []);
 
@@ -47,6 +74,20 @@ const Links = ({ handleClose }) => {
     setShowDropdown(!showDropdown);
   };
 
+  const handleLogin = () => {
+    router.push('/login'); // Redirect to the login page
+  };
+
+  const handleRegister = () => {
+    router.push('/register'); // Redirect to the registration page
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    router.push('/'); // Redirect to home or a specific page after logout
+  };
+
   return (
     <Nav className={styles.links}>
       {links.map((link) => (
@@ -58,7 +99,7 @@ const Links = ({ handleClose }) => {
         />
       ))}
       <div className={styles.genreButtonWrapper}>
-      <div onClick={toggleGenreSidebar} className={styles.dropdownToggle} >
+        <div onClick={toggleGenreSidebar} className={styles.dropdownToggle}>
           Genres
         </div>
       </div>
@@ -79,6 +120,16 @@ const Links = ({ handleClose }) => {
           ))}
         </Dropdown.Menu>
       </Dropdown>
+      <div className={styles.authButtons}>
+        {user ? (
+          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
+        ) : (
+          <>
+            <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
+            <Button variant="outline-secondary" onClick={handleRegister} className={styles.authButton}>Register</Button>
+          </>
+        )}
+      </div>
     </Nav>
   );
 };
