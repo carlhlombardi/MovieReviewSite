@@ -60,23 +60,10 @@ const Links = ({ handleClose }) => {
     setActiveLink(window.location.pathname);
   }, []); // Empty dependency array to ensure this effect only runs once
 
-  useEffect(() => {
-    // Update activeLink based on route changes
-    const handleRouteChange = (url) => {
-      setActiveLink(url);
-    };
-
-    router.events.on('routeChangeComplete', handleRouteChange);
-
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router]);
-
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
-    handleClose(); // Close the navbar if it's a mobile view
+    handleClose(); // Close the navbar
   };
 
   const toggleGenreSidebar = () => {
