@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // State to manage user authentication
   const router = useRouter();
 
   // Function to fetch user data
@@ -52,7 +52,7 @@ const NavbarComponent = () => {
   const handleRegister = () => {
     router.push('/register'); // Redirect to the registration page
   };
-
+  
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
