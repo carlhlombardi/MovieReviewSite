@@ -68,11 +68,11 @@ const NavbarComponent = () => {
         <div className="d-none d-lg-flex">
           <Links />
           {user ? (
-            <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
+            <button className={styles.navbartoggler} type="button" onClick={handleLogout}>Logout</button>
           ) : (
             <>
-              <Button variant="outline-primary" onClick={handleLogin} className="me-2">Login</Button>
-              <Button variant="outline-secondary" onClick={handleRegister}>Register</Button>
+              <button className={styles.navbartoggler} type="button" onClick={handleLogin}>Login</button>
+              <button className={styles.navbartoggler} type="button" onClick={handleRegister}>Register</button>
             </>
           )}
         </div>
@@ -84,11 +84,11 @@ const NavbarComponent = () => {
         <Offcanvas.Body>
           <Links handleClose={() => setShow(false)} />
           {user ? (
-            <Button variant="outline-danger" onClick={handleLogout}>Logout</Button>
+            <button className={styles.navbartoggler} type="button" onClick={handleLogout}>Logout</button>
           ) : (
             <>
-              <Button variant="outline-primary" onClick={handleLogin} className="me-2">Login</Button>
-              <Button variant="outline-secondary" onClick={handleRegister}>Register</Button>
+              <button className={styles.navbartoggler} type="button" onClick={handleLogin}>Login</button>
+              <button className={styles.navbartoggler} type="button" onClick={handleRegister}>Register</button>
             </>
           )}
         </Offcanvas.Body>
