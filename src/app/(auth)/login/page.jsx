@@ -39,6 +39,7 @@ export default function LoginPage() {
         localStorage.setItem('token', token);
         router.push('https://movie-review-site-seven.vercel.app/profile'); // Redirect to profile page
         onSuccessfulLogin(data.username); // Notify parent about successful login
+        setUser(username); // Update user state on successful login
       } else {
         throw new Error('Token not found in response');
       }

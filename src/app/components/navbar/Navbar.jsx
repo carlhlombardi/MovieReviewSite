@@ -44,6 +44,25 @@ const NavbarComponent = () => {
     fetchUserData();
   }, []);
 
+  const handleLogin = () => {
+    router.push('/login'); // Redirect to the login page
+  };
+
+  const handleRegister = () => {
+    router.push('/register'); // Redirect to the registration page
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    router.push('/'); // Redirect to home or a specific page after logout
+  };
+
+  const handleSuccessfulLogin = (username) => {
+    setUser(username); // Update user state on successful login
+  };
+
+
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
@@ -69,7 +88,7 @@ const NavbarComponent = () => {
           <Links />
           <div className={styles.authButtons}>
         {user ? (
-          <Button variant="outline-danger" onClick={onLogout} className={styles.authButton}>Logout</Button>
+          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
         ) : (
           <>
             <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
@@ -87,7 +106,7 @@ const NavbarComponent = () => {
           <Links handleClose={() => setShow(false)} />
           <div className={styles.authButtons}>
         {user ? (
-          <Button variant="outline-danger" onClick={onLogout} className={styles.authButton}>Logout</Button>
+          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
         ) : (
           <>
             <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
