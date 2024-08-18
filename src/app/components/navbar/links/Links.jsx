@@ -7,11 +7,10 @@ import NavLinks from "@/app/components/navbar/navLinks/navLinks.jsx";
 import GenreSidebar from "@/app/components/navbar/genreSidebar/genreSidebar.jsx";
 import styles from "./links.module.css";
 
-const Links = ({ handleClose }) => {
+const Links = ({ handleClose, user, onLogout }) => {
   const [activeLink, setActiveLink] = useState("/");
   const [showGenreSidebar, setShowGenreSidebar] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [user, setUser] = useState(null); // State to manage user authentication
   const router = useRouter();
 
   const links = [
@@ -31,32 +30,6 @@ const Links = ({ handleClose }) => {
   ];
 
   useEffect(() => {
-    // Function to fetch user data
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.username);
-          } else {
-            localStorage.removeItem('token');
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user data:', error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    };
-
-    fetchUserData();
     setActiveLink(window.location.pathname);
   }, []);
 
@@ -80,16 +53,6 @@ const Links = ({ handleClose }) => {
 
   const handleRegister = () => {
     router.push('/register'); // Redirect to the registration page
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    router.push('/'); // Redirect to home or a specific page after logout
-  };
-
-  const handleSuccessfulLogin = (username) => {
-    setUser(username); // Update user state on successful login
   };
 
   return (
@@ -126,7 +89,7 @@ const Links = ({ handleClose }) => {
       </Dropdown>
       <div className={styles.authButtons}>
         {user ? (
-          <Button variant="outline-danger" onClick={handleLogout} className={styles.authButton}>Logout</Button>
+          <Button variant="outline-danger" onClick={onLogout} className={styles.authButton}>Logout</Button>
         ) : (
           <>
             <Button variant="outline-primary" onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</Button>
