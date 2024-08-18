@@ -1,4 +1,5 @@
-// pages/login.jsx
+"use client"
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Form } from 'react-bootstrap';
