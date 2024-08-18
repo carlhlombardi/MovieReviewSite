@@ -20,9 +20,17 @@ const NavbarComponent = () => {
         const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
-        setUser(data.username);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.username);
+        } else {
+          // Handle unauthorized responses
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       } catch (error) {
+        // Handle errors
+        console.error('Failed to fetch user data:', error);
         localStorage.removeItem('token');
         setUser(null);
       }
@@ -31,7 +39,7 @@ const NavbarComponent = () => {
     }
   };
 
-  // Fetch user data when the component mounts
+  // Fetch user data when the component mounts or token changes
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -52,7 +60,7 @@ const NavbarComponent = () => {
   const handleRegister = () => {
     router.push('/register'); // Redirect to the registration page
   };
-  
+
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
