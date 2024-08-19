@@ -9,8 +9,15 @@ export async function GET(request) {
     const movieUrl = url.searchParams.get('url');
     const username = url.searchParams.get('username');
 
+    if (!movieUrl && !username) {
+      return new Response(
+        JSON.stringify({ message: 'Movie URL or username is required' }),
+        { status: 400 }
+      );
+    }
+
     // Construct the SQL query based on the presence of parameters
-    let query = 'SELECT id, username, text, createdat FROM comments';
+    let query = 'SELECT id, url, text, username, createdat FROM comments';
     let params = [];
 
     if (movieUrl && username) {
@@ -22,11 +29,6 @@ export async function GET(request) {
     } else if (username) {
       query += ' WHERE username = $1';
       params = [username];
-    } else {
-      return new Response(
-        JSON.stringify({ message: 'Either movie URL or username is required' }),
-        { status: 400 }
-      );
     }
 
     query += ' ORDER BY createdat DESC';
