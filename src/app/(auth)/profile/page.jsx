@@ -52,15 +52,22 @@ const fetchComments = async (selectedMovieUrl, token) => {
 
 const fetchLikedMovies = async (movies, token) => {
   try {
+    // Extract movie URLs from the movie objects
     const movieUrls = movies.map(movie => movie.url);
+    
+    // Fetch liked status for each movie URL
     const responses = await Promise.all(movieUrls.map(url =>
       fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
     ));
-
-    const results = await Promise.all(responses.map(response => response.json()));
     
+    // Check if all responses are OK
+    const results = await Promise.all(responses.map(response => response.json()));
+
+    // Log the results to understand the structure
+    console.log('API Results:', results);
+
     // Assuming results is an array of objects where each object contains `url` and `liked` fields
     return movies.filter((movie, index) => results[index]?.liked);
   } catch (err) {
@@ -68,6 +75,7 @@ const fetchLikedMovies = async (movies, token) => {
     return [];
   }
 };
+
 
 
 
