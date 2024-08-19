@@ -6,7 +6,7 @@ export async function GET(request) {
   try {
     // Extract URL from query parameters
     const url = new URL(request.url);
-    const movieId = url.searchParams.get('movieId');
+    const movieId = url.searchParams.get('id');
 
     if (!movieId) {
       return new Response(
@@ -92,7 +92,7 @@ export async function DELETE(request) {
   try {
     // Extract the query parameters
     const url = new URL(request.url);
-    const movieId = url.searchParams.get('movieId');
+    const movieId = url.searchParams.get('id');
     const genre = url.searchParams.get('genre');
 
     if (!movieId || !genre) {
