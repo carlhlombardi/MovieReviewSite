@@ -50,7 +50,6 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-// Function to fetch liked movies
 const fetchLikedMovies = async (baseUrl, token) => {
   try {
     // Step 1: Fetch the list of liked movies' URLs
@@ -89,7 +88,6 @@ const fetchLikedMovies = async (baseUrl, token) => {
   }
 };
 
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -106,35 +104,35 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-
+  
         if (!token) {
           router.push('/login');
           return;
         }
-
+  
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         if (!profileResponse.ok) {
           const errorData = await profileResponse.json();
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
-
+  
         const profileData = await profileResponse.json();
         setProfile(profileData);
-
+  
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
-
-        // Fetch liked movies
+  
+        // Fetch liked movies with detailed information
         const likedMoviesData = await fetchLikedMovies(baseUrl, token);
         setLikedMovies(likedMoviesData);
-
+  
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
       } catch (err) {
@@ -144,9 +142,10 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     };
-
+  
     fetchDataAsync();
   }, [router]);
+  
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
