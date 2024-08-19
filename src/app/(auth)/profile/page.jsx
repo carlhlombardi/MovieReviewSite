@@ -2,15 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form, Alert, Spinner, Card, Button, ListGroup } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
+
+// Function to fetch movies from multiple endpoints
+const fetchMovies = async () => {
+  try {
+    const endpoints = [
+      'https://movie-review-site-seven.vercel.app/api/data/actionmovies',
+      'https://movie-review-site-seven.vercel.app/api/data/classicmovies',
+      'https://movie-review-site-seven.vercel.app/api/data/comedymovies',
+      'https://movie-review-site-seven.vercel.app/api/data/documentarymovies',
+      'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
+      'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
+      'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
+    ];
+
+    const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
+    const moviesArrays = await Promise.all(responses.map(response => response.json()));
+    const movies = moviesArrays.flat(); // Combine arrays into a single array
+
+    return movies;
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+    return [];
+  }
+};
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [movies, setMovies] = useState([]); // To hold list of movies
-  const [selectedMovieUrl, setSelectedMovieUrl] = useState(''); // URL of the movie for which to fetch comments
+  const [movies, setMovies] = useState([]);
+  const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -38,17 +62,9 @@ export default function ProfilePage() {
         const profileData = await profileResponse.json();
         setProfile(profileData);
 
-        // Fetch list of movies (or set some logic to get movie URL)
-        const moviesResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movies', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (moviesResponse.ok) {
-          const moviesData = await moviesResponse.json();
-          setMovies(moviesData);
-        } else {
-          throw new Error('Failed to fetch movies');
-        }
+        // Fetch movies from multiple endpoints
+        const moviesData = await fetchMovies();
+        setMovies(moviesData);
       } catch (err) {
         setError('An error occurred');
         router.push('/login');
@@ -113,7 +129,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // Update comments list after deletion
       setComments(comments.filter(comment => comment.id !== commentId));
     } catch (err) {
       setError('An error occurred while deleting the comment');
