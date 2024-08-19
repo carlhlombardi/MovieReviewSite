@@ -65,8 +65,14 @@ const fetchLikedMovies = async (movies, token) => {
     // Parse the responses
     const results = await Promise.all(responses.map(response => response.json()));
     
-    // Log the results to understand the structure
+    // Debugging: Log raw API results
     console.log('API Results:', results);
+
+    // Check if results is an array and handle it accordingly
+    if (!Array.isArray(results)) {
+      console.error('Unexpected API result format:', results);
+      return [];
+    }
 
     // Create a set of liked movie IDs for faster lookup
     const likedMovieIds = new Set(results.map(result => result.movie_id));
