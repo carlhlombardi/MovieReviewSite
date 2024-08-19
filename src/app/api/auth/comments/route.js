@@ -1,26 +1,36 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Handler to get comments for a specific movie
+// Handler to get comments based on movie URL or username
 export async function GET(request) {
   try {
-    // Extract URL from query parameters
+    // Extract URL and username from query parameters
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
+    const username = url.searchParams.get('username');
 
-    if (!movieUrl) {
+    let query = 'SELECT id, username, text, createdat FROM comments';
+    let params = [];
+
+    if (movieUrl && username) {
+      query += ' WHERE url = $1 AND username = $2';
+      params = [movieUrl, username];
+    } else if (movieUrl) {
+      query += ' WHERE url = $1';
+      params = [movieUrl];
+    } else if (username) {
+      query += ' WHERE username = $1';
+      params = [username];
+    } else {
       return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
+        JSON.stringify({ message: 'Movie URL or username is required' }),
         { status: 400 }
       );
     }
 
-    const result = await sql`
-      SELECT id, username, text, createdat
-      FROM comments
-      WHERE url = ${movieUrl}
-      ORDER BY createdat DESC;
-    `;
+    query += ' ORDER BY createdat DESC';
+
+    const result = await sql.query(query, params);
 
     return new Response(
       JSON.stringify(result.rows),
