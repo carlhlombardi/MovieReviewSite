@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup, Form, Image } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -50,6 +50,36 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
+const fetchLikedMovies = async (baseUrl, token) => {
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/likes`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An error occurred while fetching liked movies');
+    }
+
+    const likedMoviesUrls = await response.json();
+
+    const movieDetailsPromises = likedMoviesUrls.map(async (movie) => {
+      const movieResponse = await fetch(`${baseUrl}/api/data/movieDetails?url=${encodeURIComponent(movie.url)}`);
+      if (!movieResponse.ok) {
+        throw new Error('Failed to fetch movie details');
+      }
+      return await movieResponse.json();
+    });
+
+    const moviesDetails = await Promise.all(movieDetailsPromises);
+
+    return moviesDetails;
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -58,6 +88,7 @@ export default function ProfilePage() {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
+  const [likedMovies, setLikedMovies] = useState([]);
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
 
@@ -65,48 +96,52 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-  
+        console.log('Token:', token); // Debugging
+
         if (!token) {
+          console.log('No token found, redirecting to login');
           router.push('/login');
           return;
         }
-  
+
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-  
+        console.log('Profile Response:', profileResponse); // Debugging
+
         if (!profileResponse.ok) {
           const errorData = await profileResponse.json();
+          console.log('Profile Error:', errorData); // Debugging
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
-  
+
         const profileData = await profileResponse.json();
         setProfile(profileData);
-  
+
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
-  
+
         // Fetch liked movies with detailed information
         const likedMoviesData = await fetchLikedMovies(baseUrl, token);
         setLikedMovies(likedMoviesData);
-  
+
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
       } catch (err) {
+        console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
         router.push('/login');
       } finally {
         setIsLoading(false);
       }
     };
-  
+
     fetchDataAsync();
   }, [router]);
-  
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
@@ -123,6 +158,7 @@ export default function ProfilePage() {
         // Filter movies that have comments
         setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
       } catch (err) {
+        console.error('Error in fetchFilteredMovies:', err);
         setError('An error occurred while fetching comments');
       }
     };
@@ -138,6 +174,7 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
 
         if (!token) {
+          console.log('No token found, redirecting to login');
           router.push('/login');
           return;
         }
@@ -145,6 +182,7 @@ export default function ProfilePage() {
         const commentsData = await fetchComments(selectedMovieUrl, token);
         setComments(commentsData);
       } catch (err) {
+        console.error('Error in fetchCommentsForSelectedMovie:', err);
         setError('An error occurred while fetching comments');
       }
     };
