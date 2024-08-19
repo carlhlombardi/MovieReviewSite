@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
+import { useAuth } from '@/app/(auth)/contexts/AuthContext'; // Adjust the path as needed
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { setIsLoggedIn } = useAuth(); // Get the setIsLoggedIn function from context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,9 +39,8 @@ export default function LoginPage() {
       // Check if the token is present
       if (token) {
         localStorage.setItem('token', token);
-        router.push('https://movie-review-site-seven.vercel.app/profile'); // Redirect to profile page
-        onSuccessfulLogin(data.username); // Notify parent about successful login
-        setUser(username); // Update user state on successful login
+        setIsLoggedIn(true); // Update authentication context
+        router.push('/profile'); // Redirect to profile page
       } else {
         throw new Error('Token not found in response');
       }
