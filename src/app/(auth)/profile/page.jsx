@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup, Form, Image } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -15,14 +15,11 @@ const fetchMovies = async () => {
       'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
       'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
       'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
-      // Add other endpoints here
     ];
 
     const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
     const moviesArrays = await Promise.all(responses.map(response => response.json()));
-    const movies = moviesArrays.flat(); // Combine arrays into a single array
-
-    return movies;
+    return moviesArrays.flat(); // Combine arrays into a single array
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
@@ -52,7 +49,7 @@ const fetchComments = async (selectedMovieUrl, token) => {
 
 const fetchLikedMovies = async (baseUrl, token) => {
   try {
-    // Step 1: Fetch the list of liked movies' URLs
+    // Fetch the list of liked movies' URLs
     const response = await fetch(`${baseUrl}/api/auth/likes`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -63,11 +60,8 @@ const fetchLikedMovies = async (baseUrl, token) => {
     }
 
     const likedMoviesUrls = await response.json();
-    
-    // Log liked movie URLs
-    console.log('Liked Movies URLs:', likedMoviesUrls);
 
-    // Step 2: Fetch details for each liked movie
+    // Fetch details for each liked movie
     const movieDetailsPromises = likedMoviesUrls.map(async (movie) => {
       const movieResponse = await fetch(`${baseUrl}/api/data/movieDetails?url=${encodeURIComponent(movie.url)}`);
       if (!movieResponse.ok) {
@@ -76,12 +70,7 @@ const fetchLikedMovies = async (baseUrl, token) => {
       return await movieResponse.json();
     });
 
-    const moviesDetails = await Promise.all(movieDetailsPromises);
-
-    // Log detailed movie information
-    console.log('Movies Details:', moviesDetails);
-
-    return moviesDetails;
+    return await Promise.all(movieDetailsPromises);
   } catch (err) {
     console.error(err);
     return [];
@@ -104,35 +93,35 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-  
+
         if (!token) {
           router.push('/login');
           return;
         }
-  
+
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-  
+
         if (!profileResponse.ok) {
           const errorData = await profileResponse.json();
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
-  
+
         const profileData = await profileResponse.json();
         setProfile(profileData);
-  
+
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
-  
+
         // Fetch liked movies with detailed information
         const likedMoviesData = await fetchLikedMovies(baseUrl, token);
         setLikedMovies(likedMoviesData);
-  
+
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
       } catch (err) {
@@ -142,10 +131,9 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     };
-  
+
     fetchDataAsync();
   }, [router]);
-  
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
