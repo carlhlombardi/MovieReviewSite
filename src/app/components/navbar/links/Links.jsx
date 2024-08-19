@@ -5,7 +5,7 @@ import { Nav, Dropdown, Button } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import NavLinks from '@/app/components/navbar/navLinks/navLinks.jsx';
 import GenreSidebar from '@/app/components/navbar/genreSidebar/genreSidebar.jsx';
-import { AuthContext } from '@/contexts/AuthContext'; // Import AuthContext
+import { AuthContext } from '@/app/(auth)/auth/auth';
 import styles from './links.module.css';
 
 const Links = ({ handleClose }) => {
