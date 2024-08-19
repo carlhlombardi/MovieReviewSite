@@ -46,7 +46,10 @@ const NavbarComponent = () => {
           <Links handleClose={() => setShow(false)} />
           <div className={styles.authButtons}>
             {isLoggedIn ? (
+               <>
+              <button onClick={handleProfile} className={styles.authButton}>Profile</button>
               <button onClick={handleLogout} className={styles.authButton}>Logout</button>
+              </>
             ) : (
               <>
                 <button onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</button>
@@ -65,8 +68,8 @@ const NavbarComponent = () => {
           <div className={styles.authButtons}>
             {isLoggedIn ? (
               <>
-              <button onClick={handleLogout} className={styles.authButton}>Logout</button>
               <button onClick={handleProfile} className={styles.authButton}>Profile</button>
+              <button onClick={handleLogout} className={styles.authButton}>Logout</button> 
               </>
             ) : (
               <>
