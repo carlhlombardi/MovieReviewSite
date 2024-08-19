@@ -44,19 +44,21 @@ const NavbarComponent = () => {
         </div>
         <div className="d-none d-lg-flex">
           <Links handleClose={() => setShow(false)} />
+          <div className={styles.authButtonsWrapper}>
           <div className={styles.authButtons}>
             {isLoggedIn ? (
                <>
-              <button onClick={handleProfile} className={styles.authButton}>Profile</button>
-              <button onClick={handleLogout} className={styles.authButton}>Logout</button>
+              <button onClick={handleProfile}>Profile</button>
+              <button onClick={handleLogout}>Logout</button>
               </>
             ) : (
               <>
-                <button onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</button>
-                <button onClick={handleRegister} className={styles.authButton}>Register</button>
+                <button onClick={handleLogin}>Login</button>
+                <button onClick={handleRegister}>Register</button>
               </>
             )}
           </div>
+        </div>
         </div>
       </Container>
       <Offcanvas show={show} onHide={() => setShow(false)} placement="end" className="custom-offcanvas">
@@ -65,18 +67,20 @@ const NavbarComponent = () => {
         </Offcanvas.Header>
         <Offcanvas.Body>
           <Links handleClose={() => setShow(false)} />
+          <div className={styles.authButtonsWrapper}>
           <div className={styles.authButtons}>
             {isLoggedIn ? (
               <>
-              <button onClick={handleProfile} className={styles.authButton}>Profile</button>
-              <button onClick={handleLogout} className={styles.authButton}>Logout</button> 
+              <button onClick={handleProfile}>Profile</button>
+              <button onClick={handleLogout}>Logout</button> 
               </>
             ) : (
               <>
-                <button onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</button>
-                <button onClick={handleRegister} className={styles.authButton}>Register</button>
+                <button onClick={handleLogin}>Login</button>
+                <button onClick={handleRegister}>Register</button>
               </>
             )}
+          </div>
           </div>
         </Offcanvas.Body>
       </Offcanvas>
