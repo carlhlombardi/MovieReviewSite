@@ -2,44 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
-
-// Function to fetch movies from multiple endpoints
-const fetchMovies = async () => {
-  try {
-    const endpoints = [
-      'https://movie-review-site-seven.vercel.app/api/data/actionmovies',
-      'https://movie-review-site-seven.vercel.app/api/data/classicmovies',
-      'https://movie-review-site-seven.vercel.app/api/data/comedymovies',
-      'https://movie-review-site-seven.vercel.app/api/data/documentarymovies',
-      'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
-      'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
-      'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
-    ];
-
-    const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
-    const moviesArrays = await Promise.all(responses.map(response => response.json()));
-    const movies = moviesArrays.flat(); // Combine arrays into a single array
-
-    return movies;
-  } catch (error) {
-    console.error('Error fetching movies:', error);
-    return [];
-  }
-};
+import { Alert, Spinner, Card, Button } from 'react-bootstrap';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
-  const [comments, setComments] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [movies, setMovies] = useState([]);
-  const [filteredMovies, setFilteredMovies] = useState([]);
-  const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    const fetchProfileAndMovies = async () => {
+    const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
 
@@ -48,44 +20,20 @@ export default function ProfilePage() {
           return;
         }
 
-        // Fetch user profile
-        const profileResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
+        // Decode the JWT token to get user info
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!profileResponse.ok) {
-          const errorData = await profileResponse.json();
+        if (!response.ok) {
+          const errorData = await response.json();
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
 
-        const profileData = await profileResponse.json();
-        setProfile(profileData);
-
-        // Fetch user comments
-        const commentsResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!commentsResponse.ok) {
-          const errorData = await commentsResponse.json();
-          setError(errorData.message || 'An error occurred while fetching comments');
-          return;
-        }
-
-        const commentsData = await commentsResponse.json();
-        setComments(commentsData);
-
-        // Fetch movies from multiple endpoints
-        const moviesData = await fetchMovies();
-
-        // Filter movies to only those with comments
-        const commentedMovieUrls = new Set(commentsData.map(comment => comment.url));
-        const filteredMoviesData = moviesData.filter(movie => commentedMovieUrls.has(movie.url));
-
-        setMovies(moviesData);
-        setFilteredMovies(filteredMoviesData);
+        const data = await response.json();
+        setProfile(data);
       } catch (err) {
         setError('An error occurred');
         router.push('/login');
@@ -94,66 +42,15 @@ export default function ProfilePage() {
       }
     };
 
-    fetchProfileAndMovies();
+    fetchProfile();
   }, [router]);
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (!selectedMovieUrl) return;
-
-      try {
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-          router.push('/login');
-          return;
-        }
-
-        const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!commentsResponse.ok) {
-          const errorData = await commentsResponse.json();
-          setError(errorData.message || 'An error occurred');
-          return;
-        }
-
-        const commentsData = await commentsResponse.json();
-        setComments(commentsData);
-      } catch (err) {
-        setError('An error occurred while fetching comments');
-      }
-    };
-
-    fetchComments();
-  }, [selectedMovieUrl, router]);
-
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const options = { year: 'numeric', month: 'long', day: 'numeric' }; // Customize as needed
     const date = new Date(dateString);
     return date.toLocaleDateString(undefined, options);
   };
 
-  const handleDeleteComment = async (commentId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(commentId)}&url=${encodeURIComponent(selectedMovieUrl)}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'An error occurred while deleting the comment');
-        return;
-      }
-
-      setComments(comments.filter(comment => comment.id !== commentId));
-    } catch (err) {
-      setError('An error occurred while deleting the comment');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -166,68 +63,26 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5">
-      <h2>Welcome back, {profile?.firstname}!</h2>
+      <h2>Welcome back, {profile?.username}!</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {profile && (
-        <>
-          <Card className="mb-4">
-            <Card.Header as="h5">Profile Details</Card.Header>
-            <Card.Body>
-              <Card.Text>
-                <strong>Name:</strong> {profile.firstname} {profile.lastname}
-              </Card.Text>
-              <Card.Text>
-                <strong>User Name:</strong> {profile.username}
-              </Card.Text>
-              <Card.Text>
-                <strong>Email:</strong> {profile.email}
-              </Card.Text>
-              <Card.Text>
-                <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
-              </Card.Text>
-            </Card.Body>
-          </Card>
-
-          <Card className="mb-4">
-            <Card.Header as="h5">Select Movie to View Comments</Card.Header>
-            <Card.Body>
-              <Form.Control
-                as="select"
-                value={selectedMovieUrl}
-                onChange={(e) => setSelectedMovieUrl(e.target.value)}
-              >
-                <option value="">Select a movie</option>
-                {filteredMovies.map((movie) => (
-                  <option key={movie.url} value={movie.url}>{movie.title}</option>
-                ))}
-              </Form.Control>
-            </Card.Body>
-          </Card>
-
-          <Card>
-            <Card.Header as="h5">Your Comments</Card.Header>
-            <Card.Body>
-              <ListGroup>
-                {comments.length > 0 ? (
-                  comments.map(comment => (
-                    <ListGroup.Item key={comment.id}>
-                      <div>{comment.text}</div>
-                      <Button
-                        variant="danger"
-                        className="mt-2"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        Delete
-                      </Button>
-                    </ListGroup.Item>
-                  ))
-                ) : (
-                  <ListGroup.Item>No comments found.</ListGroup.Item>
-                )}
-              </ListGroup>
-            </Card.Body>
-          </Card>
-        </>
+        <Card>
+          <Card.Header as="h5">Profile Details</Card.Header>
+          <Card.Body>
+          <Card.Text>
+              <strong>Name:</strong> {profile.firstname} {profile.lastname}
+            </Card.Text>
+            <Card.Text>
+              <strong>User Name:</strong> {profile.username}
+            </Card.Text>
+            <Card.Text>
+              <strong>Email:</strong> {profile.email}
+            </Card.Text>
+            <Card.Text>
+              <strong>Member Since:</strong> {formatDate(profile.date_joined)}
+            </Card.Text>
+          </Card.Body>
+        </Card>
       )}
     </div>
   );
