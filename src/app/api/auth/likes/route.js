@@ -1,80 +1,142 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../db'); // Assume you have a database pool setup
+// Import dependencies
+import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken';
 
-// Middleware to verify the token and extract user info
-const authenticateToken = require('../middleware/authenticateToken');
-
-// Like a movie
-router.post('/', authenticateToken, async (req, res) => {
-  const { movieId, genre } = req.body;
-  const userId = req.user.id; // Extracted from token
-
+// Handler to get likes for a specific movie
+export async function GET(request) {
   try {
-    const result = await pool.query(
-      `INSERT INTO likes (user_id, movie_id, genre)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, movie_id, genre) DO NOTHING
-       RETURNING *`,
-      [userId, movieId, genre]
-    );
+    // Extract URL from query parameters
+    const url = new URL(request.url);
+    const movieId = url.searchParams.get('movieId');
 
-    if (result.rows.length > 0) {
-      res.status(201).json({ liked: true });
-    } else {
-      res.status(200).json({ liked: false }); // Already liked
+    if (!movieId) {
+      return new Response(
+        JSON.stringify({ message: 'Movie ID is required' }),
+        { status: 400 }
+      );
     }
+
+    const result = await sql`
+      SELECT user_id, movie_id, genre, liked_at
+      FROM likes
+      WHERE movie_id = ${movieId}
+      ORDER BY liked_at DESC;
+    `;
+
+    return new Response(
+      JSON.stringify(result.rows),
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Error liking movie:', error);
-    res.status(500).json({ error: 'Failed to like movie' });
+    console.error('Fetch likes error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch likes' }),
+      { status: 500 }
+    );
   }
-});
+}
 
-// Unlike a movie
-router.delete('/', authenticateToken, async (req, res) => {
-  const { movieId, genre } = req.body;
-  const userId = req.user.id; // Extracted from token
-
+// Handler to add a new like
+export async function POST(request) {
   try {
-    const result = await pool.query(
-      `DELETE FROM likes
-       WHERE user_id = $1 AND movie_id = $2 AND genre = $3
-       RETURNING *`,
-      [userId, movieId, genre]
-    );
+    const { movieId, genre } = await request.json();
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
 
-    if (result.rowCount > 0) {
-      res.status(200).json({ liked: false });
-    } else {
-      res.status(200).json({ liked: true }); // Not liked
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const result = await sql`
+      INSERT INTO likes (user_id, movie_id, genre, liked_at)
+      VALUES (${userId}, ${movieId}, ${genre}, NOW())
+      ON CONFLICT (user_id, movie_id, genre) DO NOTHING
+      RETURNING user_id, movie_id, genre, liked_at;
+    `;
+
+    return new Response(
+      JSON.stringify(result.rows[0]),
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error unliking movie:', error);
-    res.status(500).json({ error: 'Failed to unlike movie' });
+    console.error('Add like error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to add like' }),
+      { status: 500 }
+    );
   }
-});
+}
 
-// Check if the user has liked a movie
-router.get('/', authenticateToken, async (req, res) => {
-  const { movieId, genre } = req.query;
-  const userId = req.user.id; // Extracted from token
-
+// Handler to delete a like
+export async function DELETE(request) {
   try {
-    const result = await pool.query(
-      `SELECT * FROM likes
-       WHERE user_id = $1 AND movie_id = $2 AND genre = $3`,
-      [userId, movieId, genre]
-    );
+    // Extract the query parameters
+    const url = new URL(request.url);
+    const movieId = url.searchParams.get('movieId');
+    const genre = url.searchParams.get('genre');
 
-    if (result.rows.length > 0) {
-      res.status(200).json({ liked: true });
-    } else {
-      res.status(200).json({ liked: false });
+    if (!movieId || !genre) {
+      return new Response(
+        JSON.stringify({ message: 'Movie ID and genre are required' }),
+        { status: 400 }
+      );
     }
-  } catch (error) {
-    console.error('Error fetching like status:', error);
-    res.status(500).json({ error: 'Failed to fetch like status' });
-  }
-});
 
-module.exports = router;
+    // Extract the authorization token from the headers
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    // Verify the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Check if the like exists and belongs to the user
+    const likeResult = await sql`
+      SELECT user_id
+      FROM likes
+      WHERE user_id = ${userId}
+      AND movie_id = ${movieId}
+      AND genre = ${genre};
+    `;
+    const like = likeResult.rows[0];
+
+    if (!like) {
+      return new Response(
+        JSON.stringify({ message: 'Like not found' }),
+        { status: 404 }
+      );
+    }
+
+    // Delete the like from the database
+    await sql`
+      DELETE FROM likes
+      WHERE user_id = ${userId}
+      AND movie_id = ${movieId}
+      AND genre = ${genre};
+    `;
+
+    return new Response(
+      JSON.stringify({ message: 'Like deleted' }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Delete like error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to delete like' }),
+      { status: 500 }
+    );
+  }
+}
