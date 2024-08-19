@@ -50,48 +50,9 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-const fetchLikedMovies = async (baseUrl, token) => {
-  try {
-    // Step 1: Fetch the list of liked movies' URLs
-    const response = await fetch(`${baseUrl}/api/auth/likes`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'An error occurred while fetching liked movies');
-    }
-
-    const likedMoviesUrls = await response.json();
-    
-    // Log liked movie URLs
-    console.log('Liked Movies URLs:', likedMoviesUrls);
-
-    // Step 2: Fetch details for each liked movie
-    const movieDetailsPromises = likedMoviesUrls.map(async (movie) => {
-      const movieResponse = await fetch(`${baseUrl}/api/data/movieDetails?url=${encodeURIComponent(movie.url)}`);
-      if (!movieResponse.ok) {
-        throw new Error('Failed to fetch movie details');
-      }
-      return await movieResponse.json();
-    });
-
-    const moviesDetails = await Promise.all(movieDetailsPromises);
-
-    // Log detailed movie information
-    console.log('Movies Details:', moviesDetails);
-
-    return moviesDetails;
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
-  const [likedMovies, setLikedMovies] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
@@ -198,26 +159,6 @@ export default function ProfilePage() {
     return date.toLocaleDateString(undefined, options);
   };
 
-  const handleDeleteComment = async (commentId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${baseUrl}/api/auth/comments?id=${encodeURIComponent(commentId)}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'An error occurred while deleting the comment');
-        return;
-      }
-
-      setComments(comments.filter(comment => comment.id !== commentId));
-    } catch (err) {
-      setError('An error occurred while deleting the comment');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="container mt-5 text-center">
@@ -297,7 +238,6 @@ export default function ProfilePage() {
                     <ListGroup.Item key={comment.id}>
                       <p><strong>{comment.username}:</strong> {comment.text}</p>
                       <p><small>{formatDate(comment.date)}</small></p>
-                      <Button variant="danger" onClick={() => handleDeleteComment(comment.id)}>Delete</Button>
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
