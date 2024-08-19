@@ -56,19 +56,15 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5">
-      <h2>Welcome back, {profile?.username}!</h2>
+      <h2>Welcome back, {profile?.firstname}!</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {profile && (
         <Card>
           <Card.Header as="h5">Profile Details</Card.Header>
           <Card.Body>
-            <Card.Title>{profile.username}</Card.Title>
             <Card.Text>
               <strong>Email:</strong> {profile.email}
             </Card.Text>
-            <Button variant="primary" onClick={() => router.push('/edit-profile')}>
-              Edit Profile
-            </Button>
           </Card.Body>
         </Card>
       )}
