@@ -1,61 +1,83 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const useLike = (movieId, genre) => {
   const [isLiked, setIsLiked] = useState(false);
 
-  const checkLikeStatus = async (token) => {
-    try {
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieId=${movieId}&genre=${genre}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setIsLiked(data.liked);
-    } catch (error) {
-      console.error('Failed to fetch like status', error);
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieId=${movieId}&genre=${genre}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setIsLiked(data.liked || false); // Default to false if `liked` is not present
+          } else {
+            console.error('Failed to fetch like status:', await response.text());
+          }
+        } catch (error) {
+          console.error('Failed to fetch like status:', error);
+        }
+      }
+    };
+
+    if (movieId && genre) {
+      checkLikeStatus();
+    }
+  }, [movieId, genre]);
+
+  const likeMovie = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ movieId, genre }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setIsLiked(data.liked || false); // Default to false if `liked` is not present
+        } else {
+          console.error('Failed to like movie:', await response.text());
+        }
+      } catch (error) {
+        console.error('Failed to like movie:', error);
+      }
     }
   };
 
-  const likeMovie = async (token) => {
-    try {
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ movieId, genre }),
-      });
-      const data = await response.json();
-      if (data.liked) {
-        setIsLiked(true);
+  const unlikeMovie = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ movieId, genre }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setIsLiked(!(data.liked || false)); // Default to false if `liked` is not present
+        } else {
+          console.error('Failed to unlike movie:', await response.text());
+        }
+      } catch (error) {
+        console.error('Failed to unlike movie:', error);
       }
-    } catch (error) {
-      console.error('Failed to like movie', error);
-    }
-  };
-
-  const unlikeMovie = async (token) => {
-    try {
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ movieId, genre }),
-      });
-      const data = await response.json();
-      if (!data.liked) {
-        setIsLiked(false);
-      }
-    } catch (error) {
-      console.error('Failed to unlike movie', error);
     }
   };
 
   return {
     isLiked,
-    checkLikeStatus,
     likeMovie,
     unlikeMovie,
   };
