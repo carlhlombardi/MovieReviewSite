@@ -4,14 +4,29 @@ import jwt from 'jsonwebtoken';
 // Handler to get likes for a specific movie
 export async function GET(request) {
   try {
-    // Extract URL from query parameters
+    // Extract slug from URL path
     const url = new URL(request.url);
-    const movieId = url.searchParams.get('id');
+    const slug = url.pathname.split('/').pop(); // Extract slug from URL path
+
+    if (!slug) {
+      return new Response(
+        JSON.stringify({ message: 'Movie slug is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Fetch movie ID using the slug
+    const movieIdResult = await sql`
+      SELECT id
+      FROM horrormovies
+      WHERE url = ${slug}
+    `;
+    const movieId = movieIdResult.rows[0]?.id;
 
     if (!movieId) {
       return new Response(
-        JSON.stringify({ message: 'Movie ID is required' }),
-        { status: 400 }
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
       );
     }
 
@@ -38,7 +53,7 @@ export async function GET(request) {
 // Handler to add a new like
 export async function POST(request) {
   try {
-    const { movieId, genre } = await request.json();
+    const { slug, genre } = await request.json(); // Use slug instead of movieId
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -51,6 +66,21 @@ export async function POST(request) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
+
+    // Fetch movie ID using the slug
+    const movieIdResult = await sql`
+      SELECT id
+      FROM horrormovies
+      WHERE url = ${slug}
+    `;
+    const movieId = movieIdResult.rows[0]?.id;
+
+    if (!movieId) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
 
     // Check if the like already exists
     const existingLike = await sql`
@@ -90,15 +120,30 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
-    // Extract the query parameters
+    // Extract the slug and genre from the URL
     const url = new URL(request.url);
-    const movieId = url.searchParams.get('id');
+    const slug = url.pathname.split('/').pop(); // Extract slug from URL path
     const genre = url.searchParams.get('genre');
 
-    if (!movieId || !genre) {
+    if (!slug || !genre) {
       return new Response(
-        JSON.stringify({ message: 'Movie ID and genre are required' }),
+        JSON.stringify({ message: 'Movie slug and genre are required' }),
         { status: 400 }
+      );
+    }
+
+    // Fetch movie ID using the slug
+    const movieIdResult = await sql`
+      SELECT id
+      FROM horrormovies
+      WHERE url = ${slug}
+    `;
+    const movieId = movieIdResult.rows[0]?.id;
+
+    if (!movieId) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
       );
     }
 
