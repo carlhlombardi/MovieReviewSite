@@ -51,9 +51,11 @@ const fetchComments = async (selectedMovieUrl, token) => {
 };
 
 // Function to fetch liked movies based on user token
-const fetchLikedMovies = async (token) => {
+const fetchLikedMovies = async (selectedMovieUrl, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+    if (!selectedMovieUrl) return [];
+    
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(selectedMovieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -86,7 +88,6 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-        console.log('Token:', token); // Debugging
 
         if (!token) {
           console.log('No token found, redirecting to login');
@@ -98,11 +99,9 @@ export default function ProfilePage() {
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log('Profile Response:', profileResponse); // Debugging
 
         if (!profileResponse.ok) {
           const errorData = await profileResponse.json();
-          console.log('Profile Error:', errorData); // Debugging
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
