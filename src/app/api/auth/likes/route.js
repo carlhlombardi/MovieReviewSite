@@ -121,8 +121,9 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
+    // Extract film URL and genre from query parameters
     const url = new URL(request.url);
-    const filmUrl = url.searchParams.get('url'); // Extract film URL from query parameters
+    const filmUrl = url.searchParams.get('url');
     const genre = url.searchParams.get('genre');
 
     if (!filmUrl || !genre) {
@@ -162,6 +163,11 @@ export async function DELETE(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
+    // Log extracted values for debugging
+    console.log(`User ID: ${userId}`);
+    console.log(`Movie ID: ${movieId}`);
+    console.log(`Genre: ${genre}`);
+
     // Check if the like exists and belongs to the user
     const likeResult = await sql`
       SELECT user_id
@@ -179,13 +185,19 @@ export async function DELETE(request) {
       );
     }
 
+    // Log before deletion
+    console.log('Deleting like:', { user_id: userId, movie_id: movieId, genre: genre });
+
     // Delete the like from the database
-    await sql`
+    const deleteResult = await sql`
       DELETE FROM likes
       WHERE user_id = ${userId}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
+
+    // Log deletion result
+    console.log('Delete result:', deleteResult);
 
     return new Response(
       JSON.stringify({ message: 'Like deleted' }),
