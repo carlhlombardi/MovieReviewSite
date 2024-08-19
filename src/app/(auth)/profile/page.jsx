@@ -51,11 +51,9 @@ const fetchComments = async (selectedMovieUrl, token) => {
 };
 
 // Function to fetch liked movies based on user token
-const fetchLikedMovies = async (selectedMovieUrl, token) => {
-  try {
-    if (!selectedMovieUrl) return [];
-    
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(selectedMovieUrl)}`, {
+const fetchLikedMovies = async (token) => {
+  try {    
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
