@@ -51,9 +51,9 @@ const fetchComments = async (selectedMovieUrl, token) => {
 };
 
 // Function to fetch liked movies
-const fetchLikedMovies = async (token) => {
+const fetchLikedMovies = async (baseUrl, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+    const response = await fetch(`${baseUrl}/api/auth/likes`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -79,9 +79,10 @@ export default function ProfilePage() {
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const router = useRouter();
+  const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
 
   useEffect(() => {
-    const fetchProfileAndMovies = async () => {
+    const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
 
@@ -91,7 +92,7 @@ export default function ProfilePage() {
         }
 
         // Fetch user profile
-        const profileResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/profile', {
+        const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -110,7 +111,7 @@ export default function ProfilePage() {
         setMovies(moviesData);
 
         // Fetch liked movies
-        const likedMoviesData = await fetchLikedMovies(token);
+        const likedMoviesData = await fetchLikedMovies(baseUrl, token);
         setLikedMovies(likedMoviesData);
 
         // Initialize filteredMovies to all movies first
@@ -123,7 +124,7 @@ export default function ProfilePage() {
       }
     };
 
-    fetchProfileAndMovies();
+    fetchDataAsync();
   }, [router]);
 
   useEffect(() => {
@@ -180,7 +181,7 @@ export default function ProfilePage() {
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(commentId)}`, {
+      const response = await fetch(`${baseUrl}/api/auth/comments?id=${encodeURIComponent(commentId)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -251,43 +252,38 @@ export default function ProfilePage() {
             <Card.Body>
               <div className="d-flex flex-wrap">
                 {likedMovies.length > 0 ? (
-                  likedMovies.map(movie => (
-                    <Card key={movie.url} style={{ width: '150px', margin: '10px' }}>
-                      <Image 
-                        src={movie.image_url} 
-                        alt={movie.film} 
-                        width={150} 
-                        height={225} 
-                        className="card-img-top" 
-                      />
+                  likedMovies.map((movie) => (
+                    <Card key={movie.id} className="m-2" style={{ width: '18rem' }}>
+                      <Card.Img variant="top" src={movie.imageUrl} />
                       <Card.Body>
-                        <Card.Title>{movie.film}</Card.Title>
+                        <Card.Title>{movie.title}</Card.Title>
+                        <Button variant="primary" href={movie.url}>View Details</Button>
                       </Card.Body>
                     </Card>
                   ))
                 ) : (
-                  <Alert variant="info">No liked movies found.</Alert>
+                  <p>You have no liked movies.</p>
                 )}
               </div>
             </Card.Body>
           </Card>
 
           <Card>
-            <Card.Header as="h5">Your Comments</Card.Header>
+            <Card.Header as="h5">Comments</Card.Header>
             <Card.Body>
-              <ListGroup>
-                {comments.length > 0 ? (
-                  comments.map(comment => (
+              {comments.length > 0 ? (
+                <ListGroup>
+                  {comments.map((comment) => (
                     <ListGroup.Item key={comment.id}>
-                      <div>{comment.text}</div>
-                      <div>{formatDate(comment.createdat)}</div>
+                      <p><strong>{comment.username}:</strong> {comment.text}</p>
+                      <p><small>{formatDate(comment.date)}</small></p>
                       <Button variant="danger" onClick={() => handleDeleteComment(comment.id)}>Delete</Button>
                     </ListGroup.Item>
-                  ))
-                ) : (
-                  <ListGroup.Item>No comments found.</ListGroup.Item>
-                )}
-              </ListGroup>
+                  ))}
+                </ListGroup>
+              ) : (
+                <p>No comments for this movie.</p>
+              )}
             </Card.Body>
           </Card>
         </>
