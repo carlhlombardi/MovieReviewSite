@@ -1,10 +1,48 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// Handler to get likes for a specific movie
+export async function GET(request) {
+  try {
+    // Extract URL from query parameters
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+
+    if (!movieUrl) {
+      return new Response(
+        JSON.stringify({ message: 'Movie URL is required' }),
+        { status: 400 }
+      );
+    }
+
+    const result = await sql`
+      SELECT user_id, movie_id, genre, liked_at
+      FROM likes
+      WHERE movie_id = (
+        SELECT id
+        FROM horrormovies
+        WHERE url = ${movieUrl}
+      )
+      ORDER BY liked_at DESC;
+    `;
+
+    return new Response(
+      JSON.stringify(result.rows),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Fetch likes error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch likes' }),
+      { status: 500 }
+    );
+  }
+}
+
 // Handler to add a new like
 export async function POST(request) {
   try {
-    const { url, genre } = await request.json(); // Use URL and genre from the request body
+    const { url, genre } = await request.json();
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -17,7 +55,7 @@ export async function POST(request) {
 
     // Verify the JWT token and extract the user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const username = decoded.username; // Assume username is in the token payload
+    const userId = decoded.userId;
 
     // Fetch movie ID using the film URL
     const movieIdResult = await sql`
@@ -38,7 +76,7 @@ export async function POST(request) {
     const existingLike = await sql`
       SELECT user_id
       FROM likes
-      WHERE user_id = ${username}
+      WHERE user_id = ${userId}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
@@ -53,7 +91,7 @@ export async function POST(request) {
     // Insert new like
     const result = await sql`
       INSERT INTO likes (user_id, movie_id, genre, liked_at)
-      VALUES (${username}, ${movieId}, ${genre}, NOW())
+      VALUES (${userId}, ${movieId}, ${genre}, NOW())
       RETURNING user_id, movie_id, genre, liked_at;
     `;
 
@@ -73,13 +111,14 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
+    // Extract the query parameters
     const url = new URL(request.url);
-    const filmUrl = url.searchParams.get('url'); // Extract film URL from query parameters
     const genre = url.searchParams.get('genre');
+    const movieUrl = url.searchParams.get('url');
 
-    if (!filmUrl || !genre) {
+    if (!genre || !movieUrl) {
       return new Response(
-        JSON.stringify({ message: 'URL and genre are required' }),
+        JSON.stringify({ message: 'Genre and movie URL are required' }),
         { status: 400 }
       );
     }
@@ -97,13 +136,13 @@ export async function DELETE(request) {
 
     // Verify the JWT token and extract the user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const username = decoded.username; // Assume username is in the token payload
+    const userId = decoded.userId;
 
     // Fetch movie ID using the film URL
     const movieIdResult = await sql`
       SELECT id
       FROM horrormovies
-      WHERE url = ${filmUrl}
+      WHERE url = ${movieUrl}
     `;
     const movieId = movieIdResult.rows[0]?.id;
 
@@ -118,7 +157,7 @@ export async function DELETE(request) {
     const likeResult = await sql`
       SELECT user_id
       FROM likes
-      WHERE user_id = ${username}
+      WHERE user_id = ${userId}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
@@ -134,7 +173,7 @@ export async function DELETE(request) {
     // Delete the like from the database
     await sql`
       DELETE FROM likes
-      WHERE user_id = ${username}
+      WHERE user_id = ${userId}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
