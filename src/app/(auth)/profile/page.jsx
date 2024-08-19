@@ -37,7 +37,7 @@ export default function ProfilePage() {
         setProfile(profileData);
 
         // Fetch user comments
-        const commentsResponse = await fetch('https://movie-review-site-seven.vercel.app/api/comments', {
+        const commentsResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
