@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 // Handler to get likes for a specific movie
 export async function GET(request) {
   try {
-    // Extract the URL path from request
+    // Extract film URL from the URL path
     const url = new URL(request.url);
     const filmUrl = url.pathname.split('/').pop(); // Extract the film URL
 
@@ -15,7 +15,7 @@ export async function GET(request) {
       );
     }
 
-    // Fetch movie ID using the URL
+    // Fetch movie ID using the film URL
     const movieIdResult = await sql`
       SELECT id
       FROM horrormovies
@@ -30,6 +30,7 @@ export async function GET(request) {
       );
     }
 
+    // Fetch likes for the movie
     const result = await sql`
       SELECT user_id, movie_id, genre, liked_at
       FROM likes
@@ -98,6 +99,7 @@ export async function POST(request) {
         );
       }
   
+      // Insert new like
       const result = await sql`
         INSERT INTO likes (user_id, movie_id, genre, liked_at)
         VALUES (${userId}, ${movieId}, ${genre}, NOW())
@@ -117,7 +119,7 @@ export async function POST(request) {
     }
   }
 
-// Handler to delete a like
+  // Handler to delete a like
 export async function DELETE(request) {
     try {
       // Extract the film URL and genre from the URL
