@@ -37,7 +37,7 @@ export default function ProfilePage() {
         setProfile(profileData);
 
         // Fetch user comments
-        const commentsResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
+        const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?user=${encodeURIComponent(profileData.id)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -70,7 +70,7 @@ export default function ProfilePage() {
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments/${commentId}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(commentId)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
