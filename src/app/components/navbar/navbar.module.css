@@ -31,7 +31,7 @@
     padding: 0;
 }
 
-.logbutton{
+.authButton{
     display: flex;
     color: var(--bg);
     font-size: 1.25rem;
