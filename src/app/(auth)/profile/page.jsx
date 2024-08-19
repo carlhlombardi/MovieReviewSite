@@ -53,6 +53,7 @@ const fetchComments = async (selectedMovieUrl, token) => {
 // Function to fetch liked movies
 const fetchLikedMovies = async (baseUrl, token) => {
   try {
+    // Step 1: Fetch the list of liked movies' URLs
     const response = await fetch(`${baseUrl}/api/auth/likes`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -62,12 +63,32 @@ const fetchLikedMovies = async (baseUrl, token) => {
       throw new Error(errorData.message || 'An error occurred while fetching liked movies');
     }
 
-    return await response.json();
+    const likedMoviesUrls = await response.json();
+    
+    // Log liked movie URLs
+    console.log('Liked Movies URLs:', likedMoviesUrls);
+
+    // Step 2: Fetch details for each liked movie
+    const movieDetailsPromises = likedMoviesUrls.map(async (movie) => {
+      const movieResponse = await fetch(`${baseUrl}/api/data/movieDetails?url=${encodeURIComponent(movie.url)}`);
+      if (!movieResponse.ok) {
+        throw new Error('Failed to fetch movie details');
+      }
+      return await movieResponse.json();
+    });
+
+    const moviesDetails = await Promise.all(movieDetailsPromises);
+
+    // Log detailed movie information
+    console.log('Movies Details:', moviesDetails);
+
+    return moviesDetails;
   } catch (err) {
     console.error(err);
     return [];
   }
 };
+
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
