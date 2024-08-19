@@ -230,13 +230,7 @@ export default function ProfilePage() {
                   comments.map(comment => (
                     <ListGroup.Item key={comment.id}>
                       <div>{comment.text}</div>
-                      <Button
-                        variant="danger"
-                        className="mt-2"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        Delete
-                      </Button>
+                      <div>{comment.createdat}</div>
                     </ListGroup.Item>
                   ))
                 ) : (
