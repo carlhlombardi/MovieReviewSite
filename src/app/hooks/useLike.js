@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useLike = (movieUrl, genre) => {
+const useLike = (url, genre) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
@@ -8,12 +8,12 @@ const useLike = (movieUrl, genre) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieUrl=${movieUrl}&genre=${genre}`, {
+          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${url}&genre=${genre}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
             const data = await response.json();
-            setIsLiked(data.liked || false); // Default to false if `liked` is not present
+            setIsLiked(data.length > 0); // Assuming if there are any likes, the movie is liked
           } else {
             console.error('Failed to fetch like status:', await response.text());
           }
@@ -23,10 +23,10 @@ const useLike = (movieUrl, genre) => {
       }
     };
 
-    if (movieUrl && genre) {
+    if (url && genre) {
       checkLikeStatus();
     }
-  }, [movieUrl, genre]);
+  }, [url, genre]);
 
   const likeMovie = async () => {
     const token = localStorage.getItem('token');
@@ -38,11 +38,10 @@ const useLike = (movieUrl, genre) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ movieUrl, genre }),
+          body: JSON.stringify({ url, genre }),
         });
         if (response.ok) {
-          const data = await response.json();
-          setIsLiked(data.liked || false); // Default to false if `liked` is not present
+          setIsLiked(true); // Assuming the like was successfully added
         } else {
           console.error('Failed to like movie:', await response.text());
         }
@@ -62,11 +61,10 @@ const useLike = (movieUrl, genre) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ movieUrl, genre }),
+          body: JSON.stringify({ url, genre }),
         });
         if (response.ok) {
-          const data = await response.json();
-          setIsLiked(!(data.liked || false)); // Default to false if `liked` is not present
+          setIsLiked(false); // Assuming the like was successfully removed
         } else {
           console.error('Failed to unlike movie:', await response.text());
         }
