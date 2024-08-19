@@ -8,7 +8,7 @@ import useLike from '@/app/hooks/useLike';
 
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies?url=${url}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
