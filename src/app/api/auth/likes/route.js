@@ -117,17 +117,6 @@ export async function DELETE(request) {
 
     if (!movieUrl) {
       return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Extract the authorization token from the headers
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-
-    if (!token) {
-      return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
       );
