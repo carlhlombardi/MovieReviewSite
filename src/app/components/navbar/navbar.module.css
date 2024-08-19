@@ -32,9 +32,9 @@
 }
 
 .authButton{
-    display: flex;
     color: var(--bg);
     font-size: 1.25rem;
     margin: .5rem;
     padding: .5rem;
+    border-radius: 10px;
 }
