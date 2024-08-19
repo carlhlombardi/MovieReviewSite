@@ -111,18 +111,29 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
-    // Extract URL from query parameters
+    // Extract query parameters
     const url = new URL(request.url);
+    const genre = url.searchParams.get('genre');
     const movieUrl = url.searchParams.get('url');
 
-    if (!movieUrl) {
+    if (!genre || !movieUrl) {
+      return new Response(
+        JSON.stringify({ message: 'Genre and movie URL are required' }),
+        { status: 400 }
+      );
+    }
+
+    // Extract and verify the authorization token
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
       return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
       );
     }
 
-    // Verify the JWT token and extract the user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
