@@ -3,11 +3,11 @@ import bcrypt from 'bcrypt';
 
 export async function POST(request) {
   try {
-    const { username, email, password } = await request.json();
+    const { firstname, lastname, username, email, password } = await request.json();
 
-    if (!username || !email || !password) {
+    if (!firstname || !lastname || !username || !email || !password) {
       return new Response(
-        JSON.stringify({ message: 'Username, email, and password are required' }),
+        JSON.stringify({ message: 'First Name, Last Name, User Name, email, and password are required' }),
         { status: 400 }
       );
     }
@@ -17,8 +17,8 @@ export async function POST(request) {
 
     // Insert the user into the database
     await sql`
-      INSERT INTO users (username, email, password)
-      VALUES (${username}, ${email}, ${hashedPassword});
+      INSERT INTO users (firstname, lastname, username, email, password)
+      VALUES (${firstname}, ${lastname}, ${username}, ${email}, ${hashedPassword});
     `;
 
     return new Response(

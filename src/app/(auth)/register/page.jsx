@@ -6,6 +6,8 @@ import { Form, Button, Alert } from 'react-bootstrap';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -43,6 +45,26 @@ export default function RegisterPage() {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
       <Form onSubmit={handleSubmit}>
+      <Form.Group controlId="formFirstname">
+          <Form.Label>First Name</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter First Name"
+            value={firstname}
+            onChange={(e) => setFirstname(e.target.value)}
+            required
+          />
+        </Form.Group>
+        <Form.Group controlId="formUsername">
+          <Form.Label>Last Name</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter Last Name"
+            value={lastname}
+            onChange={(e) => setLastname(e.target.value)}
+            required
+          />
+        </Form.Group>
         <Form.Group controlId="formUsername">
           <Form.Label>Username</Form.Label>
           <Form.Control
