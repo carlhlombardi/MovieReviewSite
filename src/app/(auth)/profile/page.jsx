@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, ListGroup, Form } from 'react-bootstrap';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -50,9 +50,10 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-const fetchLikedMovies = async (baseUrl, token) => {
+// Function to fetch liked movies based on user token and match with available movies
+const fetchLikedMovies = async (movies, token) => {
   try {
-    const response = await fetch(`${baseUrl}/api/auth/likes`, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -63,17 +64,10 @@ const fetchLikedMovies = async (baseUrl, token) => {
 
     const likedMoviesUrls = await response.json();
 
-    const movieDetailsPromises = likedMoviesUrls.map(async (movie) => {
-      const movieResponse = await fetch(`${baseUrl}/api/data/movieDetails?url=${encodeURIComponent(movie.url)}`);
-      if (!movieResponse.ok) {
-        throw new Error('Failed to fetch movie details');
-      }
-      return await movieResponse.json();
-    });
+    // Find movies that match the liked movie URLs
+    const likedMovies = movies.filter(movie => likedMoviesUrls.includes(movie.url));
 
-    const moviesDetails = await Promise.all(movieDetailsPromises);
-
-    return moviesDetails;
+    return likedMovies;
   } catch (err) {
     console.error(err);
     return [];
@@ -125,8 +119,8 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Fetch liked movies with detailed information
-        const likedMoviesData = await fetchLikedMovies(baseUrl, token);
+        // Fetch liked movies and filter them
+        const likedMoviesData = await fetchLikedMovies(moviesData, token);
         setLikedMovies(likedMoviesData);
 
         // Initialize filteredMovies to all movies first
@@ -227,6 +221,24 @@ export default function ProfilePage() {
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-4">
+            <Card.Header as="h5">Your Liked Movies</Card.Header>
+            <Card.Body>
+              {likedMovies.length > 0 ? (
+                <ListGroup>
+                  {likedMovies.map((movie) => (
+                    <ListGroup.Item key={movie.url}>
+                      <strong>{movie.film}</strong>
+                      <p>{movie.description}</p>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              ) : (
+                <p>You have not liked any movies yet.</p>
+              )}
             </Card.Body>
           </Card>
 
