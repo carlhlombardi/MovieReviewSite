@@ -230,7 +230,7 @@ export default function ProfilePage() {
                   comments.map(comment => (
                     <ListGroup.Item key={comment.id}>
                       <div>{comment.text}</div>
-                      <div>{comment.createdat}</div>
+                      <div>{formatDate(comment.createdat)}</div>
                     </ListGroup.Item>
                   ))
                 ) : (
