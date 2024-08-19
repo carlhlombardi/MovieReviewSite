@@ -11,26 +11,6 @@ const NavbarComponent = () => {
   const [show, setShow] = useState(false);
   const { isLoggedIn, setIsLoggedIn } = useAuth();
 
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setIsLoggedIn(response.ok);
-        } catch {
-          setIsLoggedIn(false);
-        }
-      } else {
-        setIsLoggedIn(false);
-      }
-    };
-
-    checkLoginStatus();
-  }, [setIsLoggedIn]);
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
