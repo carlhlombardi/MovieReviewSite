@@ -45,6 +45,14 @@ export default function ProfilePage() {
     fetchProfile();
   }, [router]);
 
+    // Function to format the date
+    const formatDate = (dateString) => {
+      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+      const date = new Date(dateString);
+      return date.toLocaleDateString(undefined, options);
+    };
+
+
   if (isLoading) {
     return (
       <div className="container mt-5 text-center">
@@ -72,7 +80,7 @@ export default function ProfilePage() {
               <strong>Email:</strong> {profile.email}
             </Card.Text>
             <Card.Text>
-              <strong>Date Joined:</strong> {profile.date_joined}
+              <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
             </Card.Text>
           </Card.Body>
         </Card>
