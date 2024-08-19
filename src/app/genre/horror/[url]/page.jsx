@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
@@ -8,15 +6,14 @@ import useLike from '@/app/hooks/useLike';
 
 const fetchData = async (url) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies?url=${url}`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
     const data = await response.json();
-    const filteredData = data.filter(item => item.url === url);
-    return filteredData.length > 0 ? filteredData[0] : null;
+    return data.length > 0 ? data[0] : null;
   } catch (error) {
-    console.error(error);
+    console.error('Fetch data error:', error);
     return null;
   }
 };
@@ -44,12 +41,12 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
 
-  const { isLiked, checkLikeStatus, likeMovie, unlikeMovie } = useLike(params.url, 'Horror'); // Use the correct genre here
+  const { isLiked, checkLikeStatus, likeMovie, unlikeMovie } = useLike(params.url, 'Horror'); // Use `params.url` for the movie URL
 
   useEffect(() => {
     const fetchDataAsync = async () => {
       try {
-        const result = await fetchData(params.url);
+        const result = await fetchData(params.url); // Fetch movie data by `url`
         setData(result);
 
         const loggedIn = await checkUserLoggedIn();
@@ -78,9 +75,9 @@ const HorrorPostPage = ({ params }) => {
     }
 
     if (isLiked) {
-      await unlikeMovie(token);
+      await unlikeMovie();
     } else {
-      await likeMovie(token);
+      await likeMovie();
     }
   };
 

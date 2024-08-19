@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useLike = (slug, genre) => {
+const useLike = (movieUrl, genre) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
@@ -8,12 +8,12 @@ const useLike = (slug, genre) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/likes?id=${slug}&genre=${genre}`, {
+          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieUrl=${movieUrl}&genre=${genre}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
             const data = await response.json();
-            setIsLiked(data.length > 0); // Set `isLiked` based on the response
+            setIsLiked(data.liked || false); // Default to false if `liked` is not present
           } else {
             console.error('Failed to fetch like status:', await response.text());
           }
@@ -23,26 +23,26 @@ const useLike = (slug, genre) => {
       }
     };
 
-    if (slug && genre) {
+    if (movieUrl && genre) {
       checkLikeStatus();
     }
-  }, [slug, genre]);
+  }, [movieUrl, genre]);
 
   const likeMovie = async () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/likes', {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ slug, genre }),
+          body: JSON.stringify({ movieUrl, genre }),
         });
         if (response.ok) {
           const data = await response.json();
-          setIsLiked(true); // Set `isLiked` to true
+          setIsLiked(data.liked || false); // Default to false if `liked` is not present
         } else {
           console.error('Failed to like movie:', await response.text());
         }
@@ -56,17 +56,17 @@ const useLike = (slug, genre) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/likes', {
+        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ slug, genre }),
+          body: JSON.stringify({ movieUrl, genre }),
         });
         if (response.ok) {
           const data = await response.json();
-          setIsLiked(false); // Set `isLiked` to false
+          setIsLiked(!(data.liked || false)); // Default to false if `liked` is not present
         } else {
           console.error('Failed to unlike movie:', await response.text());
         }
