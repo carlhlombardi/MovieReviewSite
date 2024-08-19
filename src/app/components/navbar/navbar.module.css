@@ -35,7 +35,6 @@
     display: flex;
     color: var(--bg);
     font-size: 1.25rem;
-    align-items: center;
     margin: .5rem;
     padding: .5rem;
 }
