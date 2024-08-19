@@ -71,6 +71,9 @@ export default function ProfilePage() {
             <Card.Text>
               <strong>Email:</strong> {profile.email}
             </Card.Text>
+            <Card.Text>
+              <strong>Date Joined:</strong> {profile.date_joined}
+            </Card.Text>
           </Card.Body>
         </Card>
       )}
