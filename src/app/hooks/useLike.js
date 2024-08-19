@@ -5,7 +5,7 @@ const useLike = (movieId, genre) => {
 
   const checkLikeStatus = async (token) => {
     try {
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieId=${id}&genre=${genre}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?movieId=${movieId}&genre=${genre}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
