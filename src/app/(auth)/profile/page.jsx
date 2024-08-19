@@ -63,7 +63,7 @@ export default function ProfilePage() {
           <Card.Header as="h5">Profile Details</Card.Header>
           <Card.Body>
           <Card.Text>
-              <strong>Name:</strong> {profile.firstname}<></>{profile.lastname}
+              <strong>Name:</strong> {profile.firstname}{profile.lastname}
             </Card.Text>
             <Card.Text>
               <strong>User Name:</strong> {profile.username}
