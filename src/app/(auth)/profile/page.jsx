@@ -129,7 +129,6 @@ export default function ProfilePage() {
     fetchComments();
   }, [selectedMovieUrl, router]);
 
-  // Function to format the date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
     const date = new Date(dateString);
@@ -139,7 +138,7 @@ export default function ProfilePage() {
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(commentId)}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(url)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -199,7 +198,7 @@ export default function ProfilePage() {
               >
                 <option value="">Select a movie</option>
                 {filteredMovies.map((movie) => (
-                  <option key={movie.url} value={movie.url}>{movie.film}</option>
+                  <option key={movie.url} value={movie.url}>{movie.title}</option>
                 ))}
               </Form.Control>
             </Card.Body>
