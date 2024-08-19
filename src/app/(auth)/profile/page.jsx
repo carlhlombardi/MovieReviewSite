@@ -208,27 +208,6 @@ export default function ProfilePage() {
             </Card.Body>
           </Card>
 
-          <Card className="mb-4">
-            <Card.Header as="h5">Your Liked Movies</Card.Header>
-            <Card.Body>
-              <div className="d-flex flex-wrap">
-                {likedMovies.length > 0 ? (
-                  likedMovies.map((movie) => (
-                    <Card key={movie.id} className="m-2" style={{ width: '18rem' }}>
-                      <Card.Img variant="top" src={movie.imageUrl} />
-                      <Card.Body>
-                        <Card.Title>{movie.title}</Card.Title>
-                        <Button variant="primary" href={movie.url}>View Details</Button>
-                      </Card.Body>
-                    </Card>
-                  ))
-                ) : (
-                  <p>You have no liked movies.</p>
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-
           <Card>
             <Card.Header as="h5">Comments</Card.Header>
             <Card.Body>
