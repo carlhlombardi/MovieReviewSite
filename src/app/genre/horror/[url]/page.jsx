@@ -6,20 +6,22 @@ import Image from 'next/image';
 import Comments from '@/app/components/comments/comments';
 import useLike from '@/app/hooks/useLike';
 
+// Function to fetch data for a specific movie URL
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/movieDetails?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
     const data = await response.json();
-    return data.length > 0 ? data[0] : null;
+    return data;
   } catch (error) {
     console.error('Fetch data error:', error);
     return null;
   }
 };
 
+// Function to check if the user is logged in
 const checkUserLoggedIn = async () => {
   try {
     const token = localStorage.getItem('token');
