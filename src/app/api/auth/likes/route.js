@@ -1,42 +1,17 @@
-// Import dependencies
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Helper function to get movie ID by URL
-const getMovieIdByUrl = async (movieUrl) => {
-  try {
-    const result = await sql`
-      SELECT id
-      FROM movies
-      WHERE url = ${movieUrl};
-    `;
-    return result.rows[0]?.id;
-  } catch (error) {
-    console.error('Error fetching movie ID by URL:', error);
-    throw new Error('Failed to fetch movie ID');
-  }
-};
-
-// Handler to get likes for a specific movie by URL
+// Handler to get likes for a specific movie
 export async function GET(request) {
   try {
     // Extract URL from query parameters
     const url = new URL(request.url);
-    const movieUrl = url.searchParams.get('url');
+    const movieId = url.searchParams.get('movieId');
 
-    if (!movieUrl) {
-      return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Get the movie ID by URL
-    const movieId = await getMovieIdByUrl(movieUrl);
     if (!movieId) {
       return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
+        JSON.stringify({ message: 'Movie ID is required' }),
+        { status: 400 }
       );
     }
 
@@ -63,7 +38,7 @@ export async function GET(request) {
 // Handler to add a new like
 export async function POST(request) {
   try {
-    const { url, genre } = await request.json();
+    const { movieId, genre } = await request.json();
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -77,19 +52,25 @@ export async function POST(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    // Get the movie ID by URL
-    const movieId = await getMovieIdByUrl(url);
-    if (!movieId) {
+    // Check if the like already exists
+    const existingLike = await sql`
+      SELECT user_id
+      FROM likes
+      WHERE user_id = ${userId}
+      AND movie_id = ${movieId}
+      AND genre = ${genre};
+    `;
+
+    if (existingLike.rowCount > 0) {
       return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
+        JSON.stringify({ message: 'Already liked' }),
+        { status: 400 }
       );
     }
 
     const result = await sql`
       INSERT INTO likes (user_id, movie_id, genre, liked_at)
       VALUES (${userId}, ${movieId}, ${genre}, NOW())
-      ON CONFLICT (user_id, movie_id, genre) DO NOTHING
       RETURNING user_id, movie_id, genre, liked_at;
     `;
 
@@ -111,12 +92,12 @@ export async function DELETE(request) {
   try {
     // Extract the query parameters
     const url = new URL(request.url);
+    const movieId = url.searchParams.get('movieId');
     const genre = url.searchParams.get('genre');
-    const movieUrl = url.searchParams.get('url');
 
-    if (!movieUrl || !genre) {
+    if (!movieId || !genre) {
       return new Response(
-        JSON.stringify({ message: 'Movie URL and genre are required' }),
+        JSON.stringify({ message: 'Movie ID and genre are required' }),
         { status: 400 }
       );
     }
@@ -135,15 +116,6 @@ export async function DELETE(request) {
     // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-
-    // Get the movie ID by URL
-    const movieId = await getMovieIdByUrl(movieUrl);
-    if (!movieId) {
-      return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
-      );
-    }
 
     // Check if the like exists and belongs to the user
     const likeResult = await sql`
