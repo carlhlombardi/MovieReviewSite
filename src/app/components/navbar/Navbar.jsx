@@ -48,13 +48,13 @@ const NavbarComponent = () => {
           <div className={styles.authButtons}>
             {isLoggedIn ? (
                <>
-              <button onClick={handleProfile}>Profile</button>
-              <button onClick={handleLogout}>Logout</button>
+              <button className={styles.authButtonsButton} onClick={handleProfile}>Profile</button>
+              <button className={styles.authButtonsButton} onClick={handleLogout}>Logout</button>
               </>
             ) : (
               <>
-                <button onClick={handleLogin}>Login</button>
-                <button onClick={handleRegister}>Register</button>
+                <button className={styles.authButtonsButton} onClick={handleLogin}>Login</button>
+                <button className={styles.authButtonsButton} onClick={handleRegister}>Register</button>
               </>
             )}
           </div>
@@ -71,13 +71,13 @@ const NavbarComponent = () => {
           <div className={styles.authButtons}>
             {isLoggedIn ? (
               <>
-              <button onClick={handleProfile}>Profile</button>
-              <button onClick={handleLogout}>Logout</button> 
+              <button className={styles.authButtonsButton} onClick={handleProfile}>Profile</button>
+              <button className={styles.authButtonsButton} onClick={handleLogout}>Logout</button> 
               </>
             ) : (
               <>
-                <button onClick={handleLogin}>Login</button>
-                <button onClick={handleRegister}>Register</button>
+                <button className={styles.authButtonsButton} onClick={handleLogin}>Login</button>
+                <button className={styles.authButtonsButton} onClick={handleRegister}>Register</button>
               </>
             )}
           </div>
