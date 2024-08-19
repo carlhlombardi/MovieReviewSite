@@ -179,7 +179,7 @@ export default function ProfilePage() {
               >
                 <option value="">Select a movie</option>
                 {movies.map((movie) => (
-                  <option key={movie.url} value={movie.url}>{movie.title}</option>
+                  <option key={movie.url} value={movie.url}>{movie.film}</option>
                 ))}
               </Form.Control>
             </Card.Body>
