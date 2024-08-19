@@ -19,7 +19,7 @@ export async function GET(request) {
 
     // Query the database for the user by userId
     const result = await sql`
-      SELECT username, email
+      SELECT username, email, firstname
       FROM users
       WHERE id = ${userId};
     `;
