@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
 import Comments from '@/app/components/comments/comments';
+import useLike from '@/app/hooks/useLike';
 
 const fetchData = async (url) => {
   try {
@@ -36,11 +37,14 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-const Page = ({ params }) => {
+const HorrorPostPage = ({ params }) => {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState(null);
+
+  const { isLiked, checkLikeStatus, likeMovie, unlikeMovie } = useLike(params.url, 'Genre'); // Use the correct genre here
 
   useEffect(() => {
     const fetchDataAsync = async () => {
@@ -48,9 +52,14 @@ const Page = ({ params }) => {
         const result = await fetchData(params.url);
         setData(result);
 
-        // Check if the user is logged in
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
+
+        if (loggedIn) {
+          const token = localStorage.getItem('token');
+          setToken(token);
+          await checkLikeStatus(token);
+        }
       } catch (err) {
         setError('Failed to load data');
         console.error(err);
@@ -60,7 +69,20 @@ const Page = ({ params }) => {
     };
 
     fetchDataAsync();
-  }, [params.url]);
+  }, [params.url, checkLikeStatus]);
+
+  const handleLike = async () => {
+    if (!isLoggedIn) {
+      alert('You need to be logged in to like a movie.');
+      return;
+    }
+
+    if (isLiked) {
+      await unlikeMovie(token);
+    } else {
+      await likeMovie(token);
+    }
+  };
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -100,6 +122,14 @@ const Page = ({ params }) => {
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
+          {isLoggedIn && (
+            <Button 
+              variant={isLiked ? 'danger' : 'primary'}
+              onClick={handleLike}
+            >
+              {isLiked ? 'Unlike' : 'Like'}
+            </Button>
+          )}
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-3">
           <h2 className='mb-4'>The Stats</h2>
@@ -127,4 +157,4 @@ const Page = ({ params }) => {
   );
 };
 
-export default Page;
+export default HorrorPostPage;
