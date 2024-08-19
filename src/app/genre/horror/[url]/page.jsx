@@ -44,7 +44,7 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
 
-  const { isLiked, checkLikeStatus, likeMovie, unlikeMovie } = useLike(params.url, 'Genre'); // Use the correct genre here
+  const { isLiked, checkLikeStatus, likeMovie, unlikeMovie } = useLike(params.url, 'Horror'); // Use the correct genre here
 
   useEffect(() => {
     const fetchDataAsync = async () => {
