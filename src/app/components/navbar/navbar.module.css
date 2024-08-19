@@ -46,8 +46,10 @@
   .authButtonsButton {
     color: white;
     background-color: var(--bg);
-    font-size: 1.25rem;
-    border-radius: 10px;
+    font-size: 1.3rem;
+    border-radius: 5px;
+    padding: .5rem;
+    border: 2px solid white;
   }
   
   @media (max-width: 992px) {
