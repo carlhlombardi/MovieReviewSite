@@ -9,7 +9,7 @@ import useLike from '@/app/hooks/useLike';
 // Function to fetch data for a specific movie URL
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/movieDetails?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
