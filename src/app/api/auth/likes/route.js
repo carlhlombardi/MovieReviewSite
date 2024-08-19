@@ -7,7 +7,7 @@ export async function GET(request) {
   try {
     // Extract URL from query parameters
     const url = new URL(request.url);
-    const id = url.searchParams.get('id');
+    const movieId = url.searchParams.get('movie_id');
 
     if (!movieId) {
       return new Response(
@@ -19,7 +19,7 @@ export async function GET(request) {
     const result = await sql`
       SELECT user_id, movie_id, genre, liked_at
       FROM likes
-      WHERE movie_id = ${id}
+      WHERE movie_id = ${movieId}
       ORDER BY liked_at DESC;
     `;
 
@@ -78,7 +78,7 @@ export async function DELETE(request) {
   try {
     // Extract the query parameters
     const url = new URL(request.url);
-    const movieId = url.searchParams.get('id');
+    const movieId = url.searchParams.get('movieId');
     const genre = url.searchParams.get('genre');
 
     if (!movieId || !genre) {
@@ -108,7 +108,7 @@ export async function DELETE(request) {
       SELECT user_id
       FROM likes
       WHERE user_id = ${userId}
-      AND movie_id = ${id}
+      AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
     const like = likeResult.rows[0];
