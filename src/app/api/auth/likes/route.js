@@ -111,14 +111,13 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
-    // Extract the query parameters
+    // Extract URL from query parameters
     const url = new URL(request.url);
-    const genre = url.searchParams.get('genre');
     const movieUrl = url.searchParams.get('url');
 
-    if (!genre || !movieUrl) {
+    if (!movieUrl) {
       return new Response(
-        JSON.stringify({ message: 'Genre and movie URL are required' }),
+        JSON.stringify({ message: 'Movie URL is required' }),
         { status: 400 }
       );
     }
