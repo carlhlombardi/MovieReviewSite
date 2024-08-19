@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Navbar, Container, Offcanvas, Nav, Button } from 'react-bootstrap';
+import { Navbar, Container, Offcanvas, Button } from 'react-bootstrap';
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
 import styles from './navbar.module.css';
@@ -33,6 +33,18 @@ const NavbarComponent = () => {
     };
 
     checkLoginStatus();
+    
+    // Add an event listener to listen for `storage` events
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Cleanup the event listener
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const handleClose = () => setShow(false);
@@ -57,8 +69,8 @@ const NavbarComponent = () => {
       <Container>
         <Navbar.Brand href="/">
           <Image
-            src="/images/logo/logo.png" // Use the image URL directly from the database
-            alt="Logo" // Alt text for accessibility
+            src="/images/logo/logo.png"
+            alt="Logo"
             width={160}
             height={80}
             className="img-fluid"
