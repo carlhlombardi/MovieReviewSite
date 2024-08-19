@@ -117,7 +117,7 @@ const likedMoviesData = await Promise.all(moviesData.map(movie => fetchLikedStat
 // Filter movies based on liked status
 const likedMovieUrls = new Set(likedMoviesData.filter(status => status.liked === 'yes').map((_, index) => moviesData[index].url));
 const filteredLikedMovies = moviesData.filter(movie => likedMovieUrls.has(movie.url));
-setLikedMovies(filteredLikedMovies);
+setLikedMovies(filteredLikedMovies)
 
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
