@@ -1,59 +1,10 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Handler to get likes for a specific movie
-export async function GET(request) {
-  try {
-    const url = new URL(request.url);
-    const filmUrl = url.searchParams.get('url'); // Extract film URL from query parameters
-
-    if (!filmUrl) {
-      return new Response(
-        JSON.stringify({ message: 'URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Fetch movie ID using the film URL
-    const movieIdResult = await sql`
-      SELECT id
-      FROM horrormovies
-      WHERE url = ${filmUrl}
-    `;
-    const movieId = movieIdResult.rows[0]?.id;
-
-    if (!movieId) {
-      return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
-      );
-    }
-
-    // Fetch likes for the movie
-    const result = await sql`
-      SELECT user_id, movie_id, genre, liked_at
-      FROM likes
-      WHERE movie_id = ${movieId}
-      ORDER BY liked_at DESC;
-    `;
-
-    return new Response(
-      JSON.stringify(result.rows),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Fetch likes error:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to fetch likes' }),
-      { status: 500 }
-    );
-  }
-}
-
 // Handler to add a new like
 export async function POST(request) {
   try {
-    const { url, genre } = await request.json(); // Use url instead of filmUrl
+    const { url, genre } = await request.json(); // Use URL and genre from the request body
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -64,8 +15,9 @@ export async function POST(request) {
       );
     }
 
+    // Verify the JWT token and extract the user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    const username = decoded.username; // Assume username is in the token payload
 
     // Fetch movie ID using the film URL
     const movieIdResult = await sql`
@@ -86,7 +38,7 @@ export async function POST(request) {
     const existingLike = await sql`
       SELECT user_id
       FROM likes
-      WHERE user_id = ${userId}
+      WHERE user_id = ${username}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
@@ -101,7 +53,7 @@ export async function POST(request) {
     // Insert new like
     const result = await sql`
       INSERT INTO likes (user_id, movie_id, genre, liked_at)
-      VALUES (${userId}, ${movieId}, ${genre}, NOW())
+      VALUES (${username}, ${movieId}, ${genre}, NOW())
       RETURNING user_id, movie_id, genre, liked_at;
     `;
 
@@ -121,9 +73,8 @@ export async function POST(request) {
 // Handler to delete a like
 export async function DELETE(request) {
   try {
-    // Extract film URL and genre from query parameters
     const url = new URL(request.url);
-    const filmUrl = url.searchParams.get('url');
+    const filmUrl = url.searchParams.get('url'); // Extract film URL from query parameters
     const genre = url.searchParams.get('genre');
 
     if (!filmUrl || !genre) {
@@ -132,6 +83,21 @@ export async function DELETE(request) {
         { status: 400 }
       );
     }
+
+    // Extract the authorization token from the headers
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    // Verify the JWT token and extract the user info
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const username = decoded.username; // Assume username is in the token payload
 
     // Fetch movie ID using the film URL
     const movieIdResult = await sql`
@@ -148,31 +114,11 @@ export async function DELETE(request) {
       );
     }
 
-    // Extract the authorization token from the headers
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
-      );
-    }
-
-    // Verify the JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    // Log extracted values for debugging
-    console.log(`User ID: ${userId}`);
-    console.log(`Movie ID: ${movieId}`);
-    console.log(`Genre: ${genre}`);
-
     // Check if the like exists and belongs to the user
     const likeResult = await sql`
       SELECT user_id
       FROM likes
-      WHERE user_id = ${userId}
+      WHERE user_id = ${username}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
@@ -185,19 +131,13 @@ export async function DELETE(request) {
       );
     }
 
-    // Log before deletion
-    console.log('Deleting like:', { user_id: userId, movie_id: movieId, genre: genre });
-
     // Delete the like from the database
-    const deleteResult = await sql`
+    await sql`
       DELETE FROM likes
-      WHERE user_id = ${userId}
+      WHERE user_id = ${username}
       AND movie_id = ${movieId}
       AND genre = ${genre};
     `;
-
-    // Log deletion result
-    console.log('Delete result:', deleteResult);
 
     return new Response(
       JSON.stringify({ message: 'Like deleted' }),
