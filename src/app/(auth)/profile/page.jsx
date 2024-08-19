@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, ListGroup, Form, Image } from 'react-bootstrap';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -50,9 +50,29 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
+// Function to fetch liked movies
+const fetchLikedMovies = async (token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An error occurred while fetching liked movies');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
@@ -88,6 +108,10 @@ export default function ProfilePage() {
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
+
+        // Fetch liked movies
+        const likedMoviesData = await fetchLikedMovies(token);
+        setLikedMovies(likedMoviesData);
 
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
@@ -222,6 +246,32 @@ export default function ProfilePage() {
             </Card.Body>
           </Card>
 
+          <Card className="mb-4">
+            <Card.Header as="h5">Your Liked Movies</Card.Header>
+            <Card.Body>
+              <div className="d-flex flex-wrap">
+                {likedMovies.length > 0 ? (
+                  likedMovies.map(movie => (
+                    <Card key={movie.url} style={{ width: '150px', margin: '10px' }}>
+                      <Image 
+                        src={movie.image_url} 
+                        alt={movie.film} 
+                        width={150} 
+                        height={225} 
+                        className="card-img-top" 
+                      />
+                      <Card.Body>
+                        <Card.Title>{movie.film}</Card.Title>
+                      </Card.Body>
+                    </Card>
+                  ))
+                ) : (
+                  <Alert variant="info">No liked movies found.</Alert>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+
           <Card>
             <Card.Header as="h5">Your Comments</Card.Header>
             <Card.Body>
@@ -231,6 +281,7 @@ export default function ProfilePage() {
                     <ListGroup.Item key={comment.id}>
                       <div>{comment.text}</div>
                       <div>{formatDate(comment.createdat)}</div>
+                      <Button variant="danger" onClick={() => handleDeleteComment(comment.id)}>Delete</Button>
                     </ListGroup.Item>
                   ))
                 ) : (
