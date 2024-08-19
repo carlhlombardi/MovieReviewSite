@@ -29,12 +29,34 @@ const fetchMovies = async () => {
   }
 };
 
+// Function to fetch comments for a movie
+const fetchComments = async (selectedMovieUrl, token) => {
+  try {
+    if (!selectedMovieUrl) return [];
+
+    const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!commentsResponse.ok) {
+      const errorData = await commentsResponse.json();
+      throw new Error(errorData.message || 'An error occurred while fetching comments');
+    }
+
+    return await commentsResponse.json();
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
+  const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const router = useRouter();
 
@@ -66,6 +88,9 @@ export default function ProfilePage() {
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
+
+        // Initialize filteredMovies to all movies first
+        setFilteredMovies(moviesData);
       } catch (err) {
         setError('An error occurred');
         router.push('/login');
@@ -78,7 +103,29 @@ export default function ProfilePage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchComments = async () => {
+    const fetchFilteredMovies = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        // Fetch comments for each movie and filter movies with comments
+        const moviesWithComments = await Promise.all(movies.map(async (movie) => {
+          const commentsData = await fetchComments(movie.url, token);
+          return { ...movie, hasComments: commentsData.length > 0 };
+        }));
+
+        // Filter movies that have comments
+        setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
+      } catch (err) {
+        setError('An error occurred while fetching comments');
+      }
+    };
+
+    fetchFilteredMovies();
+  }, [movies]);
+
+  useEffect(() => {
+    const fetchCommentsForSelectedMovie = async () => {
       if (!selectedMovieUrl) return;
 
       try {
@@ -89,24 +136,14 @@ export default function ProfilePage() {
           return;
         }
 
-        const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!commentsResponse.ok) {
-          const errorData = await commentsResponse.json();
-          setError(errorData.message || 'An error occurred');
-          return;
-        }
-
-        const commentsData = await commentsResponse.json();
+        const commentsData = await fetchComments(selectedMovieUrl, token);
         setComments(commentsData);
       } catch (err) {
         setError('An error occurred while fetching comments');
       }
     };
 
-    fetchComments();
+    fetchCommentsForSelectedMovie();
   }, [selectedMovieUrl, router]);
 
   // Function to format the date
@@ -178,7 +215,7 @@ export default function ProfilePage() {
                 onChange={(e) => setSelectedMovieUrl(e.target.value)}
               >
                 <option value="">Select a movie</option>
-                {movies.map((movie) => (
+                {filteredMovies.map((movie) => (
                   <option key={movie.url} value={movie.url}>{movie.film}</option>
                 ))}
               </Form.Control>
