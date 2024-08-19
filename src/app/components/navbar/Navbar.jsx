@@ -19,6 +19,7 @@ const NavbarComponent = () => {
 
   const handleLogin = () => window.location.href = '/login';
   const handleRegister = () => window.location.href = '/register';
+  const handleProfile = () => window.location.href = '/profile';
 
   return (
     <Navbar expand="lg" className="navbar-dark">
@@ -63,7 +64,10 @@ const NavbarComponent = () => {
           <Links handleClose={() => setShow(false)} />
           <div className={styles.authButtons}>
             {isLoggedIn ? (
+              <>
               <button onClick={handleLogout} className={styles.authButton}>Logout</button>
+              <button onClick={handleProfile} className={styles.authButton}>Profile</button>
+              </>
             ) : (
               <>
                 <button onClick={handleLogin} className={`${styles.authButton} me-2`}>Login</button>
