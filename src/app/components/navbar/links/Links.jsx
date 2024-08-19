@@ -31,18 +31,6 @@ const Links = ({ handleClose }) => {
     { title: 'Sci-Fi', path: '/genre/sci-fi' },
   ];
 
-  useEffect(() => {
-    const handleRouteChange = (url) => {
-      setActiveLink(url);
-    };
-
-    router.events.on('routeChangeComplete', handleRouteChange);
-
-    return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router]);
-
   const handleLinkClick = (path) => {
     setActiveLink(path);
     router.push(path);
