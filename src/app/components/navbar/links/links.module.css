@@ -34,7 +34,7 @@
   
     .genreDropdown {
       display: block; /* Show on desktop */
-      border: 2px solid white;
+      border-bottom: 2px solid white;
       padding: 5px;
       border-radius: 5px;
     }
