@@ -50,46 +50,23 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-const fetchLikedMovies = async (movies, token) => {
+const fetchLikedStatus = async (movieUrl, token) => {
   try {
-    // Extract movie URLs from the movie objects
-    const movieUrls = movies.map(movie => movie.url);
-
-    // Fetch liked status for each movie URL
-    const responses = await Promise.all(movieUrls.map(url =>
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    ));
-
-    // Parse the responses
-    const results = await Promise.all(responses.map(response => response.json()));
-    
-    // Debugging: Log raw API results
-    console.log('API Results:', results);
-
-    // Check if results is an array and handle it accordingly
-    if (!Array.isArray(results)) {
-      console.error('Unexpected API result format:', results);
-      return [];
-    }
-
-    // Create a map of movie IDs to their liked status
-    const likedMovies = new Map();
-    results.forEach(result => {
-      if (result.liked === 'yes') {
-        likedMovies.set(result.movie_id, true);
-      }
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    // Filter the movies to include only those with IDs in the likedMovies map
-    return movies.filter(movie => likedMovies.has(movie.id));
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An error occurred while fetching liked status');
+    }
+
+    return await response.json();
   } catch (err) {
-    console.error('Error fetching liked movies:', err);
-    return [];
+    console.error('Error fetching liked status:', err);
+    return { liked: 'no' }; // Default to 'no' if there's an error
   }
 };
-
 
 
 export default function ProfilePage() {
@@ -134,12 +111,13 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Fetch liked movie URLs
-        const likedMoviesUrls = await fetchLikedMovies(token);
+// Fetch liked status for each movie
+const likedMoviesData = await Promise.all(moviesData.map(movie => fetchLikedStatus(movie.url, token)));
 
-        // Filter movies based on liked movie URLs
-        const likedMoviesData = moviesData.filter(movie => likedMoviesUrls.includes(movie.url));
-        setLikedMovies(likedMoviesData);
+// Filter movies based on liked status
+const likedMovieUrls = new Set(likedMoviesData.filter(status => status.liked === 'yes').map((_, index) => moviesData[index].url));
+const filteredLikedMovies = moviesData.filter(movie => likedMovieUrls.has(movie.url));
+setLikedMovies(filteredLikedMovies);
 
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
