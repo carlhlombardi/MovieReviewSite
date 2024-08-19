@@ -50,12 +50,10 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-// Function to fetch liked movies based on user token and match with available movies
-const fetchLikedMovies = async (selectedMovieUrl, token) => {
+// Function to fetch liked movies based on user token
+const fetchLikedMovies = async (token) => {
   try {
-    if (!selectedMovieUrl) return [];
-    
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(selectedMovieUrl)}`, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -65,11 +63,7 @@ const fetchLikedMovies = async (selectedMovieUrl, token) => {
     }
 
     const likedMoviesUrls = await response.json();
-
-    // Find movies that match the liked movie URLs
-    const likedMovies = movies.filter(movie => likedMoviesUrls.includes(movie.url));
-
-    return likedMovies;
+    return likedMoviesUrls;
   } catch (err) {
     console.error(err);
     return [];
@@ -121,8 +115,11 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Fetch liked movies and filter them
-        const likedMoviesData = await fetchLikedMovies(moviesData, token);
+        // Fetch liked movie URLs
+        const likedMoviesUrls = await fetchLikedMovies(token);
+
+        // Filter movies based on liked movie URLs
+        const likedMoviesData = moviesData.filter(movie => likedMoviesUrls.includes(movie.url));
         setLikedMovies(likedMoviesData);
 
         // Initialize filteredMovies to all movies first
