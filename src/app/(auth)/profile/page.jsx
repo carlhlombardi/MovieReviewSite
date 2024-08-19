@@ -2,17 +2,44 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Button, ListGroup } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, ListGroup, Form } from 'react-bootstrap';
+
+// Function to fetch movies from multiple endpoints
+const fetchMovies = async () => {
+  try {
+    const endpoints = [
+      'https://movie-review-site-seven.vercel.app/api/data/actionmovies',
+      'https://movie-review-site-seven.vercel.app/api/data/classicmovies',
+      'https://movie-review-site-seven.vercel.app/api/data/comedymovies',
+      'https://movie-review-site-seven.vercel.app/api/data/documentarymovies',
+      'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
+      'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
+      'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
+      // Add other endpoints here
+    ];
+
+    const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
+    const moviesArrays = await Promise.all(responses.map(response => response.json()));
+    const movies = moviesArrays.flat(); // Combine arrays into a single array
+
+    return movies;
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+    return [];
+  }
+};
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [movies, setMovies] = useState([]);
+  const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const router = useRouter();
 
   useEffect(() => {
-    const fetchProfileAndComments = async () => {
+    const fetchProfileAndMovies = async () => {
       try {
         const token = localStorage.getItem('token');
 
@@ -36,8 +63,33 @@ export default function ProfilePage() {
         const profileData = await profileResponse.json();
         setProfile(profileData);
 
-        // Fetch comments made by the user
-        const commentsResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
+        // Fetch movies from multiple endpoints
+        const moviesData = await fetchMovies();
+        setMovies(moviesData);
+      } catch (err) {
+        setError('An error occurred');
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileAndMovies();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!selectedMovieUrl) return;
+
+      try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -48,19 +100,14 @@ export default function ProfilePage() {
         }
 
         const commentsData = await commentsResponse.json();
-        // Filter comments to ensure they belong to the logged-in user
-        const userComments = commentsData.filter(comment => comment.username === profileData.username);
-        setComments(userComments);
+        setComments(commentsData);
       } catch (err) {
-        setError('An error occurred');
-        router.push('/login');
-      } finally {
-        setIsLoading(false);
+        setError('An error occurred while fetching comments');
       }
     };
 
-    fetchProfileAndComments();
-  }, [router]);
+    fetchComments();
+  }, [selectedMovieUrl, router]);
 
   // Function to format the date
   const formatDate = (dateString) => {
@@ -83,7 +130,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // Update comments list after deletion
       setComments(comments.filter(comment => comment.id !== commentId));
     } catch (err) {
       setError('An error occurred while deleting the comment');
@@ -118,8 +164,24 @@ export default function ProfilePage() {
                 <strong>Email:</strong> {profile.email}
               </Card.Text>
               <Card.Text>
-                <strong>Member Since:</strong> {formatDate(profile.date_joined)}
+                <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-4">
+            <Card.Header as="h5">Select Movie to View Comments</Card.Header>
+            <Card.Body>
+              <Form.Control
+                as="select"
+                value={selectedMovieUrl}
+                onChange={(e) => setSelectedMovieUrl(e.target.value)}
+              >
+                <option value="">Select a movie</option>
+                {movies.map((movie) => (
+                  <option key={movie.url} value={movie.url}>{movie.title}</option>
+                ))}
+              </Form.Control>
             </Card.Body>
           </Card>
 
