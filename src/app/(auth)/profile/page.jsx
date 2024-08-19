@@ -50,25 +50,26 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-// Function to fetch liked movies based on user token
-const fetchLikedMovies = async (token) => {
-  try {    
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+const fetchLikedMovies = async (movies, token) => {
+  try {
+    const movieUrls = movies.map(movie => movie.url);
+    const responses = await Promise.all(movieUrls.map(url =>
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    ));
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'An error occurred while fetching liked movies');
-    }
-
-    const likedMoviesUrls = await response.json();
-    return likedMoviesUrls;
+    const results = await Promise.all(responses.map(response => response.json()));
+    
+    // Assuming results is an array of objects where each object contains `url` and `liked` fields
+    return movies.filter((movie, index) => results[index]?.liked);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching liked movies:', err);
     return [];
   }
 };
+
+
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
