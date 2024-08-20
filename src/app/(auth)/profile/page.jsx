@@ -81,6 +81,7 @@ export default function ProfilePage() {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
+  const [likedMovies, setLikedMovies] = useState([]);
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
