@@ -30,9 +30,9 @@ const fetchMovies = async () => {
 };
 
 // Function to fetch liked status for a movie
-const fetchIsMovieLiked = async (url, token) => {
+const fetchIsMovieLiked = async (movieUrl, genre, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}&genre=${encodeURIComponent(genre)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -41,10 +41,11 @@ const fetchIsMovieLiked = async (url, token) => {
       throw new Error(errorData.message || 'An error occurred while checking if movie is liked');
     }
 
-    return await response.json();
+    const data = await response.json();
+    return data.liked; // Ensure this field correctly reflects the liked status
   } catch (err) {
     console.error(err);
-    return { liked: false }; // Default to not liked if there's an error
+    return false; // Default to not liked if there's an error
   }
 };
 
@@ -114,8 +115,8 @@ export default function ProfilePage() {
 
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
-          const likeStatus = await fetchIsMovieLiked(movie.url, token);
-          return { ...movie, liked: likeStatus.liked };
+          const isLiked = await fetchIsMovieLiked(movie.url, movie.genre, token);
+          return { ...movie, liked: isLiked };
         }));
 
         // Filter movies based on liked status
@@ -245,9 +246,8 @@ export default function ProfilePage() {
               {likedMovies.length > 0 ? (
                 <ListGroup>
                   {likedMovies.map((movie) => (
-                    <ListGroup.Item key={movie.id}>
-                      <p>{movie.film}</p>
-                      <p><small>Liked on: {formatDate(movie.liked_at)}</small></p>
+                    <ListGroup.Item key={movie.url}>
+                      {movie.film}
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
