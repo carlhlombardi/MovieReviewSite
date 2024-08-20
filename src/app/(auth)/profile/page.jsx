@@ -50,6 +50,22 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
+// Function to fetch likes for a movie
+const fetchLikes = async (movieUrl) => {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch likes');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching likes:', error);
+    return [];
+  }
+};
+
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -163,6 +179,27 @@ export default function ProfilePage() {
     fetchCommentsForSelectedMovie();
   }, [selectedMovieUrl, router]);
 
+  useEffect(() => {
+    const fetchLikesForMovies = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+  
+        const moviesWithLikes = await Promise.all(movies.map(async (movie) => {
+          const likesData = await fetchLikes(movie.url);
+          return { ...movie, likesCount: likesData.length }; // Update with likes count or details
+        }));
+  
+        setMovies(moviesWithLikes); // Update the state with movies including likes data
+      } catch (error) {
+        console.error('Error in fetchLikesForMovies:', error);
+        setError('An error occurred while fetching likes');
+      }
+    };
+  
+    fetchLikesForMovies();
+  }, [movies]);
+
   // Function to format the date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -202,6 +239,17 @@ export default function ProfilePage() {
               </Card.Text>
             </Card.Body>
           </Card>
+
+          <Card className="mb-4">
+  <Card.Header as="h5">Liked Movies</Card.Header>
+  <Card.Body>
+    {filteredMovies.map((movie) => (
+      <div key={movie.url}>
+        <h5>{movie.film}</h5>
+      </div>
+    ))}
+  </Card.Body>
+</Card>
 
           <Card className="mb-4">
             <Card.Header as="h5">Select Movie to View Comments</Card.Header>
