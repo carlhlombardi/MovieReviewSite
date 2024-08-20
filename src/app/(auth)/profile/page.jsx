@@ -57,7 +57,7 @@ const fetchLikedMovies = async (movies, token) => {
 
     // Fetch liked status for each movie URL
     const responses = await Promise.all(movieUrls.map(url =>
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes`, {
         headers: { Authorization: `Bearer ${token}` },
       })
     ));
