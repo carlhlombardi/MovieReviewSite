@@ -30,9 +30,9 @@ const fetchMovies = async () => {
 };
 
 // Function to fetch liked status for a movie
-const fetchIsMovieLiked = async (movieUrl, token) => {
+const fetchIsMovieLiked = async (url, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
