@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useLike = (url, genre) => {
+const useLike = (url, genre, userName, movieName) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
@@ -8,7 +8,7 @@ const useLike = (url, genre) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${url}&genre=${genre}`, {
+          const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}&genre=${encodeURIComponent(genre)}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.ok) {
@@ -38,7 +38,7 @@ const useLike = (url, genre) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ url, genre }),
+          body: JSON.stringify({ url, genre, user_name: userName, movie_name: movieName }),
         });
         if (response.ok) {
           setIsLiked(true); // Update state to liked
@@ -55,7 +55,7 @@ const useLike = (url, genre) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes?url=' + encodeURIComponent(url) + '&genre=' + encodeURIComponent(genre), {
+        const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}&genre=${encodeURIComponent(genre)}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

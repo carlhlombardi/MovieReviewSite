@@ -16,14 +16,21 @@ export async function GET(request) {
     }
 
     const result = await sql`
-      SELECT user_id, movie_id, genre, liked_at
-      FROM likes
-      WHERE movie_id = (
+      SELECT
+        l.user_id,
+        u.user_name,
+        m.movie_name,
+        l.url,
+        l.liked_at
+      FROM likes l
+      JOIN users u ON l.user_id = u.id
+      JOIN movies m ON l.movie_id = m.id
+      WHERE l.movie_id = (
         SELECT id
         FROM horrormovies
         WHERE url = ${movieUrl}
       )
-      ORDER BY liked_at DESC;
+      ORDER BY l.liked_at DESC;
     `;
 
     return new Response(
@@ -57,13 +64,15 @@ export async function POST(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    // Fetch movie ID using the film URL
-    const movieIdResult = await sql`
-      SELECT id
+    // Fetch movie ID and movie name using the film URL
+    const movieResult = await sql`
+      SELECT id, movie_name
       FROM horrormovies
       WHERE url = ${url}
     `;
-    const movieId = movieIdResult.rows[0]?.id;
+    const movie = movieResult.rows[0];
+    const movieId = movie?.id;
+    const movieName = movie?.movie_name;
 
     if (!movieId) {
       return new Response(
@@ -90,9 +99,9 @@ export async function POST(request) {
 
     // Insert new like
     const result = await sql`
-      INSERT INTO likes (user_id, movie_id, genre, liked_at)
-      VALUES (${userId}, ${movieId}, ${genre}, NOW())
-      RETURNING user_id, movie_id, genre, liked_at;
+      INSERT INTO likes (user_id, movie_id, genre, url, liked_at, movie_name)
+      VALUES (${userId}, ${movieId}, ${genre}, ${url}, NOW(), ${movieName})
+      RETURNING user_id, movie_id, genre, url, liked_at, movie_name;
     `;
 
     return new Response(
