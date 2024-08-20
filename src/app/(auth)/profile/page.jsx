@@ -15,7 +15,6 @@ const fetchMovies = async () => {
       'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
       'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
       'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
-      // Add other endpoints here
     ];
 
     const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
@@ -62,7 +61,7 @@ const fetchLikes = async (movieUrl, token) => {
   }
 };
 
-// Function to check if a movie is liked
+// Function to check if a movie is liked by the user
 const fetchIsMovieLiked = async (movieUrl, token) => {
   try {
     const likes = await fetchLikes(movieUrl, token);
@@ -82,6 +81,7 @@ export default function ProfilePage() {
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const [likedMovies, setLikedMovies] = useState([]);
+  const [user_id, setuser_id] = useState(null); // Assuming you use user_id to filter
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
@@ -111,7 +111,8 @@ export default function ProfilePage() {
   
         const profileData = await profileResponse.json();
         setProfile(profileData);
-  
+        setuser_id(profileData.id); // Set user_id from profile
+
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         console.log('Fetched movies:', moviesData); // Log fetched movies
@@ -141,17 +142,18 @@ export default function ProfilePage() {
     fetchDataAsync();
   }, [router]);
   
-  // Inside the useEffect that fetches filtered movies
   useEffect(() => {
     const fetchFilteredMovies = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-  
+
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
           const commentsData = await fetchComments(movie.url, token);
-          return { ...movie, hasComments: commentsData.length > 0 };
+          // Filter comments by user_id
+          const userComments = commentsData.filter(comment => comment.user_id === user_id);
+          return { ...movie, hasComments: userComments.length > 0, comments: userComments };
         }));
   
         console.log('Movies with comments:', moviesWithComments); // Log movies with comments
@@ -165,7 +167,8 @@ export default function ProfilePage() {
     };
   
     fetchFilteredMovies();
-  }, [movies]);
+  }, [movies, user_id]);
+  
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
       if (!selectedMovieUrl) return;
@@ -180,7 +183,9 @@ export default function ProfilePage() {
         }
 
         const commentsData = await fetchComments(selectedMovieUrl, token);
-        setComments(commentsData);
+        // Filter comments by user_id
+        const userComments = commentsData.filter(comment => comment.user_id === user_id);
+        setComments(userComments);
       } catch (err) {
         console.error('Error in fetchCommentsForSelectedMovie:', err);
         setError('An error occurred while fetching comments');
@@ -188,7 +193,7 @@ export default function ProfilePage() {
     };
 
     fetchCommentsForSelectedMovie();
-  }, [selectedMovieUrl, router]);
+  }, [selectedMovieUrl, router, user_id]);
 
   // Function to format the date
   const formatDate = (dateString) => {
@@ -231,22 +236,22 @@ export default function ProfilePage() {
           </Card>
 
           <Card className="mb-4">
-  <Card.Header as="h5">Liked Movies</Card.Header>
-  <Card.Body>
-    {likedMovies.length > 0 ? (
-      <ListGroup>
-        {likedMovies.map((movie) => (
-          <ListGroup.Item key={movie.url}>
-            <h5>{movie.film}</h5> {/* Display the movie title */}
-            <p>{movie.genre}</p> {/* Display the movie genre */}
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
-    ) : (
-      <p>No liked movies found.</p>
-    )}
-  </Card.Body>
-</Card>
+            <Card.Header as="h5">Liked Movies</Card.Header>
+            <Card.Body>
+              {likedMovies.length > 0 ? (
+                <ListGroup>
+                  {likedMovies.map((movie) => (
+                    <ListGroup.Item key={movie.url}>
+                      <h5>{movie.film}</h5> {/* Display the movie title */}
+                      <p>{movie.genre}</p> {/* Display the movie genre */}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              ) : (
+                <p>No liked movies found.</p>
+              )}
+            </Card.Body>
+          </Card>
 
           <Card className="mb-4">
             <Card.Header as="h5">Select Movie to View Comments</Card.Header>
