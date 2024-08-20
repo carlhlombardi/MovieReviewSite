@@ -231,22 +231,22 @@ export default function ProfilePage() {
           </Card>
 
           <Card className="mb-4">
-            <Card.Header as="h5">Liked Movies</Card.Header>
-            <Card.Body>
-              {likedMovies.length > 0 ? (
-                <ListGroup>
-                  {likedMovies.map((movie) => (
-                    <ListGroup.Item key={movie.url}>
-                      <h5>{movie.film}</h5>
-                      <p>{movie.genre}</p>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p>No liked movies found.</p>
-              )}
-            </Card.Body>
-          </Card>
+  <Card.Header as="h5">Liked Movies</Card.Header>
+  <Card.Body>
+    {filteredLikedMovies.length > 0 ? (
+      <ListGroup>
+        {filteredLikedMovies.map((movie) => (
+          <ListGroup.Item key={movie.url}>
+            <h5>{movie.film}</h5> {/* Display the movie title */}
+            <p>{movie.genre}</p> {/* Display the movie genre */}
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+    ) : (
+      <p>No liked movies found.</p>
+    )}
+  </Card.Body>
+</Card>
 
           <Card className="mb-4">
             <Card.Header as="h5">Select Movie to View Comments</Card.Header>
