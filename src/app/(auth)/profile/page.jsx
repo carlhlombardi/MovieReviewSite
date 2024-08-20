@@ -139,10 +139,16 @@ export default function ProfilePage() {
     const fetchFilteredMovies = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token || username === null) {
+        if (!token) {
           console.log('No token or username, skipping fetchFilteredMovies');
           return;
         }
+
+        const profileData = await profileResponse.json();
+        setProfile(profileData);
+        setUsername(profileData.username); // Set username from profile
+        setUserId(profileData.id); // Set user ID from profile
+        console.log('Fetched profile data:', profileData);
 
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
@@ -168,7 +174,7 @@ export default function ProfilePage() {
   
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
-      if (!selectedMovieUrl || username === null) {
+      if (!selectedMovieUrl) {
         console.log('No selectedMovieUrl or username, skipping fetchCommentsForSelectedMovie');
         return;
       }
@@ -181,6 +187,12 @@ export default function ProfilePage() {
           router.push('/login');
           return;
         }
+
+        const profileData = await profileResponse.json();
+        setProfile(profileData);
+        setUsername(profileData.username); // Set username from profile
+        setUserId(profileData.id); // Set user ID from profile
+        console.log('Fetched profile data:', profileData);
 
         const commentsData = await fetchComments(selectedMovieUrl, token);
         // Filter comments by username
