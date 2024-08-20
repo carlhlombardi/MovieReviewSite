@@ -61,17 +61,6 @@ const fetchLikes = async (movieUrl, token) => {
   }
 };
 
-// Function to check if a movie is liked by the user
-const fetchIsMovieLiked = async (movieUrl, token) => {
-  try {
-    const likes = await fetchLikes(movieUrl, token);
-    return likes.length > 0;
-  } catch (error) {
-    console.error('Error fetching like status:', error);
-    return false;
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -81,7 +70,7 @@ export default function ProfilePage() {
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const [likedMovies, setLikedMovies] = useState([]);
-  const [userId, setUserId] = useState(null); // Store user ID
+  const [username, setUsername] = useState(null); // Store username
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
@@ -111,7 +100,7 @@ export default function ProfilePage() {
   
         const profileData = await profileResponse.json();
         setProfile(profileData);
-        setUserId(profileData.id); // Set user ID from profile
+        setUsername(profileData.username); // Set username from profile
         console.log('Fetched profile data:', profileData);
   
         // Fetch movies from multiple endpoints
@@ -122,8 +111,8 @@ export default function ProfilePage() {
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const likes = await fetchLikes(movie.url, token);
-          const isLikedByUser = likes.some(like => like.userId === profileData.id); // Fix to use `userId`
-          console.log(`Movie ${movie.url} liked by user ${profileData.id}:`, isLikedByUser);
+          const isLikedByUser = likes.some(like => like.username === profileData.username); // Use username
+          console.log(`Movie ${movie.url} liked by user ${profileData.username}:`, isLikedByUser);
           return { ...movie, liked: isLikedByUser };
         }));
   
@@ -143,23 +132,23 @@ export default function ProfilePage() {
     };
   
     fetchDataAsync();
-  }, [router]); // No need to add `userId` here since it's fetched in the `fetchDataAsync` function
+  }, [router]); // No need to add `username` here since it's fetched in the `fetchDataAsync` function
   
   useEffect(() => {
     const fetchFilteredMovies = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token || userId === null) {
-          console.log('No token or userId, skipping fetchFilteredMovies');
+        if (!token || username === null) {
+          console.log('No token or username, skipping fetchFilteredMovies');
           return;
         }
 
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
           const commentsData = await fetchComments(movie.url, token);
-          // Filter comments by userId
-          const userComments = commentsData.filter(comment => comment.userId === userId);
-          console.log(`Movie ${movie.url} comments by user ${userId}:`, userComments);
+          // Filter comments by username
+          const userComments = commentsData.filter(comment => comment.username === username);
+          console.log(`Movie ${movie.url} comments by user ${username}:`, userComments);
           return { ...movie, hasComments: userComments.length > 0, comments: userComments };
         }));
   
@@ -174,12 +163,12 @@ export default function ProfilePage() {
     };
   
     fetchFilteredMovies();
-  }, [movies, userId]); // Add `userId` as a dependency here
+  }, [movies, username]); // Add `username` as a dependency here
   
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
-      if (!selectedMovieUrl || userId === null) {
-        console.log('No selectedMovieUrl or userId, skipping fetchCommentsForSelectedMovie');
+      if (!selectedMovieUrl || username === null) {
+        console.log('No selectedMovieUrl or username, skipping fetchCommentsForSelectedMovie');
         return;
       }
 
@@ -193,9 +182,9 @@ export default function ProfilePage() {
         }
 
         const commentsData = await fetchComments(selectedMovieUrl, token);
-        // Filter comments by userId
-        const userComments = commentsData.filter(comment => comment.userId === userId);
-        console.log(`Comments for selected movie ${selectedMovieUrl} by user ${userId}:`, userComments);
+        // Filter comments by username
+        const userComments = commentsData.filter(comment => comment.username === username);
+        console.log(`Comments for selected movie ${selectedMovieUrl} by user ${username}:`, userComments);
         setComments(userComments);
       } catch (err) {
         console.error('Error in fetchCommentsForSelectedMovie:', err);
@@ -204,7 +193,7 @@ export default function ProfilePage() {
     };
 
     fetchCommentsForSelectedMovie();
-  }, [selectedMovieUrl, router, userId]); // Add `userId` as a dependency here
+  }, [selectedMovieUrl, router, username]); // Add `username` as a dependency here
 
   // Function to format the date
   const formatDate = (dateString) => {
