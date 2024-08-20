@@ -20,9 +20,7 @@ const fetchMovies = async () => {
 
     const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
     const moviesArrays = await Promise.all(responses.map(response => response.json()));
-    const movies = moviesArrays.flat(); // Combine arrays into a single array
-
-    return movies;
+    return moviesArrays.flat(); // Combine arrays into a single array
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
@@ -50,6 +48,30 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
+// Function to fetch likes for a movie
+const fetchLikes = async (movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch likes');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching likes:', error);
+    return [];
+  }
+};
+
+// Function to check if a movie is liked
+const fetchIsMovieLiked = async (movieUrl, token) => {
+  try {
+    const likes = await fetchLikes(movieUrl, token);
+    return likes.length > 0;
+  } catch (error) {
+    console.error('Error fetching like status:', error);
+    return false;
+  }
+};
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -95,16 +117,13 @@ export default function ProfilePage() {
 
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
-          const isLiked = await fetchIsMovieLiked(movie.url, movie.genre, token);
+          const isLiked = await fetchIsMovieLiked(movie.url, token);
           return { ...movie, liked: isLiked };
         }));
 
         // Filter movies based on liked status
         const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
-        setLikedMovies(likedMoviesFiltered);
-
-        // Initialize filteredMovies to all movies first
-        setFilteredMovies(moviesData);
+        setFilteredMovies(likedMoviesFiltered);
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
