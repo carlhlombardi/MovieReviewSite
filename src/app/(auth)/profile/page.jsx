@@ -80,7 +80,6 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-        console.log('Token from local storage:', token); // Check if token is available
 
         if (!token) {
           console.log('No token found, redirecting to login');
@@ -104,7 +103,6 @@ export default function ProfilePage() {
         setProfile(profileData);
         setUsername(profileData.username); // Set username from profile
         setUserId(profileData.id); // Set user ID from profile
-        console.log('Fetched profile data:', profileData);
 
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
@@ -114,15 +112,11 @@ export default function ProfilePage() {
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const likes = await fetchLikes(movie.url, token);
           const isLikedByUser = likes.some(like => like.user_id === profileData.id); // Use user_id from likes data
-          console.log(`Movie ${movie.url} liked by user ${profileData.id}:`, isLikedByUser);
           return { ...movie, liked: isLikedByUser };
         }));
 
-        console.log('Liked movies data:', likedMoviesData); // Log liked movies data
-
         // Filter movies based on liked status
         const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
-        console.log('Filtered liked movies:', likedMoviesFiltered); // Log filtered liked movies
         setLikedMovies(likedMoviesFiltered);
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
@@ -155,11 +149,8 @@ export default function ProfilePage() {
           const commentsData = await fetchComments(movie.url, token);
           // Filter comments by username
           const userComments = commentsData.filter(comment => comment.username === username);
-          console.log(`Movie ${movie.url} comments by user ${username}:`, userComments);
           return { ...movie, hasComments: userComments.length > 0, comments: userComments };
         }));
-
-        console.log('Movies with comments:', moviesWithComments); // Log movies with comments
 
         // Filter movies that have comments
         setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
@@ -191,7 +182,6 @@ export default function ProfilePage() {
         const commentsData = await fetchComments(selectedMovieUrl, token);
         // Filter comments by username
         const userComments = commentsData.filter(comment => comment.username === username);
-        console.log(`Comments for selected movie ${selectedMovieUrl} by user ${username}:`, userComments);
         setComments(userComments);
       } catch (err) {
         console.error('Error in fetchCommentsForSelectedMovie:', err);
