@@ -29,7 +29,7 @@ const fetchMovies = async () => {
 // Function to fetch comments for a movie
 const fetchComments = async (selectedMovieUrl, token) => {
   try {
-    if (!selectedMovieUrl) return [];
+    if (!selectedMovieUrl || !token) return [];
 
     const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -50,9 +50,12 @@ const fetchComments = async (selectedMovieUrl, token) => {
 // Function to fetch likes for a movie
 const fetchLikes = async (movieUrl, token) => {
   try {
+    if (!token) return [];
+    
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
     if (!response.ok) throw new Error('Failed to fetch likes');
     return await response.json();
   } catch (error) {
