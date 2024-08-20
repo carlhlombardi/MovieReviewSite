@@ -71,6 +71,7 @@ export default function ProfilePage() {
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const [likedMovies, setLikedMovies] = useState([]);
   const [username, setUsername] = useState(null); // Store username
+  const [userId, setUserId] = useState(null); // Store user ID
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
@@ -101,6 +102,7 @@ export default function ProfilePage() {
         const profileData = await profileResponse.json();
         setProfile(profileData);
         setUsername(profileData.username); // Set username from profile
+        setUserId(profileData.id); // Set user ID from profile
         console.log('Fetched profile data:', profileData);
   
         // Fetch movies from multiple endpoints
@@ -111,8 +113,8 @@ export default function ProfilePage() {
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const likes = await fetchLikes(movie.url, token);
-          const isLikedByUser = likes.some(like => like.username === profileData.username); // Use username
-          console.log(`Movie ${movie.url} liked by user ${profileData.username}:`, isLikedByUser);
+          const isLikedByUser = likes.some(like => like.userId === profileData.id); // Use userId
+          console.log(`Movie ${movie.url} liked by user ${profileData.id}:`, isLikedByUser);
           return { ...movie, liked: isLikedByUser };
         }));
   
@@ -132,7 +134,7 @@ export default function ProfilePage() {
     };
   
     fetchDataAsync();
-  }, [router]); // No need to add `username` here since it's fetched in the `fetchDataAsync` function
+  }, [router]); // No need to add `username` and `userId` here since they are set in the `fetchDataAsync` function
   
   useEffect(() => {
     const fetchFilteredMovies = async () => {
