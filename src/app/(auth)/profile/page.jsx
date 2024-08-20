@@ -107,13 +107,12 @@ export default function ProfilePage() {
   
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
-        console.log('Fetched movies:', moviesData); // Log fetched movies
         setMovies(moviesData);
   
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const likes = await fetchLikes(movie.url, token);
-          const isLikedByUser = likes.some(like => like.userId === profileData.id); // Use userId
+          const isLikedByUser = likes.some(like => like.user_id === profileData.id); // Use user_id from likes data
           console.log(`Movie ${movie.url} liked by user ${profileData.id}:`, isLikedByUser);
           return { ...movie, liked: isLikedByUser };
         }));
