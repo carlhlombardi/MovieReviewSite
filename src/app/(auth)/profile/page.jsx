@@ -29,6 +29,25 @@ const fetchMovies = async () => {
   }
 };
 
+// Function to fetch liked status for a movie
+const fetchIsMovieLiked = async (movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'An error occurred while checking if movie is liked');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error(err);
+    return { liked: false }; // Default to not liked if there's an error
+  }
+};
+
 // Function to fetch comments for a movie
 const fetchComments = async (selectedMovieUrl, token) => {
   try {
@@ -57,8 +76,9 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
- 
+
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
 
@@ -92,12 +112,15 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Fetch liked movie URLs
-        const likedMoviesUrls = await fetchLikedMovies(token);
+        // Check if each movie is liked
+        const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
+          const likeStatus = await fetchIsMovieLiked(movie.url, token);
+          return { ...movie, liked: likeStatus.liked };
+        }));
 
-        // Filter movies based on liked movie URLs
-        const likedMoviesData = moviesData.filter(movie => likedMoviesUrls.includes(movie.url));
-        setLikedMovies(likedMoviesData);
+        // Filter movies based on liked status
+        const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
+        setLikedMovies(likedMoviesFiltered);
 
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
@@ -213,6 +236,24 @@ export default function ProfilePage() {
                   <option key={movie.url} value={movie.url}>{movie.film}</option>
                 ))}
               </Form.Control>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-4">
+            <Card.Header as="h5">Liked Movies</Card.Header>
+            <Card.Body>
+              {likedMovies.length > 0 ? (
+                <ListGroup>
+                  {likedMovies.map((movie) => (
+                    <ListGroup.Item key={movie.id}>
+                      <p>{movie.film}</p>
+                      <p><small>Liked on: {formatDate(movie.liked_at)}</small></p>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              ) : (
+                <p>No liked movies.</p>
+              )}
             </Card.Body>
           </Card>
 
