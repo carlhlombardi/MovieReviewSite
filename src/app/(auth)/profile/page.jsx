@@ -29,26 +29,6 @@ const fetchMovies = async () => {
   }
 };
 
-// Function to fetch liked status for a movie
-const fetchIsMovieLiked = async (movieUrl, genre, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}&genre=${encodeURIComponent(genre)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'An error occurred while checking if movie is liked');
-    }
-
-    const data = await response.json();
-    return data.liked; // Ensure this field correctly reflects the liked status
-  } catch (err) {
-    console.error(err);
-    return false; // Default to not liked if there's an error
-  }
-};
-
 // Function to fetch comments for a movie
 const fetchComments = async (selectedMovieUrl, token) => {
   try {
@@ -77,7 +57,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
-  const [likedMovies, setLikedMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
 
   const router = useRouter();
@@ -237,23 +216,6 @@ export default function ProfilePage() {
                   <option key={movie.url} value={movie.url}>{movie.film}</option>
                 ))}
               </Form.Control>
-            </Card.Body>
-          </Card>
-
-          <Card className="mb-4">
-            <Card.Header as="h5">Liked Movies</Card.Header>
-            <Card.Body>
-              {likedMovies.length > 0 ? (
-                <ListGroup>
-                  {likedMovies.map((movie) => (
-                    <ListGroup.Item key={movie.url}>
-                      {movie.url}
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p>No liked movies.</p>
-              )}
             </Card.Body>
           </Card>
 
