@@ -10,7 +10,7 @@ export async function GET(request) {
 
     if (!movieUrl) {
       return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
+        JSON.stringify({ message: 'Movie URL is required' })
         { status: 400 }
       );
     }
