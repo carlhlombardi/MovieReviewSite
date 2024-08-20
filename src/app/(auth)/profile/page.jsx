@@ -50,44 +50,6 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-const fetchLikedMovies = async (movies, token) => {
-  try {
-    // Extract movie URLs from the movie objects
-    const movieUrls = movies.map(movie => movie.url);
-
-    // Fetch liked status for each movie URL
-    const responses = await Promise.all(movieUrls.map(url =>
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    ));
-
-    // Parse the responses
-    const results = await Promise.all(responses.map(response => response.json()));
-    
-    // Debugging: Log raw API results
-    console.log('API Results:', results);
-
-    // Check if results is an array and handle it accordingly
-    if (!Array.isArray(results)) {
-      console.error('Unexpected API result format:', results);
-      return [];
-    }
-
-    // Create a set of liked movie IDs for faster lookup
-    const likedMovieIds = new Set(results.map(result => result.movie_id));
-
-    // Filter the movies to include only those with IDs in the likedMovieIds set
-    return movies.filter(movie => likedMovieIds.has(movie.id));
-  } catch (err) {
-    console.error('Error fetching liked movies:', err);
-    return [];
-  }
-};
-
-
-
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -96,7 +58,7 @@ export default function ProfilePage() {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
-  const [likedMovies, setLikedMovies] = useState([]);
+ 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
 
@@ -235,24 +197,6 @@ export default function ProfilePage() {
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
-            </Card.Body>
-          </Card>
-
-          <Card className="mb-4">
-            <Card.Header as="h5">Your Liked Movies</Card.Header>
-            <Card.Body>
-              {likedMovies.length > 0 ? (
-                <ListGroup>
-                  {likedMovies.map((movie) => (
-                    <ListGroup.Item key={movie.url}>
-                      <strong>{movie.film}</strong>
-                      <p>{movie.description}</p>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p>You have not liked any movies yet.</p>
-              )}
             </Card.Body>
           </Card>
 
