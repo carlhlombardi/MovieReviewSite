@@ -247,7 +247,7 @@ export default function ProfilePage() {
                 <ListGroup>
                   {likedMovies.map((movie) => (
                     <ListGroup.Item key={movie.url}>
-                      {movie.title}
+                      {movie.url}
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
