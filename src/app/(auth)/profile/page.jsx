@@ -1,10 +1,7 @@
-"use client";
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert, Spinner, Card, ListGroup, Form } from 'react-bootstrap';
 
-// Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
   try {
     const endpoints = [
@@ -15,7 +12,6 @@ const fetchMovies = async () => {
       'https://movie-review-site-seven.vercel.app/api/data/dramamovies',
       'https://movie-review-site-seven.vercel.app/api/data/horrormovies',
       'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
-      // Add other endpoints here
     ];
 
     const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
@@ -29,42 +25,23 @@ const fetchMovies = async () => {
   }
 };
 
-// Function to fetch comments for a movie
-const fetchComments = async (selectedMovieUrl, token) => {
+// Define fetchIsMovieLiked function here
+const fetchIsMovieLiked = async (movieUrl, genre, token) => {
   try {
-    if (!selectedMovieUrl) return [];
-
-    const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}&genre=${encodeURIComponent(genre)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (!commentsResponse.ok) {
-      const errorData = await commentsResponse.json();
-      throw new Error(errorData.message || 'An error occurred while fetching comments');
+    if (!response.ok) {
+      console.error('Failed to fetch like status:', await response.text());
+      return false;
     }
-
-    return await commentsResponse.json();
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-};
-
-// Function to fetch likes for a movie
-const fetchLikes = async (movieUrl) => {
-  const token = localStorage.getItem('token');
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) throw new Error('Failed to fetch likes');
-    return await response.json();
+    const data = await response.json();
+    return data.length > 0;
   } catch (error) {
-    console.error('Error fetching likes:', error);
-    return [];
+    console.error('Failed to fetch like status:', error);
+    return false;
   }
 };
-
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -116,7 +93,7 @@ export default function ProfilePage() {
 
         // Filter movies based on liked status
         const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
-        setLikedMovies(likedMoviesFiltered);
+        setFilteredMovies(likedMoviesData);
 
         // Initialize filteredMovies to all movies first
         setFilteredMovies(moviesData);
@@ -131,29 +108,6 @@ export default function ProfilePage() {
 
     fetchDataAsync();
   }, [router]);
-
-  useEffect(() => {
-    const fetchFilteredMovies = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        // Fetch comments for each movie and filter movies with comments
-        const moviesWithComments = await Promise.all(movies.map(async (movie) => {
-          const commentsData = await fetchComments(movie.url, token);
-          return { ...movie, hasComments: commentsData.length > 0 };
-        }));
-
-        // Filter movies that have comments
-        setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
-      } catch (err) {
-        console.error('Error in fetchFilteredMovies:', err);
-        setError('An error occurred while fetching comments');
-      }
-    };
-
-    fetchFilteredMovies();
-  }, [movies]);
 
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
@@ -178,27 +132,6 @@ export default function ProfilePage() {
 
     fetchCommentsForSelectedMovie();
   }, [selectedMovieUrl, router]);
-
-  useEffect(() => {
-    const fetchLikesForMovies = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-  
-        const moviesWithLikes = await Promise.all(movies.map(async (movie) => {
-          const likesData = await fetchLikes(movie.url);
-          return { ...movie, likesCount: likesData.length }; // Update with likes count or details
-        }));
-  
-        setMovies(moviesWithLikes); // Update the state with movies including likes data
-      } catch (error) {
-        console.error('Error in fetchLikesForMovies:', error);
-        setError('An error occurred while fetching likes');
-      }
-    };
-  
-    fetchLikesForMovies();
-  }, [movies]);
 
   // Function to format the date
   const formatDate = (dateString) => {
@@ -239,17 +172,6 @@ export default function ProfilePage() {
               </Card.Text>
             </Card.Body>
           </Card>
-
-          <Card className="mb-4">
-  <Card.Header as="h5">Liked Movies</Card.Header>
-  <Card.Body>
-    {filteredMovies.map((movie) => (
-      <div key={movie.url}>
-        <h5>{movie.film}</h5>
-      </div>
-    ))}
-  </Card.Body>
-</Card>
 
           <Card className="mb-4">
             <Card.Header as="h5">Select Movie to View Comments</Card.Header>
