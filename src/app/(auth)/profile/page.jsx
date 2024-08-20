@@ -57,7 +57,7 @@ const fetchLikedMovies = async (movies, token) => {
 
     // Fetch liked status for each movie URL
     const responses = await Promise.all(movieUrls.map(url =>
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
     ));
@@ -74,17 +74,21 @@ const fetchLikedMovies = async (movies, token) => {
       return [];
     }
 
-    // Create a set of liked movie IDs for faster lookup
-    const likedMovieIds = new Set(results.map(result => result.movie_id));
+    // Create a map of movie IDs to their liked status
+    const likedMovies = new Map();
+    results.forEach(result => {
+      if (result.liked === 'yes') {
+        likedMovies.set(result.movie_id, true);
+      }
+    });
 
-    // Filter the movies to include only those with IDs in the likedMovieIds set
-    return movies.filter(movie => likedMovieIds.has(movie.id));
+    // Filter the movies to include only those with IDs in the likedMovies map
+    return movies.filter(movie => likedMovies.has(movie.id));
   } catch (err) {
     console.error('Error fetching liked movies:', err);
     return [];
   }
 };
-
 
 
 
