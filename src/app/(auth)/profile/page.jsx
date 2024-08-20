@@ -90,41 +90,45 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token');
-
+  
         if (!token) {
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
         }
-
+  
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         if (!profileResponse.ok) {
           const errorData = await profileResponse.json();
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
-
+  
         const profileData = await profileResponse.json();
         setProfile(profileData);
-
+  
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
+        console.log('Fetched movies:', moviesData); // Log fetched movies
         setMovies(moviesData);
-
+  
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const isLiked = await fetchIsMovieLiked(movie.url, token);
           return { ...movie, liked: isLiked };
         }));
-
+  
+        console.log('Liked movies data:', likedMoviesData); // Log liked movies data
+  
         // Filter movies based on liked status
         const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
-        setFilteredMovies(likedMoviesFiltered);
+        console.log('Filtered liked movies:', likedMoviesFiltered); // Log filtered liked movies
+        setLikedMovies(likedMoviesFiltered);
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
@@ -133,22 +137,25 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     };
-
+  
     fetchDataAsync();
   }, [router]);
-
+  
+  // Inside the useEffect that fetches filtered movies
   useEffect(() => {
     const fetchFilteredMovies = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-
+  
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
           const commentsData = await fetchComments(movie.url, token);
           return { ...movie, hasComments: commentsData.length > 0 };
         }));
-
+  
+        console.log('Movies with comments:', moviesWithComments); // Log movies with comments
+  
         // Filter movies that have comments
         setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
       } catch (err) {
@@ -156,10 +163,9 @@ export default function ProfilePage() {
         setError('An error occurred while fetching comments');
       }
     };
-
+  
     fetchFilteredMovies();
   }, [movies]);
-
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
       if (!selectedMovieUrl) return;
