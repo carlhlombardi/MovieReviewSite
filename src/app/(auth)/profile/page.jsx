@@ -122,7 +122,7 @@ export default function ProfilePage() {
         // Check if each movie is liked
         const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
           const likes = await fetchLikes(movie.url, token);
-          const isLikedByUser = likes.some(like => like.userId === profileData.id);
+          const isLikedByUser = likes.some(like => like.userId === profileData.id); // Fix to use `userId`
           console.log(`Movie ${movie.url} liked by user ${profileData.id}:`, isLikedByUser);
           return { ...movie, liked: isLikedByUser };
         }));
@@ -149,7 +149,10 @@ export default function ProfilePage() {
     const fetchFilteredMovies = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token || userId === null) return;
+        if (!token || userId === null) {
+          console.log('No token or userId, skipping fetchFilteredMovies');
+          return;
+        }
 
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
@@ -175,7 +178,10 @@ export default function ProfilePage() {
   
   useEffect(() => {
     const fetchCommentsForSelectedMovie = async () => {
-      if (!selectedMovieUrl || userId === null) return;
+      if (!selectedMovieUrl || userId === null) {
+        console.log('No selectedMovieUrl or userId, skipping fetchCommentsForSelectedMovie');
+        return;
+      }
 
       try {
         const token = localStorage.getItem('token');
