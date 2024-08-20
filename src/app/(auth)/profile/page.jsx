@@ -233,9 +233,9 @@ export default function ProfilePage() {
           <Card className="mb-4">
   <Card.Header as="h5">Liked Movies</Card.Header>
   <Card.Body>
-    {filteredLikedMovies.length > 0 ? (
+    {likedMoviesFiltered.length > 0 ? (
       <ListGroup>
-        {filteredLikedMovies.map((movie) => (
+        {likedMoviesFiltered.map((movie) => (
           <ListGroup.Item key={movie.url}>
             <h5>{movie.film}</h5> {/* Display the movie title */}
             <p>{movie.genre}</p> {/* Display the movie genre */}
