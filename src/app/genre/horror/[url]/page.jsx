@@ -72,18 +72,23 @@ const fetchMovieStatus = async (url) => {
 const handleMovieAction = async (url, genre, action, shouldAdd) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/${action}/${shouldAdd ? 'add' : 'remove'}`, {
-      method: 'POST',
+    const endpoint = `https://movie-review-site-seven.vercel.app/api/auth/${action}`;
+    const method = shouldAdd ? 'POST' : 'DELETE';
+    
+    const response = await fetch(endpoint, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ movie_id: url, genre })
+      body: shouldAdd ? JSON.stringify({ movie_id: url, genre }) : undefined
     });
 
     if (!response.ok) {
       throw new Error(`Failed to ${shouldAdd ? action : `remove ${action}`}`);
     }
+
+    console.log(`${action} action successful`);
   } catch (error) {
     console.error(`Error in ${action} movie:`, error);
   }
