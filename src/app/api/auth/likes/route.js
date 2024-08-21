@@ -2,11 +2,11 @@ import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
 // Function to get user details from the Users table
-const getUserDetails = async (userId) => {
+const getUserDetails = async (id) => {
   const userResult = await sql`
     SELECT username, email
     FROM users
-    WHERE id = ${userId};
+    WHERE id = ${id};
   `;
   if (userResult.rows.length === 0) {
     throw new Error('User not found');
@@ -22,6 +22,16 @@ const isMovieLiked = async (username, url) => {
     WHERE username = ${username} AND url = ${url};
   `;
   return result.rowCount > 0;
+};
+
+// Helper function to get the total like count for a specific movie URL
+const getLikeCount = async (url) => {
+  const result = await sql`
+    SELECT COUNT(*) AS likeCount
+    FROM likes
+    WHERE url = ${url};
+  `;
+  return result.rows[0].likeCount;
 };
 
 // Handler for the `/api/auth/liked` route
@@ -54,11 +64,16 @@ export async function handler(request) {
         );
       }
 
+      // Determine the response data
+      let isLiked = false;
+      let likeCount = 0;
+
       if (action === 'status') {
         // Fetch like status
-        const liked = await isMovieLiked(user.username, url);
+        isLiked = await isMovieLiked(user.username, url);
+        likeCount = await getLikeCount(url);
         return new Response(
-          JSON.stringify({ isLiked: liked }),
+          JSON.stringify({ isLiked, likeCount }),
           { status: 200 }
         );
       }
@@ -74,16 +89,19 @@ export async function handler(request) {
 
         if (postResult.rowCount === 0) {
           return new Response(
-            JSON.stringify({ message: 'Item already liked' }),
+            JSON.stringify({ message: 'Item already liked', isLiked: true, likeCount: await getLikeCount(url) }),
             { status: 409 }
           );
         }
 
         // Return the status after adding
+        isLiked = true;
+        likeCount = await getLikeCount(url);
         return new Response(
           JSON.stringify({
             message: 'Item liked',
-            isLiked: true,
+            isLiked,
+            likeCount,
           }),
           { status: 201 }
         );
@@ -97,16 +115,19 @@ export async function handler(request) {
 
         if (deleteResult.rowCount === 0) {
           return new Response(
-            JSON.stringify({ message: 'Item not found in liked list' }),
+            JSON.stringify({ message: 'Item not found in liked list', isLiked: false, likeCount: await getLikeCount(url) }),
             { status: 404 }
           );
         }
 
         // Return the status after removing
+        isLiked = false;
+        likeCount = await getLikeCount(url);
         return new Response(
           JSON.stringify({
             message: 'Item unliked',
-            isLiked: false,
+            isLiked,
+            likeCount,
           }),
           { status: 200 }
         );
