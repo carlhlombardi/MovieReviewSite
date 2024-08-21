@@ -1,79 +1,76 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// Function to get user details from the Users table
+const getUserDetails = async (userId) => {
+  const userResult = await sql`
+    SELECT username, email
+    FROM Users
+    WHERE id = ${userId};
+  `;
+  if (userResult.rows.length === 0) {
+    throw new Error('User not found');
+  }
+  return userResult.rows[0];
+};
+
 // Handler for the `/liked` route
 export async function handler(request) {
   try {
-    // Extract user ID from token if the request is user-specific
+    // Extract user ID from token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
-    let userId;
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      userId = decoded.userId;
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Fetch user details from the Users table
+    const user = await getUserDetails(userId);
 
     switch (request.method) {
       case 'GET':
-        if (userId) {
-          // Get liked movies for the specific user
-          const getResult = await sql`
-            SELECT l.user_id, u.username, u.email, m.url, m.genre
-            FROM liked l
-            JOIN Users u ON l.user_id = u.id
-            JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre
-            WHERE l.user_id = ${userId};
-          `;
+        // Get liked movies for the specific user
+        const getResult = await sql`
+          SELECT l.username, l.email, m.url, m.genre
+          FROM liked l
+          JOIN all_movies m ON l.url = m.url AND l.genre = m.genre
+          WHERE l.username = ${user.username};
+        `;
 
-          if (getResult.rows.length === 0) {
-            return new Response(
-              JSON.stringify({ message: 'No liked movies found' }),
-              { status: 404 }
-            );
-          }
-
+        if (getResult.rows.length === 0) {
           return new Response(
-            JSON.stringify(getResult.rows),
-            { status: 200 }
-          );
-        } else {
-          // Get all liked movies
-          const getAllResult = await sql`
-            SELECT l.user_id, u.username, u.email, m.url, m.genre
-            FROM liked l
-            JOIN Users u ON l.user_id = u.id
-            JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre;
-          `;
-
-          if (getAllResult.rows.length === 0) {
-            return new Response(
-              JSON.stringify({ message: 'No liked movies found' }),
-              { status: 404 }
-            );
-          }
-
-          return new Response(
-            JSON.stringify(getAllResult.rows),
-            { status: 200 }
+            JSON.stringify({ message: 'No liked movies found' }),
+            { status: 404 }
           );
         }
 
+        return new Response(
+          JSON.stringify(getResult.rows),
+          { status: 200 }
+        );
+
       case 'POST':
         // Add a movie to the liked list
-        const { movie_id, genre } = await request.json();
-        if (!movie_id || !genre) {
+        const { url, genre } = await request.json();
+        if (!url || !genre) {
           return new Response(
-            JSON.stringify({ message: 'Movie ID and genre are required' }),
+            JSON.stringify({ message: 'URL and genre are required' }),
             { status: 400 }
           );
         }
 
         const postResult = await sql`
-          INSERT INTO liked (user_id, movie_id, genre)
-          VALUES (${userId}, ${movie_id}, ${genre})
-          ON CONFLICT (user_id, movie_id, genre) DO NOTHING
-          RETURNING user_id, movie_id, genre;
+          INSERT INTO liked (username, email, url, genre)
+          VALUES (${user.username}, ${user.email}, ${url}, ${genre})
+          ON CONFLICT (username, url, genre) DO NOTHING
+          RETURNING username, email, url, genre;
         `;
 
         if (postResult.rows.length === 0) {
@@ -90,21 +87,21 @@ export async function handler(request) {
 
       case 'DELETE':
         // Remove a movie from the liked list
-        const url = new URL(request.url);
-        const movie_id_del = url.searchParams.get('movie_id');
-        const genre_del = url.searchParams.get('genre');
+        const urlToDelete = new URL(request.url);
+        const url_del = urlToDelete.searchParams.get('url');
+        const genre_del = urlToDelete.searchParams.get('genre');
 
-        if (!movie_id_del || !genre_del) {
+        if (!url_del || !genre_del) {
           return new Response(
-            JSON.stringify({ message: 'Movie ID and genre are required' }),
+            JSON.stringify({ message: 'URL and genre are required' }),
             { status: 400 }
           );
         }
 
         const deleteResult = await sql`
           DELETE FROM liked
-          WHERE user_id = ${userId} AND movie_id = ${movie_id_del} AND genre = ${genre_del}
-          RETURNING user_id, movie_id, genre;
+          WHERE username = ${user.username} AND url = ${url_del} AND genre = ${genre_del}
+          RETURNING username, email, url, genre;
         `;
 
         if (deleteResult.rowCount === 0) {

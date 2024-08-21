@@ -44,10 +44,10 @@ const fetchMovieStatus = async (url, genre) => {
     if (!token) return { isLiked: false, isInWatchlist: false };
 
     const [likedResponse, watchlistResponse] = await Promise.all([
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked`, {
+      fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist`, {
+      fetch('https://movie-review-site-seven.vercel.app/api/auth/watchlist', {
         headers: { Authorization: `Bearer ${token}` }
       })
     ]);
@@ -61,7 +61,7 @@ const fetchMovieStatus = async (url, genre) => {
       watchlistResponse.json()
     ]);
 
-    const isLiked = likedData.some(item => item.movie_id === url && item.genre === genre);
+    const isLiked = likedData.some(item => item.url === url && item.genre === genre);
     const isInWatchlist = watchlistData.some(item => item.url === url && item.genre === genre);
 
     return { isLiked, isInWatchlist };
@@ -84,7 +84,7 @@ const handleMovieAction = async (url, genre, action, shouldAdd) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: shouldAdd ? JSON.stringify({ movie_id: url, genre }) : undefined
+      body: shouldAdd ? JSON.stringify({ url, genre }) : undefined
     });
 
     if (!response.ok) {
@@ -123,10 +123,10 @@ const HorrorPostPage = ({ params }) => {
           setIsInWatchlist(isInWatchlist);
 
           // Fetch counts for liked and watchlisted
-          const likedResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked`, {
+          const likedResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
-          const watchlistResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist`, {
+          const watchlistResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/watchlist', {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
 
