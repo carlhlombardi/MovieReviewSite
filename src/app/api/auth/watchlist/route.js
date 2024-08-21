@@ -23,7 +23,7 @@ export async function handler(request) {
         // Get watchlisted movies for the user, including user details and movie details
         const getResult = await sql`
           SELECT w.user_id, u.username, u.email, w.movie_id, m.genre
-          FROM Watchlist w
+          FROM watchlist w
           JOIN "user" u ON w.user_id = u.id
           JOIN movie m ON w.movie_id = m.id
           WHERE w.user_id = ${userId};
@@ -52,7 +52,7 @@ export async function handler(request) {
         }
 
         const postResult = await sql`
-          INSERT INTO Watchlist (user_id, movie_id, genre)
+          INSERT INTO watchlist (user_id, movie_id, genre)
           VALUES (${userId}, ${movie_id}, ${genre})
           ON CONFLICT (user_id, movie_id, genre) DO NOTHING
           RETURNING user_id, movie_id, genre;
@@ -84,7 +84,7 @@ export async function handler(request) {
         }
 
         const deleteResult = await sql`
-          DELETE FROM Watchlist
+          DELETE FROM watchlist
           WHERE user_id = ${userId} AND movie_id = ${movie_id_del} AND genre = ${genre_del}
           RETURNING user_id, movie_id, genre;
         `;

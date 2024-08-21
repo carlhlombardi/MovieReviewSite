@@ -23,7 +23,7 @@ export async function handler(request) {
         // Get liked movies for the user, including user details and movie details
         const getResult = await sql`
           SELECT l.user_id, u.username, u.email, l.movie_id, m.genre
-          FROM Liked l
+          FROM liked l
           JOIN "user" u ON l.user_id = u.id
           JOIN movie m ON l.movie_id = m.id
           WHERE l.user_id = ${userId};
@@ -52,7 +52,7 @@ export async function handler(request) {
         }
 
         const postResult = await sql`
-          INSERT INTO Liked (user_id, movie_id, genre)
+          INSERT INTO liked (user_id, movie_id, genre)
           VALUES (${userId}, ${movie_id}, ${genre})
           ON CONFLICT (user_id, movie_id, genre) DO NOTHING
           RETURNING user_id, movie_id, genre;
@@ -84,7 +84,7 @@ export async function handler(request) {
         }
 
         const deleteResult = await sql`
-          DELETE FROM Liked
+          DELETE FROM liked
           WHERE user_id = ${userId} AND movie_id = ${movie_id_del} AND genre = ${genre_del}
           RETURNING user_id, movie_id, genre;
         `;
