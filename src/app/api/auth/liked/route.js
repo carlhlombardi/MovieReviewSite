@@ -22,10 +22,10 @@ export async function handler(request) {
       case 'GET':
         // Get liked movies for the user, including user details and movie details
         const getResult = await sql`
-          SELECT l.user_id, u.username, u.email, l.movie_id, m.genre
+          SELECT l.user_id, u.username, u.email, m.url, m.genre
           FROM liked l
-          JOIN "user" u ON l.user_id = u.id
-          JOIN movie m ON l.movie_id = m.id
+          JOIN Users u ON l.user_id = u.id
+          JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre
           WHERE l.user_id = ${userId};
         `;
 
