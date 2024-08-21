@@ -86,7 +86,6 @@ export default function ProfilePage() {
         const profileData = await profileResponse.json();
         setProfile(profileData);
         setUsername(profileData.username); // Set username from profile
-        setUserId(profileData.id); // Set user ID from profile
 
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
