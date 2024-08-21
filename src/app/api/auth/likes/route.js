@@ -79,6 +79,7 @@ export async function POST(request) {
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
+      console.log('No token provided');
       return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
@@ -88,6 +89,8 @@ export async function POST(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
+    console.log('Decoded user ID:', userId);
+
     const userResult = await sql`
       SELECT username
       FROM users
@@ -96,11 +99,14 @@ export async function POST(request) {
     const user = userResult.rows[0];
 
     if (!user) {
+      console.log('User not found');
       return new Response(
         JSON.stringify({ message: 'User not found' }),
         { status: 404 }
       );
     }
+
+    console.log('User found:', user.username);
 
     const postResult = await sql`
       INSERT INTO likes (username, url)
@@ -110,6 +116,7 @@ export async function POST(request) {
     `;
 
     if (postResult.rowCount === 0) {
+      console.log('Item already liked');
       return new Response(
         JSON.stringify({ message: 'Item already liked' }),
         { status: 409 }
@@ -121,13 +128,14 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Add like error:', error);
+    console.error('Add like error:', error.message);
     return new Response(
       JSON.stringify({ message: 'Failed to add like' }),
       { status: 500 }
     );
   }
 }
+
 
 // Handler to delete a like
 export async function DELETE(request) {
