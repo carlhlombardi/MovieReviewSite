@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, ListGroup, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, Form } from 'react-bootstrap';
+import Comments from '@/app/components/comments/comments.jsx';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -26,31 +27,8 @@ const fetchMovies = async () => {
   }
 };
 
-// Function to fetch comments for a movie
-const fetchComments = async (selectedMovieUrl, token) => {
-  try {
-    if (!selectedMovieUrl || !token) return [];
-
-    const commentsResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(selectedMovieUrl)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!commentsResponse.ok) {
-      const errorData = await commentsResponse.json();
-      throw new Error(errorData.message || 'An error occurred while fetching comments');
-    }
-
-    return await commentsResponse.json();
-  } catch (err) {
-    console.error('Error fetching comments:', err);
-    return [];
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
@@ -136,40 +114,6 @@ export default function ProfilePage() {
     fetchFilteredMovies();
   }, [movies, username]);
 
-  useEffect(() => {
-    const fetchCommentsForSelectedMovie = async () => {
-      if (!selectedMovieUrl || !username) {
-        console.log('No selectedMovieUrl or username, skipping fetchCommentsForSelectedMovie');
-        return;
-      }
-
-      try {
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-          console.log('No token found, redirecting to login');
-          router.push('/login');
-          return;
-        }
-
-        const commentsData = await fetchComments(selectedMovieUrl, token);
-        // Filter comments by username
-        const userComments = commentsData.filter(comment => comment.username === username);
-        setComments(userComments);
-      } catch (err) {
-        console.error('Error in fetchCommentsForSelectedMovie:', err);
-        setError('An error occurred while fetching comments');
-      }
-    };
-
-    fetchCommentsForSelectedMovie();
-  }, [selectedMovieUrl, router, username]);
-
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
-  };
-
   if (isLoading) {
     return (
       <div className="container mt-5 text-center">
@@ -219,23 +163,10 @@ export default function ProfilePage() {
             </Card.Body>
           </Card>
 
-          <Card>
-            <Card.Header as="h5">Comments</Card.Header>
-            <Card.Body>
-              {comments.length > 0 ? (
-                <ListGroup>
-                  {comments.map((comment) => (
-                    <ListGroup.Item key={comment.id}>
-                      <p><strong>{comment.username}:</strong> {comment.text}</p>
-                      <p><small>{formatDate(comment.date)}</small></p>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p>No comments for this movie.</p>
-              )}
-            </Card.Body>
-          </Card>
+          {/* Use the Comments component here */}
+          {selectedMovieUrl && (
+            <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
+          )}
         </>
       )}
     </div>
