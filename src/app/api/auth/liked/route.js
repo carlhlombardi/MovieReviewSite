@@ -4,42 +4,60 @@ import jwt from 'jsonwebtoken';
 // Handler for the `/liked` route
 export async function handler(request) {
   try {
-    // Extract user ID from token
+    // Extract user ID from token if the request is user-specific
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
-      );
+    let userId;
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.userId;
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
 
     switch (request.method) {
       case 'GET':
-        // Get liked movies for the user, including user details and movie details
-        const getResult = await sql`
-          SELECT l.user_id, u.username, u.email, m.url, m.genre
-          FROM liked l
-          JOIN Users u ON l.user_id = u.id
-          JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre
-          WHERE l.user_id = ${userId};
-        `;
+        if (userId) {
+          // Get liked movies for the specific user
+          const getResult = await sql`
+            SELECT l.user_id, u.username, u.email, m.url, m.genre
+            FROM liked l
+            JOIN Users u ON l.user_id = u.id
+            JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre
+            WHERE l.user_id = ${userId};
+          `;
 
-        if (getResult.rows.length === 0) {
+          if (getResult.rows.length === 0) {
+            return new Response(
+              JSON.stringify({ message: 'No liked movies found' }),
+              { status: 404 }
+            );
+          }
+
           return new Response(
-            JSON.stringify({ message: 'No liked movies found' }),
-            { status: 404 }
+            JSON.stringify(getResult.rows),
+            { status: 200 }
+          );
+        } else {
+          // Get all liked movies
+          const getAllResult = await sql`
+            SELECT l.user_id, u.username, u.email, m.url, m.genre
+            FROM liked l
+            JOIN Users u ON l.user_id = u.id
+            JOIN all_movies m ON l.movie_id = m.id AND l.genre = m.genre;
+          `;
+
+          if (getAllResult.rows.length === 0) {
+            return new Response(
+              JSON.stringify({ message: 'No liked movies found' }),
+              { status: 404 }
+            );
+          }
+
+          return new Response(
+            JSON.stringify(getAllResult.rows),
+            { status: 200 }
           );
         }
-
-        return new Response(
-          JSON.stringify(getResult.rows),
-          { status: 200 }
-        );
 
       case 'POST':
         // Add a movie to the liked list
