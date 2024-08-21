@@ -38,16 +38,16 @@ const checkUserLoggedIn = async () => {
 };
 
 // Function to get the status of the movie in liked and watchlist
-const fetchMovieStatus = async (url) => {
+const fetchMovieStatus = async (url, genre) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return { isLiked: false, isInWatchlist: false };
 
     const [likedResponse, watchlistResponse] = await Promise.all([
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/status?url=${encodeURIComponent(url)}`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ]);
@@ -61,7 +61,10 @@ const fetchMovieStatus = async (url) => {
       watchlistResponse.json()
     ]);
 
-    return { isLiked: likedData.isLiked, isInWatchlist: watchlistData.isInWatchlist };
+    const isLiked = likedData.some(item => item.movie_id === url && item.genre === genre);
+    const isInWatchlist = watchlistData.some(item => item.url === url && item.genre === genre);
+
+    return { isLiked, isInWatchlist };
   } catch (error) {
     console.error('Error fetching movie status:', error);
     return { isLiked: false, isInWatchlist: false };
@@ -114,24 +117,28 @@ const HorrorPostPage = ({ params }) => {
         setIsLoggedIn(loggedIn);
 
         if (loggedIn) {
+          // Fetch current status of the movie for the logged-in user
+          const { isLiked, isInWatchlist } = await fetchMovieStatus(params.url, result.genre);
+          setIsLiked(isLiked);
+          setIsInWatchlist(isInWatchlist);
+
           // Fetch counts for liked and watchlisted
-          const likedResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/?url=${encodeURIComponent(params.url)}`);
-          const watchlistResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/?url=${encodeURIComponent(params.url)}`);
+          const likedResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const watchlistResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
 
           if (likedResponse.ok) {
             const likedData = await likedResponse.json();
-            setLikedCount(likedData.count);
+            setLikedCount(likedData.length);
           }
 
           if (watchlistResponse.ok) {
             const watchlistData = await watchlistResponse.json();
-            setWatchlistCount(watchlistData.count);
+            setWatchlistCount(watchlistData.length);
           }
-
-          // Fetch current status of the movie for the logged-in user
-          const { isLiked, isInWatchlist } = await fetchMovieStatus(params.url);
-          setIsLiked(isLiked);
-          setIsInWatchlist(isInWatchlist);
         }
       } catch (err) {
         setError('Failed to load data');
