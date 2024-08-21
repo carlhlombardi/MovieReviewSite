@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 const getUserDetails = async (userId) => {
   const userResult = await sql`
     SELECT username, email
-    FROM Users
+    FROM users
     WHERE id = ${userId};
   `;
   if (userResult.rows.length === 0) {
@@ -36,17 +36,16 @@ export async function handler(request) {
 
     switch (request.method) {
       case 'GET':
-        // Get liked movies for the specific user
+        // Get liked items for the specific user
         const getResult = await sql`
-          SELECT l.username, l.email, m.url, m.genre
-          FROM liked l
-          JOIN all_movies m ON l.url = m.url AND l.genre = m.genre
-          WHERE l.username = ${user.username};
+          SELECT username, email, url
+          FROM likes
+          WHERE username = ${user.username};
         `;
 
         if (getResult.rows.length === 0) {
           return new Response(
-            JSON.stringify({ message: 'No liked movies found' }),
+            JSON.stringify({ message: 'No liked items found' }),
             { status: 404 }
           );
         }
@@ -57,25 +56,25 @@ export async function handler(request) {
         );
 
       case 'POST':
-        // Add a movie to the liked list
-        const { url, genre } = await request.json();
-        if (!url || !genre) {
+        // Add a like to the list
+        const { url } = await request.json();
+        if (!url) {
           return new Response(
-            JSON.stringify({ message: 'URL and genre are required' }),
+            JSON.stringify({ message: 'URL is required' }),
             { status: 400 }
           );
         }
 
         const postResult = await sql`
-          INSERT INTO liked (username, email, url, genre)
-          VALUES (${user.username}, ${user.email}, ${url}, ${genre})
-          ON CONFLICT (username, url, genre) DO NOTHING
-          RETURNING username, email, url, genre;
+          INSERT INTO likes (username, email, url)
+          VALUES (${user.username}, ${user.email}, ${url})
+          ON CONFLICT (username, url) DO NOTHING
+          RETURNING username, email, url;
         `;
 
         if (postResult.rows.length === 0) {
           return new Response(
-            JSON.stringify({ message: 'Movie already liked' }),
+            JSON.stringify({ message: 'Item already liked' }),
             { status: 409 }
           );
         }
@@ -86,33 +85,32 @@ export async function handler(request) {
         );
 
       case 'DELETE':
-        // Remove a movie from the liked list
+        // Remove a like from the list
         const urlToDelete = new URL(request.url);
         const url_del = urlToDelete.searchParams.get('url');
-        const genre_del = urlToDelete.searchParams.get('genre');
 
-        if (!url_del || !genre_del) {
+        if (!url_del) {
           return new Response(
-            JSON.stringify({ message: 'URL and genre are required' }),
+            JSON.stringify({ message: 'URL is required' }),
             { status: 400 }
           );
         }
 
         const deleteResult = await sql`
-          DELETE FROM liked
-          WHERE username = ${user.username} AND url = ${url_del} AND genre = ${genre_del}
-          RETURNING username, email, url, genre;
+          DELETE FROM likes
+          WHERE username = ${user.username} AND url = ${url_del}
+          RETURNING username, email, url;
         `;
 
         if (deleteResult.rowCount === 0) {
           return new Response(
-            JSON.stringify({ message: 'Movie not found in liked list' }),
+            JSON.stringify({ message: 'Item not found in liked list' }),
             { status: 404 }
           );
         }
 
         return new Response(
-          JSON.stringify({ message: 'Movie removed from liked list' }),
+          JSON.stringify({ message: 'Item removed from liked list' }),
           { status: 200 }
         );
 
