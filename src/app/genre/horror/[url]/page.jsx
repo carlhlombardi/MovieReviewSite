@@ -40,7 +40,7 @@ const checkUserLoggedIn = async () => {
 // Function to fetch like status and count
 const fetchLikeStatus = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes/status?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch like status');
     }
@@ -56,7 +56,7 @@ const fetchLikeStatus = async (url) => {
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes/${action}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/${action}`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,

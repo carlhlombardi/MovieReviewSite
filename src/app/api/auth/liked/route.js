@@ -14,7 +14,7 @@ const getUserDetails = async (userId) => {
   return userResult.rows[0];
 };
 
-// Handler for the `/liked` route
+// Handler for the `/likes` route
 export async function handler(request) {
   try {
     // Extract the authorization token
