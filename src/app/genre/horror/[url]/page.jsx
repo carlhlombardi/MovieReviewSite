@@ -1,128 +1,207 @@
-import { sql } from '@vercel/postgres';
-import jwt from 'jsonwebtoken';
+"use client";
 
-// Function to get user details from the Users table
-const getUserDetails = async (userId) => {
-  const userResult = await sql`
-    SELECT username, email
-    FROM users
-    WHERE id = ${userId};
-  `;
-  if (userResult.rows.length === 0) {
-    throw new Error('User not found');
-  }
-  return userResult.rows[0];
-};
+import React, { useEffect, useState } from 'react';
+import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
+import Image from 'next/image';
+import Comments from '@/app/components/comments/comments';
 
-// Helper function to check if a movie is liked
-const isMovieLiked = async (username, url) => {
-  const result = await sql`
-    SELECT 1
-    FROM likes
-    WHERE username = ${username} AND url = ${url};
-  `;
-  return result.rowCount > 0;
-};
-
-// Handler for the `/api/auth/liked` route
-export async function handler(request) {
+// Function to fetch movie data
+const fetchData = async (url) => {
   try {
-    if (request.method === 'POST') {
-      // Extract the authorization token
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
-
-      if (!token) {
-        return new Response(
-          JSON.stringify({ message: 'Unauthorized' }),
-          { status: 401 }
-        );
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId;
-
-      // Fetch user details from the Users table
-      const user = await getUserDetails(userId);
-
-      // Parse request body
-      const { url, action } = await request.json();
-      if (!url) {
-        return new Response(
-          JSON.stringify({ message: 'URL is required' }),
-          { status: 400 }
-        );
-      }
-
-      if (action === 'status') {
-        // Fetch like status
-        const liked = await isMovieLiked(user.username, url);
-        return new Response(
-          JSON.stringify({ isLiked: liked }),
-          { status: 200 }
-        );
-      }
-
-      if (action === 'like') {
-        // Add a like
-        const postResult = await sql`
-          INSERT INTO likes (username, email, url)
-          VALUES (${user.username}, ${user.email}, ${url})
-          ON CONFLICT (username, url) DO NOTHING
-          RETURNING username, email, url;
-        `;
-
-        if (postResult.rowCount === 0) {
-          return new Response(
-            JSON.stringify({ message: 'Item already liked' }),
-            { status: 409 }
-          );
-        }
-
-        // Return the status after adding
-        return new Response(
-          JSON.stringify({
-            message: 'Item liked',
-            isLiked: true,
-          }),
-          { status: 201 }
-        );
-      } else if (action === 'unlike') {
-        // Remove a like
-        const deleteResult = await sql`
-          DELETE FROM likes
-          WHERE username = ${user.username} AND url = ${url}
-          RETURNING username, email, url;
-        `;
-
-        if (deleteResult.rowCount === 0) {
-          return new Response(
-            JSON.stringify({ message: 'Item not found in liked list' }),
-            { status: 404 }
-          );
-        }
-
-        // Return the status after removing
-        return new Response(
-          JSON.stringify({
-            message: 'Item unliked',
-            isLiked: false,
-          }),
-          { status: 200 }
-        );
-      }
-
-    } else {
-      return new Response(
-        JSON.stringify({ message: 'Method not allowed' }),
-        { status: 405 }
-      );
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/horrormovies?url=${encodeURIComponent(url)}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch data');
     }
+    return await response.json();
   } catch (error) {
-    console.error('Error handling liked request:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to process request' }),
-      { status: 500 }
-    );
+    console.error('Fetch data error:', error);
+    return null;
   }
-}
+};
+
+// Function to check if the user is logged in
+const checkUserLoggedIn = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return false;
+    }
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to check login status', error);
+    return false;
+  }
+};
+
+// Function to fetch like status and count
+const fetchLikeStatus = async (url) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url, action: 'status' })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch like status');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Fetch like status error:', error);
+    return { isLiked: false };
+  }
+};
+
+// Function to like/unlike a movie
+const toggleLike = async (url, action) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url, action })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to toggle like');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Toggle like error:', error);
+    return null;
+  }
+};
+
+const HorrorPostPage = ({ params }) => {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [likedCount, setLikedCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    const fetchDataAndStatus = async () => {
+      try {
+        const movieData = await fetchData(params.url);
+        if (movieData) {
+          setData(movieData);
+        }
+
+        const userLoggedIn = await checkUserLoggedIn();
+        setIsLoggedIn(userLoggedIn);
+
+        if (userLoggedIn) {
+          const { isLiked, likedCount } = await fetchLikeStatus(params.url);
+          setIsLiked(isLiked);
+          setLikedCount(likedCount);
+        }
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDataAndStatus();
+  }, [params.url]);
+
+  const handleLike = async () => {
+    const action = isLiked ? 'unlike' : 'like';
+    const result = await toggleLike(params.url, action);
+
+    if (result) {
+      setIsLiked(!isLiked);
+      setLikedCount(result.likedCount);
+    }
+  };
+
+  if (isLoading) {
+    return <Spinner animation="border" />;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!data) {
+    return <div>No data found</div>;
+  }
+
+  const { film, year, studio, director, screenwriters, producer, total_kills, men, women, run_time, my_rating, review, image_url } = data;
+
+  return (
+    <Container>
+      <Row>
+        <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
+          <div className="image-wrapper">
+            {image_url ? (
+              <Image
+                src={image_url}
+                alt={film}
+                width={300}
+                height={450}
+              />
+            ) : (
+              <div>No image available</div>
+            )}
+          </div>
+        </Col>
+        <Col xs={12} md={6} className="text-center m-auto order-md-1">
+          <h1 className='mb-4'>{film}</h1>
+          <h5>Director: {director}</h5>
+          <h5>Screenwriter(s): {screenwriters}</h5>
+          <h5>Producer(s): {producer}</h5>
+          <h5>Studio: {studio}</h5>
+          <h5>Year: {year}</h5>
+        </Col>
+        <Col xs={12} md={6} className="text-center m-auto order-md-3">
+          <h2 className='mb-4'>The Stats</h2>
+          <h6>Run Time: {run_time} Minutes</h6>
+          <h6>Total Kills: {total_kills} Kills</h6>
+          <h6>Men: {men} Killed</h6>
+          <h6>Women: {women} Killed</h6>
+        </Col>
+        <Col xs={12} md={6} className="text-center m-auto order-md-4">
+          <h3 className='mb-4'>Review of {film}</h3>
+          <p>{review}</p>
+          <h3>My Rating: {my_rating} Stars</h3>
+        </Col>
+      </Row>
+      <Row>
+        <Col xs={12} className="text-center mt-5">
+          {isLoggedIn ? (
+            <>
+              <Button
+                variant={isLiked ? "danger" : "primary"}
+                onClick={handleLike}
+                className="me-2"
+              >
+                {isLiked ? `Unlike (${likedCount})` : `Like (${likedCount})`}
+              </Button>
+              <Comments movieUrl={params.url} />
+            </>
+          ) : (
+            <Alert variant="info">Please log in to like or add to watchlist and to view and post comments.</Alert>
+          )}
+        </Col>
+      </Row>
+    </Container>
+  );
+};
+
+export default HorrorPostPage;
