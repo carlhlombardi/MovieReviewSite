@@ -52,19 +52,19 @@ const fetchLikeStatus = async (url) => {
 
     const result = await response.json();
     return {
-      isliked: result.isliked || false,
-      like_count: result.like_count || 0,
+      isLiked: result.isliked || false,
+      likeCount: result.likecount || 0,
     };
   } catch (error) {
     console.error('Fetch like status error:', error);
-    return { isliked: false, like_count: 0 };
+    return { isLiked: false, likeCount: 0 }; // Default values
   }
 };
 
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes' + (action === 'unlike' ? `?url=${encodeURIComponent(url)}` : ''), {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes${action === 'unlike' ? `?url=${encodeURIComponent(url)}` : ''}`, {
       method: action === 'like' ? 'POST' : 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -81,7 +81,7 @@ const toggleLike = async (url, action) => {
     return await response.json();
   } catch (error) {
     console.error('Toggle like error:', error);
-    return null;
+    return null; // Default error handling
   }
 };
 
@@ -126,7 +126,7 @@ const HorrorPostPage = ({ params }) => {
 
     if (result) {
       setIsLiked(action === 'like');
-      setLikedCount(result.likeCount || 0); // Handle likeCount properly
+      setLikedCount(result.likeCount || 0); // Ensure correct likeCount
     }
   };
 
