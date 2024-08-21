@@ -39,16 +39,28 @@ const checkUserLoggedIn = async () => {
 // Function to fetch like status and count
 const fetchLikeStatus = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`);
+    // Send a GET request to the endpoint with the movie URL as a query parameter
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Check if the response is OK
     if (!response.ok) {
       throw new Error('Failed to fetch like status');
     }
+
+    // Parse and return the JSON data
     return await response.json();
   } catch (error) {
     console.error('Fetch like status error:', error);
     return { isLiked: false, likedCount: 0 };
   }
 };
+
 
 // Function to like/unlike a movie
 const toggleLike = async (url, action) => {
@@ -62,15 +74,18 @@ const toggleLike = async (url, action) => {
       },
       body: JSON.stringify({ url, action })
     });
+
     if (!response.ok) {
       throw new Error('Failed to toggle like');
     }
+
     return await response.json();
   } catch (error) {
     console.error('Toggle like error:', error);
     return null;
   }
 };
+
 
 const HorrorPostPage = ({ params }) => {
   const [data, setData] = useState(null);

@@ -14,6 +14,16 @@ const getUserDetails = async (userId) => {
   return userResult.rows[0];
 };
 
+// Helper function to get like count for a specific URL
+const getLikeCount = async (url) => {
+  const result = await sql`
+    SELECT COUNT(*) AS likedCount
+    FROM likes
+    WHERE url = ${url};
+  `;
+  return result.rows[0].likedCount;
+}
+
 // Handler for the `/api/auth/liked` route
 export async function handler(request) {
   try {
@@ -52,15 +62,15 @@ export async function handler(request) {
           );
         }
 
-        // If action is 'like', add the like
         if (action === 'like') {
+          // Add a like
           const postResult = await sql`
             INSERT INTO likes (username, email, url)
             VALUES (${user.username}, ${user.email}, ${url})
             ON CONFLICT (username, url) DO NOTHING
             RETURNING username, email, url;
           `;
-          
+
           if (postResult.rowCount === 0) {
             return new Response(
               JSON.stringify({ message: 'Item already liked' }),
@@ -73,14 +83,12 @@ export async function handler(request) {
             JSON.stringify({
               message: 'Item liked',
               isLiked: true,
-              likedCount: (await getLikeCount(url)).likedCount
+              likedCount: await getLikeCount(url)
             }),
             { status: 201 }
           );
-        }
-
-        // If action is 'unlike', remove the like
-        if (action === 'unlike') {
+        } else if (action === 'unlike') {
+          // Remove a like
           const deleteResult = await sql`
             DELETE FROM likes
             WHERE username = ${user.username} AND url = ${url}
@@ -99,12 +107,11 @@ export async function handler(request) {
             JSON.stringify({
               message: 'Item unliked',
               isLiked: false,
-              likedCount: (await getLikeCount(url)).likedCount
+              likedCount: await getLikeCount(url)
             }),
             { status: 200 }
           );
         }
-
         break;
 
       default:
@@ -120,14 +127,4 @@ export async function handler(request) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to get like count for a specific URL
-const getLikeCount = async (url) => {
-  const result = await sql`
-    SELECT COUNT(*) AS likedCount
-    FROM likes
-    WHERE url = ${url};
-  `;
-  return result.rows[0];
 }
