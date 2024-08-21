@@ -58,7 +58,7 @@ const fetchLikeStatus = async (url) => {
   }
 };
 
-// Function to like/unlike a movie
+// Function to toggle like/unlike a movie
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
