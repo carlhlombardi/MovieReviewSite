@@ -14,14 +14,14 @@ const getUserDetails = async (id) => {
   return userResult.rows[0];
 };
 
-// Helper function to get like count for a specific URL
-const getLikeCount = async (url) => {
+// Helper function to check if a movie is liked
+const isMovieLiked = async (username, url) => {
   const result = await sql`
-    SELECT COUNT(*) AS likedCount
+    SELECT 1
     FROM likes
-    WHERE url = ${url};
+    WHERE username = ${username} AND url = ${url};
   `;
-  return result.rows[0].likedCount;
+  return result.rowCount > 0;
 }
 
 // Handler for the `/api/auth/liked` route
@@ -83,7 +83,6 @@ export async function handler(request) {
             JSON.stringify({
               message: 'Item liked',
               isLiked: true,
-              likedCount: await getLikeCount(url)
             }),
             { status: 201 }
           );
@@ -107,12 +106,30 @@ export async function handler(request) {
             JSON.stringify({
               message: 'Item unliked',
               isLiked: false,
-              likedCount: await getLikeCount(url)
             }),
             { status: 200 }
           );
         }
         break;
+
+      case 'GET':
+        // Check if a movie is liked
+        const urlToCheck = new URL(request.url).searchParams.get('url');
+        if (!urlToCheck) {
+          return new Response(
+            JSON.stringify({ message: 'URL is required' }),
+            { status: 400 }
+          );
+        }
+
+        const liked = await isMovieLiked(user.username, urlToCheck);
+
+        return new Response(
+          JSON.stringify({
+            isLiked: liked,
+          }),
+          { status: 200 }
+        );
 
       default:
         return new Response(
