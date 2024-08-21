@@ -130,6 +130,13 @@ export default function ProfilePage() {
     fetchFilteredMovies();
   }, [movies, username]);
 
+    // Function to format the date
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A'; // Handle empty or undefined date strings
+      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+      return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
+    };
+
   if (isLoading) {
     return (
       <div className="container mt-5 text-center">
