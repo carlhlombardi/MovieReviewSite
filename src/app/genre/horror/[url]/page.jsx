@@ -40,7 +40,7 @@ const checkUserLoggedIn = async () => {
 const fetchLikeStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -65,7 +65,7 @@ const fetchLikeStatus = async (url) => {
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
