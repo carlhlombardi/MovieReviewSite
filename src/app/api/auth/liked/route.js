@@ -20,14 +20,16 @@ export async function handler(request) {
 
     switch (request.method) {
       case 'GET':
-        // Get liked movies for the user
-        const result = await sql`
-          SELECT movie_id, genre
-          FROM Liked
-          WHERE user_id = ${userId};
+        // Get liked movies for the user, including user details and movie details
+        const getResult = await sql`
+          SELECT l.user_id, u.username, u.email, l.movie_id, m.genre
+          FROM Liked l
+          JOIN "user" u ON l.user_id = u.id
+          JOIN movie m ON l.movie_id = m.id
+          WHERE l.user_id = ${userId};
         `;
 
-        if (result.rows.length === 0) {
+        if (getResult.rows.length === 0) {
           return new Response(
             JSON.stringify({ message: 'No liked movies found' }),
             { status: 404 }
@@ -35,7 +37,7 @@ export async function handler(request) {
         }
 
         return new Response(
-          JSON.stringify(result.rows),
+          JSON.stringify(getResult.rows),
           { status: 200 }
         );
 

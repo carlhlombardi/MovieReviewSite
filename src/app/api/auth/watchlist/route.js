@@ -20,11 +20,13 @@ export async function handler(request) {
 
     switch (request.method) {
       case 'GET':
-        // Get watchlisted movies for the user
+        // Get watchlisted movies for the user, including user details and movie details
         const getResult = await sql`
-          SELECT movie_id, genre
-          FROM Watchlist
-          WHERE user_id = ${userId};
+          SELECT w.user_id, u.username, u.email, w.movie_id, m.genre
+          FROM Watchlist w
+          JOIN "user" u ON w.user_id = u.id
+          JOIN movie m ON w.movie_id = m.id
+          WHERE w.user_id = ${userId};
         `;
 
         if (getResult.rows.length === 0) {
