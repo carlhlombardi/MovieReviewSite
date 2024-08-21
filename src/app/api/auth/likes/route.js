@@ -34,10 +34,46 @@ const getLikeCount = async (url) => {
   return result.rows[0].likeCount;
 };
 
-// Handler for the `/api/auth/liked` route
+// Handler for the `/api/auth/likes` route
 export async function handler(request) {
   try {
-    if (request.method === 'POST') {
+    if (request.method === 'GET') {
+      // Extract the authorization token
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.split(' ')[1];
+
+      if (!token) {
+        return new Response(
+          JSON.stringify({ message: 'Unauthorized' }),
+          { status: 401 }
+        );
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId;
+
+      // Fetch user details from the Users table
+      const user = await getUserDetails(userId);
+
+      // Parse query parameters
+      const url = new URL(request.url).searchParams.get('url');
+      if (!url) {
+        return new Response(
+          JSON.stringify({ message: 'URL is required' }),
+          { status: 400 }
+        );
+      }
+
+      // Determine the response data
+      const isLiked = await isMovieLiked(user.username, url);
+      const likeCount = await getLikeCount(url);
+
+      return new Response(
+        JSON.stringify({ isLiked, likeCount }),
+        { status: 200 }
+      );
+
+    } else if (request.method === 'POST') {
       // Extract the authorization token
       const authHeader = request.headers.get('Authorization');
       const token = authHeader?.split(' ')[1];
@@ -67,16 +103,6 @@ export async function handler(request) {
       // Determine the response data
       let isLiked = false;
       let likeCount = 0;
-
-      if (action === 'status') {
-        // Fetch like status
-        isLiked = await isMovieLiked(user.username, url);
-        likeCount = await getLikeCount(url);
-        return new Response(
-          JSON.stringify({ isLiked, likeCount }),
-          { status: 200 }
-        );
-      }
 
       if (action === 'like') {
         // Add a like

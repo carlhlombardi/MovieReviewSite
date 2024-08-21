@@ -40,13 +40,11 @@ const checkUserLoggedIn = async () => {
 const fetchLikeStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
-      method: 'POST',
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ url, action: 'status' })
     });
 
     if (!response.ok) {
