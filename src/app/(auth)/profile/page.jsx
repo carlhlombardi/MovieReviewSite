@@ -27,6 +27,21 @@ const fetchMovies = async () => {
   }
 };
 
+const fetchComments = async (movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return [];
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,6 +49,7 @@ export default function ProfilePage() {
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const [username, setUsername] = useState(null);
+  const [error, setError] = useState('');
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API

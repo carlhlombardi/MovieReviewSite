@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 
@@ -11,19 +13,6 @@ const fetchComments = async (movieUrl) => {
     return await response.json();
   } catch (error) {
     console.error('Error fetching comments:', error);
-    return [];
-  }
-};
-
-const fetchUserComments = async (username) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?username=${encodeURIComponent(username)}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user comments');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching user comments:', error);
     return [];
   }
 };
@@ -49,27 +38,27 @@ const postComment = async (url, text, token) => {
 };
 
 const deleteComment = async (id, movieUrl, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+    try {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error deleting comment:', errorData);
+        throw new Error(`Failed to delete comment: ${errorData.message}`);
       }
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error deleting comment:', errorData);
-      throw new Error(`Failed to delete comment: ${errorData.message}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      return false;
     }
-    return true;
-  } catch (error) {
-    console.error('Error deleting comment:', error);
-    return false;
-  }
-};
+  };
 
 // Comments component
-const Comments = ({ movieUrl, isProfilePage }) => {
+const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -90,16 +79,9 @@ const Comments = ({ movieUrl, isProfilePage }) => {
             setUser(userData);
           }
         }
-
-        if (isProfilePage && user) {
-          // Fetch comments for the logged-in user
-          const userCommentsData = await fetchUserComments(user.username);
-          setComments(userCommentsData);
-        } else {
-          // Fetch comments for a specific movie
-          const commentsData = await fetchComments(movieUrl);
-          setComments(commentsData);
-        }
+        // Fetch comments
+        const commentsData = await fetchComments(movieUrl);
+        setComments(commentsData);
       } catch (err) {
         setError('Failed to load comments');
         console.error('Error:', err);
@@ -109,7 +91,7 @@ const Comments = ({ movieUrl, isProfilePage }) => {
     };
 
     fetchCommentsAsync();
-  }, [movieUrl, isProfilePage, user]);
+  }, [movieUrl]);
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -144,6 +126,7 @@ const Comments = ({ movieUrl, isProfilePage }) => {
       console.error('Error:', err);
     }
   };
+  
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -151,9 +134,9 @@ const Comments = ({ movieUrl, isProfilePage }) => {
 
   return (
     <>
-      <h3>{isProfilePage ? 'Your Comments' : 'Comments'}</h3>
+      <h3>Comments</h3>
       {error && <Alert variant="danger">{error}</Alert>}
-      {!isProfilePage && user && (
+      {user && (
         <Form onSubmit={handleCommentSubmit} className="mb-4">
           <Form.Group controlId="commentText">
             <Form.Control
@@ -172,7 +155,7 @@ const Comments = ({ movieUrl, isProfilePage }) => {
           <ListGroup.Item key={comment.id}>
             <strong>{comment.username}</strong> - {new Date(comment.createdat).toLocaleDateString()}
             <p>{comment.text}</p>
-            {!isProfilePage && user && user.username === comment.username && (
+            {user && user.username === comment.username && (
               <Button
                 variant="danger"
                 onClick={() => handleDeleteComment(comment.id)}
