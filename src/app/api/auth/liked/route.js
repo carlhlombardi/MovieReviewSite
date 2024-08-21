@@ -6,7 +6,7 @@ const getUserDetails = async (userId) => {
   const userResult = await sql`
     SELECT username, email
     FROM users
-    WHERE id = ${userId};
+    WHERE id = ${id};
   `;
   if (userResult.rows.length === 0) {
     throw new Error('User not found');
