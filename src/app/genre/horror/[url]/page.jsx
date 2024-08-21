@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
 import Comments from '@/app/components/comments/comments';
-import useLike from '@/app/hooks/useLike';
 
 // Function to fetch data for a specific movie URL
 const fetchData = async (url) => {
@@ -44,14 +43,11 @@ const HorrorPostPage = ({ params }) => {
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const { isLiked, likeMovie, unlikeMovie } = useLike(params.url, 'Horror'); // Use `params.url` for the movie URL
-
   useEffect(() => {
     const fetchDataAsync = async () => {
       try {
         const result = await fetchData(params.url); // Fetch movie data by `url`
         setData(result);
-
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
       } catch (err) {
@@ -64,19 +60,6 @@ const HorrorPostPage = ({ params }) => {
 
     fetchDataAsync();
   }, [params.url]);
-
-  const handleLike = async () => {
-    if (!isLoggedIn) {
-      alert('You need to be logged in to like a movie.');
-      return;
-    }
-
-    if (isLiked) {
-      await unlikeMovie();
-    } else {
-      await likeMovie();
-    }
-  };
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -116,14 +99,6 @@ const HorrorPostPage = ({ params }) => {
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
-          {isLoggedIn && (
-            <Button 
-              variant={isLiked ? 'danger' : 'primary'}
-              onClick={handleLike}
-            >
-              {isLiked ? 'Unlike' : 'Like'}
-            </Button>
-          )}
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-3">
           <h2 className='mb-4'>The Stats</h2>
