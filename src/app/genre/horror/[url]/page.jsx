@@ -12,8 +12,7 @@ const fetchData = async (url) => {
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error('Fetch data error:', error);
     return null;
@@ -37,32 +36,17 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-// Function to fetch like status and count
-const fetchLikeStatus = async (url) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch like status');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Fetch like status error:', error);
-    return { isLiked: false, likedCount: 0 };
-  }
-};
-
 // Function to like/unlike a movie
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/${action}`, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/liked', {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url, action })
     });
     if (!response.ok) {
       throw new Error('Failed to toggle like');
@@ -84,21 +68,26 @@ const HorrorPostPage = ({ params }) => {
 
   useEffect(() => {
     const fetchDataAndStatus = async () => {
-      const movieData = await fetchData(params.url);
-      if (movieData) {
-        setData(movieData);
-      }
-      
-      const userLoggedIn = await checkUserLoggedIn();
-      setIsLoggedIn(userLoggedIn);
+      try {
+        const movieData = await fetchData(params.url);
+        if (movieData) {
+          setData(movieData);
+        }
 
-      if (userLoggedIn) {
-        const { isLiked, likedCount } = await fetchLikeStatus(params.url);
-        setIsLiked(isLiked);
-        setLikedCount(likedCount);
-      }
+        const userLoggedIn = await checkUserLoggedIn();
+        setIsLoggedIn(userLoggedIn);
 
-      setIsLoading(false);
+        if (userLoggedIn) {
+          const { isLiked, likedCount } = await fetchLikeStatus(params.url);
+          setIsLiked(isLiked);
+          setLikedCount(likedCount);
+        }
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchDataAndStatus();

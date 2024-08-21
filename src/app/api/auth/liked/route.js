@@ -14,7 +14,7 @@ const getUserDetails = async (userId) => {
   return userResult.rows[0];
 };
 
-// Handler for the `/likes` route
+// Handler for the `/api/auth/liked` route
 export async function handler(request) {
   try {
     // Extract the authorization token
@@ -35,84 +35,77 @@ export async function handler(request) {
     const user = await getUserDetails(userId);
 
     switch (request.method) {
-      case 'GET':
-        // Get liked items for the specific user
-        const getResult = await sql`
-          SELECT username, email, url
-          FROM likes
-          WHERE username = ${user.username};
-        `;
-
-        if (getResult.rows.length === 0) {
-          return new Response(
-            JSON.stringify({ message: 'No liked items found' }),
-            { status: 404 }
-          );
-        }
-
-        return new Response(
-          JSON.stringify(getResult.rows),
-          { status: 200 }
-        );
-
       case 'POST':
-        // Add a like to the list
-        const { url } = await request.json();
-        if (!url) {
+        // Toggle like status
+        const { url, action } = await request.json();
+        if (!url || !action) {
           return new Response(
-            JSON.stringify({ message: 'URL is required' }),
+            JSON.stringify({ message: 'URL and action are required' }),
             { status: 400 }
           );
         }
 
-        const postResult = await sql`
-          INSERT INTO likes (username, email, url)
-          VALUES (${user.username}, ${user.email}, ${url})
-          ON CONFLICT (username, url) DO NOTHING
-          RETURNING username, email, url;
-        `;
-
-        if (postResult.rows.length === 0) {
+        if (action !== 'like' && action !== 'unlike') {
           return new Response(
-            JSON.stringify({ message: 'Item already liked' }),
-            { status: 409 }
-          );
-        }
-
-        return new Response(
-          JSON.stringify(postResult.rows[0]),
-          { status: 201 }
-        );
-
-      case 'DELETE':
-        // Remove a like from the list
-        const urlToDelete = new URL(request.url);
-        const url_del = urlToDelete.searchParams.get('url');
-
-        if (!url_del) {
-          return new Response(
-            JSON.stringify({ message: 'URL is required' }),
+            JSON.stringify({ message: 'Invalid action' }),
             { status: 400 }
           );
         }
 
-        const deleteResult = await sql`
-          DELETE FROM likes
-          WHERE username = ${user.username} AND url = ${url_del}
-          RETURNING username, email, url;
-        `;
+        // If action is 'like', add the like
+        if (action === 'like') {
+          const postResult = await sql`
+            INSERT INTO likes (username, email, url)
+            VALUES (${user.username}, ${user.email}, ${url})
+            ON CONFLICT (username, url) DO NOTHING
+            RETURNING username, email, url;
+          `;
+          
+          if (postResult.rowCount === 0) {
+            return new Response(
+              JSON.stringify({ message: 'Item already liked' }),
+              { status: 409 }
+            );
+          }
 
-        if (deleteResult.rowCount === 0) {
+          // Return the status after adding
           return new Response(
-            JSON.stringify({ message: 'Item not found in liked list' }),
-            { status: 404 }
+            JSON.stringify({
+              message: 'Item liked',
+              isLiked: true,
+              likedCount: (await getLikeCount(url)).likedCount
+            }),
+            { status: 201 }
           );
         }
 
-        return new Response(
-          JSON.stringify({ message: 'Item removed from liked list' }),
-          { status: 200 }
-        );
+        // If action is 'unlike', remove the like
+        if (action === 'unlike') {
+          const deleteResult = await sql`
+            DELETE FROM likes
+            WHERE username = ${user.username} AND url = ${url}
+            RETURNING username, email, url;
+          `;
+
+          if (deleteResult.rowCount === 0) {
+            return new Response(
+              JSON.stringify({ message: 'Item not found in liked list' }),
+              { status: 404 }
+            );
+          }
+
+          // Return the status after removing
+          return new Response(
+            JSON.stringify({
+              message: 'Item unliked',
+              isLiked: false,
+              likedCount: (await getLikeCount(url)).likedCount
+            }),
+            { status: 200 }
+          );
+        }
+
+        break;
 
       default:
         return new Response(
@@ -121,10 +114,20 @@ export async function handler(request) {
         );
     }
   } catch (error) {
-    console.error('Liked list operation error:', error);
+    console.error('Error handling liked request:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to process request' }),
       { status: 500 }
     );
   }
+}
+
+// Helper function to get like count for a specific URL
+const getLikeCount = async (url) => {
+  const result = await sql`
+    SELECT COUNT(*) AS likedCount
+    FROM likes
+    WHERE url = ${url};
+  `;
+  return result.rows[0];
 }
