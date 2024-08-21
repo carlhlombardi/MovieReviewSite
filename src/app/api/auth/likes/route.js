@@ -1,10 +1,8 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Handler to get likes for a specific movie
 export async function GET(request) {
   try {
-    // Extract URL from query parameters
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
 
@@ -19,14 +17,14 @@ export async function GET(request) {
     }
 
     // Get the total like count for the movie
-    const likeCountResult = await sql`
-      SELECT COUNT(*) AS likeCount
+    const likecountResult = await sql`
+      SELECT COUNT(*) AS likecount
       FROM likes
-      WHERE url = ${movieUrl};
+      WHERE url = ${movieUrl} AND isliked = TRUE;
     `;
-    const likeCount = likeCountResult.rows[0].likeCount;
+    const likecount = likecountResult.rows[0].likecount;
 
-    console.log('GET Request - Like Count:', likeCount);
+    console.log('GET Request - Like Count:', likecount);
 
     // Check if the user has liked the movie
     const authHeader = request.headers.get('Authorization');
@@ -35,7 +33,7 @@ export async function GET(request) {
     if (!token) {
       console.log('GET Request - No Token Provided');
       return new Response(
-        JSON.stringify({ likeCount, isLiked: false }),
+        JSON.stringify({ likecount, isliked: false }),
         { status: 200 }
       );
     }
@@ -62,17 +60,17 @@ export async function GET(request) {
 
     console.log('GET Request - User Found:', user.username);
 
-    const isLikedResult = await sql`
-      SELECT 1
+    const islikedResult = await sql`
+      SELECT isliked
       FROM likes
       WHERE username = ${user.username} AND url = ${movieUrl};
     `;
-    const isLiked = isLikedResult.rowCount > 0;
+    const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
 
-    console.log('GET Request - Is Liked:', isLiked);
+    console.log('GET Request - Is Liked:', isliked);
 
     return new Response(
-      JSON.stringify({ likeCount, isLiked }),
+      JSON.stringify({ likecount, isliked }),
       { status: 200 }
     );
   } catch (error) {
@@ -84,14 +82,11 @@ export async function GET(request) {
   }
 }
 
-// Handler to add a new like
 export async function POST(request) {
   try {
-    // Parse the request body
     const { url } = await request.json();
     console.log('POST Request - URL:', url);
 
-    // Extract and verify the token from the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -103,12 +98,10 @@ export async function POST(request) {
       );
     }
 
-    // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
     console.log('POST Request - Decoded User ID:', userId);
 
-    // Retrieve the username based on userId
     const userResult = await sql`
       SELECT username
       FROM users
@@ -125,11 +118,10 @@ export async function POST(request) {
     }
     console.log('POST Request - User Found:', user.username);
 
-    // Insert the like into the database
     const postResult = await sql`
-      INSERT INTO likes (username, url)
-      VALUES (${user.username}, ${url})
-      ON CONFLICT (username, url) DO NOTHING
+      INSERT INTO likes (username, url, isliked)
+      VALUES (${user.username}, ${url}, TRUE)
+      ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
       RETURNING username, url;
     `;
 
@@ -157,12 +149,10 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    // Extract URL from query parameters
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
     console.log('DELETE Request - Movie URL:', movieUrl);
 
-    // Extract and verify the token from the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -174,12 +164,10 @@ export async function DELETE(request) {
       );
     }
 
-    // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
     console.log('DELETE Request - Decoded User ID:', userId);
 
-    // Retrieve the username based on userId
     const userResult = await sql`
       SELECT username
       FROM users
@@ -196,9 +184,9 @@ export async function DELETE(request) {
     }
     console.log('DELETE Request - User Found:', user.username);
 
-    // Delete the like from the database
     const deleteResult = await sql`
-      DELETE FROM likes
+      UPDATE likes
+      SET isliked = FALSE
       WHERE username = ${user.username} AND url = ${movieUrl}
       RETURNING username, url;
     `;

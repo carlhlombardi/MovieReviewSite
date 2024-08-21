@@ -36,7 +36,6 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-// Function to fetch like status and count
 const fetchLikeStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
@@ -52,14 +51,13 @@ const fetchLikeStatus = async (url) => {
     }
 
     const result = await response.json();
-    // Ensure the result has a likeCount
     return {
-      isLiked: result.isLiked || false,
-      likeCount: result.likeCount || 0,
+      isliked: result.isliked || false,
+      like_count: result.like_count || 0,
     };
   } catch (error) {
     console.error('Fetch like status error:', error);
-    return { isLiked: false, likeCount: 0 }; // Return default values
+    return { isliked: false, like_count: 0 };
   }
 };
 
@@ -83,7 +81,7 @@ const toggleLike = async (url, action) => {
     return await response.json();
   } catch (error) {
     console.error('Toggle like error:', error);
-    return null; // Return null if there's an error
+    return null;
   }
 };
 
