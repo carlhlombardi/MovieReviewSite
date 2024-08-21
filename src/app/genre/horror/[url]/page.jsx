@@ -54,10 +54,11 @@ const fetchLikeStatus = async (url) => {
     }
 
     // Parse and return the JSON data
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Fetch like status error:', error);
-    return { isLiked: false, likedCount: 0 };
+    return { isLiked: false };
   }
 };
 

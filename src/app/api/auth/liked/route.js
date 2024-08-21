@@ -2,11 +2,11 @@ import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
 // Function to get user details from the Users table
-const getUserDetails = async (id) => {
+const getUserDetails = async (userId) => {
   const userResult = await sql`
     SELECT username, email
     FROM users
-    WHERE id = ${id};
+    WHERE id = ${userId};
   `;
   if (userResult.rows.length === 0) {
     throw new Error('User not found');
