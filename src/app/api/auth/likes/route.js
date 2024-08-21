@@ -87,9 +87,11 @@ export async function GET(request) {
 // Handler to add a new like
 export async function POST(request) {
   try {
+    // Parse the request body
     const { url } = await request.json();
     console.log('POST Request - URL:', url);
 
+    // Extract and verify the token from the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -101,11 +103,12 @@ export async function POST(request) {
       );
     }
 
+    // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-
     console.log('POST Request - Decoded User ID:', userId);
 
+    // Retrieve the username based on userId
     const userResult = await sql`
       SELECT username
       FROM users
@@ -120,9 +123,9 @@ export async function POST(request) {
         { status: 404 }
       );
     }
-
     console.log('POST Request - User Found:', user.username);
 
+    // Insert the like into the database
     const postResult = await sql`
       INSERT INTO likes (username, url)
       VALUES (${user.username}, ${url})
@@ -137,7 +140,6 @@ export async function POST(request) {
         { status: 409 }
       );
     }
-
     console.log('POST Request - Item Liked');
 
     return new Response(
@@ -153,13 +155,14 @@ export async function POST(request) {
   }
 }
 
-// Handler to delete a like
 export async function DELETE(request) {
   try {
+    // Extract URL from query parameters
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
     console.log('DELETE Request - Movie URL:', movieUrl);
 
+    // Extract and verify the token from the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -171,11 +174,12 @@ export async function DELETE(request) {
       );
     }
 
+    // Verify the JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
-
     console.log('DELETE Request - Decoded User ID:', userId);
 
+    // Retrieve the username based on userId
     const userResult = await sql`
       SELECT username
       FROM users
@@ -190,9 +194,9 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
-
     console.log('DELETE Request - User Found:', user.username);
 
+    // Delete the like from the database
     const deleteResult = await sql`
       DELETE FROM likes
       WHERE username = ${user.username} AND url = ${movieUrl}
@@ -206,7 +210,6 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
-
     console.log('DELETE Request - Like Removed');
 
     return new Response(
