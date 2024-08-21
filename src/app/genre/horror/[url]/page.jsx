@@ -110,8 +110,8 @@ const HorrorPostPage = ({ params }) => {
 
         if (loggedIn) {
           // Fetch counts for liked and watchlisted
-          const likedResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/liked/count?url=${encodeURIComponent(params.url)}`);
-          const watchlistResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/watchlist/count?url=${encodeURIComponent(params.url)}`);
+          const likedResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/?url=${encodeURIComponent(params.url)}`);
+          const watchlistResponse = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/?url=${encodeURIComponent(params.url)}`);
 
           if (likedResponse.ok) {
             const likedData = await likedResponse.json();
