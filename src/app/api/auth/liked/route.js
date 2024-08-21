@@ -46,19 +46,23 @@ export async function handler(request) {
 
     switch (request.method) {
       case 'POST':
-        // Toggle like status
+        // Toggle like status or fetch status
         const { url, action } = await request.json();
-        if (!url || !action) {
+        if (!url) {
           return new Response(
-            JSON.stringify({ message: 'URL and action are required' }),
+            JSON.stringify({ message: 'URL is required' }),
             { status: 400 }
           );
         }
 
-        if (action !== 'like' && action !== 'unlike') {
+        if (action === 'status') {
+          // Fetch like status
+          const liked = await isMovieLiked(user.username, url);
           return new Response(
-            JSON.stringify({ message: 'Invalid action' }),
-            { status: 400 }
+            JSON.stringify({
+              isLiked: liked,
+            }),
+            { status: 200 }
           );
         }
 
@@ -110,26 +114,8 @@ export async function handler(request) {
             { status: 200 }
           );
         }
+
         break;
-
-      case 'GET':
-        // Check if a movie is liked
-        const urlToCheck = new URL(request.url).searchParams.get('url');
-        if (!urlToCheck) {
-          return new Response(
-            JSON.stringify({ message: 'URL is required' }),
-            { status: 400 }
-          );
-        }
-
-        const liked = await isMovieLiked(user.username, urlToCheck);
-
-        return new Response(
-          JSON.stringify({
-            isLiked: liked,
-          }),
-          { status: 200 }
-        );
 
       default:
         return new Response(
