@@ -1,8 +1,8 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Handler to get watchlisted movies for a user
-export async function GET(request) {
+// Handler for the `/watchlist` route
+export async function handler(request) {
   try {
     // Extract user ID from token
     const authHeader = request.headers.get('Authorization');
@@ -18,102 +18,97 @@ export async function GET(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    const result = await sql`
-      SELECT movie_id, genre
-      FROM Watchlist
-      WHERE user_id = ${userId};
-    `;
+    switch (request.method) {
+      case 'GET':
+        // Get watchlisted movies for the user
+        const getResult = await sql`
+          SELECT movie_id, genre
+          FROM Watchlist
+          WHERE user_id = ${userId};
+        `;
 
-    return new Response(
-      JSON.stringify(result.rows),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Fetch watchlist error:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to fetch watchlist' }),
-      { status: 500 }
-    );
-  }
-}
+        if (getResult.rows.length === 0) {
+          return new Response(
+            JSON.stringify({ message: 'No watchlisted movies found' }),
+            { status: 404 }
+          );
+        }
 
-// Handler to add a movie to watchlist
-export async function POST(request) {
-  try {
-    const { movie_id, genre } = await request.json();
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
+        return new Response(
+          JSON.stringify(getResult.rows),
+          { status: 200 }
+        );
 
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
-      );
+      case 'POST':
+        // Add a movie to the watchlist
+        const { movie_id, genre } = await request.json();
+        if (!movie_id || !genre) {
+          return new Response(
+            JSON.stringify({ message: 'Movie ID and genre are required' }),
+            { status: 400 }
+          );
+        }
+
+        const postResult = await sql`
+          INSERT INTO Watchlist (user_id, movie_id, genre)
+          VALUES (${userId}, ${movie_id}, ${genre})
+          ON CONFLICT (user_id, movie_id, genre) DO NOTHING
+          RETURNING user_id, movie_id, genre;
+        `;
+
+        if (postResult.rows.length === 0) {
+          return new Response(
+            JSON.stringify({ message: 'Movie already in watchlist' }),
+            { status: 409 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify(postResult.rows[0]),
+          { status: 201 }
+        );
+
+      case 'DELETE':
+        // Remove a movie from the watchlist
+        const url = new URL(request.url);
+        const movie_id_del = url.searchParams.get('movie_id');
+        const genre_del = url.searchParams.get('genre');
+
+        if (!movie_id_del || !genre_del) {
+          return new Response(
+            JSON.stringify({ message: 'Movie ID and genre are required' }),
+            { status: 400 }
+          );
+        }
+
+        const deleteResult = await sql`
+          DELETE FROM Watchlist
+          WHERE user_id = ${userId} AND movie_id = ${movie_id_del} AND genre = ${genre_del}
+          RETURNING user_id, movie_id, genre;
+        `;
+
+        if (deleteResult.rowCount === 0) {
+          return new Response(
+            JSON.stringify({ message: 'Movie not found in watchlist' }),
+            { status: 404 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ message: 'Movie removed from watchlist' }),
+          { status: 200 }
+        );
+
+      default:
+        return new Response(
+          JSON.stringify({ message: 'Method not allowed' }),
+          { status: 405 }
+        );
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    const result = await sql`
-      INSERT INTO Watchlist (user_id, movie_id, genre)
-      VALUES (${userId}, ${movie_id}, ${genre})
-      ON CONFLICT (user_id, movie_id, genre) DO NOTHING
-      RETURNING user_id, movie_id, genre;
-    `;
-
-    return new Response(
-      JSON.stringify(result.rows[0]),
-      { status: 201 }
-    );
   } catch (error) {
-    console.error('Add to watchlist error:', error);
+    console.error('Watchlist operation error:', error);
     return new Response(
-      JSON.stringify({ message: 'Failed to add to watchlist' }),
-      { status: 500 }
-    );
-  }
-}
-
-// Handler to remove a movie from watchlist
-export async function DELETE(request) {
-  try {
-    const url = new URL(request.url);
-    const movie_id = url.searchParams.get('movie_id');
-    const genre = url.searchParams.get('genre');
-
-    if (!movie_id || !genre) {
-      return new Response(
-        JSON.stringify({ message: 'Movie ID and genre are required' }),
-        { status: 400 }
-      );
-    }
-
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    await sql`
-      DELETE FROM Watchlist
-      WHERE user_id = ${userId} AND movie_id = ${movie_id} AND genre = ${genre};
-    `;
-
-    return new Response(
-      JSON.stringify({ message: 'Movie removed from watchlist' }),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Remove from watchlist error:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to remove from watchlist' }),
+      JSON.stringify({ message: 'Failed to process request' }),
       { status: 500 }
     );
   }
