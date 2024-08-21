@@ -53,11 +53,10 @@ const fetchLikeStatus = async (url) => {
       throw new Error('Failed to fetch like status');
     }
 
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error('Fetch like status error:', error);
-    return { isLiked: false };
+    return { isLiked: false, likeCount: 0 };
   }
 };
 
@@ -105,9 +104,9 @@ const HorrorPostPage = ({ params }) => {
         setIsLoggedIn(userLoggedIn);
 
         if (userLoggedIn) {
-          const { isLiked, likedCount } = await fetchLikeStatus(params.url);
+          const { isLiked, likeCount } = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
-          setLikedCount(likedCount);
+          setLikedCount(likeCount);
         }
       } catch (err) {
         setError('Failed to load data');
@@ -125,8 +124,8 @@ const HorrorPostPage = ({ params }) => {
     const result = await toggleLike(params.url, action);
 
     if (result) {
-      setIsLiked(!isLiked);
-      setLikedCount(result.likedCount);
+      setIsLiked(action === 'like');
+      setLikedCount(result.likeCount);
     }
   };
 
