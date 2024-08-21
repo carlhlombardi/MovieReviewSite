@@ -37,20 +37,52 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-// Function to interact with Liked and Watchlist APIs
-const updateMovieStatus = async (url, genre, action) => {
+// Function to get the status of the movie in liked and watchlist
+const fetchMovieStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/${action}`, {
-      method: action === 'liked' ? 'POST' : 'DELETE',
+    if (!token) return { isLiked: false, isInWatchlist: false };
+
+    const [likedResponse, watchlistResponse] = await Promise.all([
+      fetch(`https://movie-review-site-seven.vercel.app/api/liked/status?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch(`https://movie-review-site-seven.vercel.app/api/watchlist/status?url=${encodeURIComponent(url)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ]);
+
+    if (!likedResponse.ok || !watchlistResponse.ok) {
+      throw new Error('Failed to fetch movie status');
+    }
+
+    const [likedData, watchlistData] = await Promise.all([
+      likedResponse.json(),
+      watchlistResponse.json()
+    ]);
+
+    return { isLiked: likedData.isLiked, isInWatchlist: watchlistData.isInWatchlist };
+  } catch (error) {
+    console.error('Error fetching movie status:', error);
+    return { isLiked: false, isInWatchlist: false };
+  }
+};
+
+// Function to handle like and watchlist actions
+const handleMovieAction = async (url, genre, action, shouldAdd) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/${action}/${shouldAdd ? 'add' : 'remove'}`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ movie_id: url, genre })
     });
+
     if (!response.ok) {
-      throw new Error(`Failed to ${action} movie`);
+      throw new Error(`Failed to ${shouldAdd ? action : `remove ${action}`}`);
     }
   } catch (error) {
     console.error(`Error in ${action} movie:`, error);
@@ -64,6 +96,8 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
   const [watchlistCount, setWatchlistCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
 
   useEffect(() => {
     const fetchDataAsync = async () => {
@@ -88,6 +122,11 @@ const HorrorPostPage = ({ params }) => {
             const watchlistData = await watchlistResponse.json();
             setWatchlistCount(watchlistData.count);
           }
+
+          // Fetch current status of the movie for the logged-in user
+          const { isLiked, isInWatchlist } = await fetchMovieStatus(params.url);
+          setIsLiked(isLiked);
+          setIsInWatchlist(isInWatchlist);
         }
       } catch (err) {
         setError('Failed to load data');
@@ -101,13 +140,15 @@ const HorrorPostPage = ({ params }) => {
   }, [params.url]);
 
   const handleLike = async () => {
-    await updateMovieStatus(params.url, data.genre, 'liked');
-    setLikedCount(prevCount => prevCount + 1);
+    await handleMovieAction(params.url, data.genre, 'liked', !isLiked);
+    setLikedCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
+    setIsLiked(!isLiked);
   };
 
   const handleWatchlist = async () => {
-    await updateMovieStatus(params.url, data.genre, 'watchlist');
-    setWatchlistCount(prevCount => prevCount + 1);
+    await handleMovieAction(params.url, data.genre, 'watchlist', !isInWatchlist);
+    setWatchlistCount(prevCount => isInWatchlist ? prevCount - 1 : prevCount + 1);
+    setIsInWatchlist(!isInWatchlist);
   };
 
   if (isLoading) {
@@ -122,7 +163,7 @@ const HorrorPostPage = ({ params }) => {
     return <div>No data found</div>;
   }
 
-  const { film, year, studio, director, screenwriters, producer, total_kills, men, women, run_time, my_rating, review, image_url, genre } = data;
+  const { film, year, studio, director, screenwriters, producer, total_kills, men, women, run_time, my_rating, review, image_url } = data;
 
   return (
     <Container>
@@ -166,11 +207,18 @@ const HorrorPostPage = ({ params }) => {
         <Col xs={12} className="text-center mt-5">
           {isLoggedIn ? (
             <>
-              <Button variant="primary" onClick={handleLike} className="me-2">
-                Like ({likedCount})
+              <Button
+                variant={isLiked ? "danger" : "primary"}
+                onClick={handleLike}
+                className="me-2"
+              >
+                {isLiked ? `Unlike (${likedCount})` : `Like (${likedCount})`}
               </Button>
-              <Button variant="secondary" onClick={handleWatchlist}>
-                Add to Watchlist ({watchlistCount})
+              <Button
+                variant={isInWatchlist ? "warning" : "secondary"}
+                onClick={handleWatchlist}
+              >
+                {isInWatchlist ? `Remove from Watchlist (${watchlistCount})` : `Add to Watchlist (${watchlistCount})`}
               </Button>
               <Comments movieUrl={params.url} />
             </>
