@@ -63,11 +63,10 @@ const fetchLikeStatus = async (url) => {
   }
 };
 
-// Function to toggle like/unlike a movie
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes' + (action === 'unlike' ? `?url=${encodeURIComponent(url)}` : ''), {
       method: action === 'like' ? 'POST' : 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -77,7 +76,8 @@ const toggleLike = async (url, action) => {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to toggle like');
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle like');
     }
 
     return await response.json();
