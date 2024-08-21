@@ -47,23 +47,6 @@ const fetchComments = async (selectedMovieUrl, token) => {
   }
 };
 
-// Function to fetch likes for a movie
-const fetchLikes = async (movieUrl, token) => {
-  try {
-    if (!token) return [];
-    
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch likes');
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching likes:', error);
-    return [];
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [comments, setComments] = useState([]);
@@ -72,9 +55,7 @@ export default function ProfilePage() {
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
-  const [likedMovies, setLikedMovies] = useState([]);
-  const [username, setUsername] = useState(null); // Store username
-  const [userId, setUserId] = useState(null); // Store user ID
+  const [username, setUsername] = useState(null);
 
   const router = useRouter();
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
@@ -111,16 +92,6 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Check if each movie is liked
-        const likedMoviesData = await Promise.all(moviesData.map(async (movie) => {
-          const likes = await fetchLikes(movie.url, token);
-          const isLikedByUser = likes.some(like => like.user_id === profileData.id); // Use user_id from likes data
-          return { ...movie, liked: isLikedByUser };
-        }));
-
-        // Filter movies based on liked status
-        const likedMoviesFiltered = likedMoviesData.filter(movie => movie.liked);
-        setLikedMovies(likedMoviesFiltered);
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
@@ -232,24 +203,6 @@ export default function ProfilePage() {
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
-            </Card.Body>
-          </Card>
-
-          <Card className="mb-4">
-            <Card.Header as="h5">Liked Movies</Card.Header>
-            <Card.Body>
-              {likedMovies.length > 0 ? (
-                <ListGroup>
-                  {likedMovies.map((movie) => (
-                    <ListGroup.Item key={movie.url}>
-                      <h5>{movie.film}</h5> {/* Display the movie title */}
-                      <p>{movie.genre}</p> {/* Display the movie genre */}
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p>No liked movies found.</p>
-              )}
             </Card.Body>
           </Card>
 
