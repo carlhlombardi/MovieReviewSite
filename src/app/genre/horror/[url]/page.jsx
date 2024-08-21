@@ -36,6 +36,20 @@ const checkUserLoggedIn = async () => {
   }
 };
 
+// Function to fetch like status and count
+const fetchLikeStatus = async (url) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch like status');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch like status error:', error);
+    return { isLiked: false, likedCount: 0 };
+  }
+};
+
 // Function to like/unlike a movie
 const toggleLike = async (url, action) => {
   try {
