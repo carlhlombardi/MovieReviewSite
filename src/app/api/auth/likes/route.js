@@ -70,11 +70,13 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // Parse JSON body
     const { url } = await request.json();
+    console.log('POST Request - URL:', url);
 
+    // Extract and verify JWT token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
-
     if (!token) {
       return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
@@ -82,42 +84,47 @@ export async function POST(request) {
       );
     }
 
+    // Verify token and extract user info
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
     const userId = decoded.userId;
 
+    // Get user from database
     const userResult = await sql`
       SELECT username
       FROM users
       WHERE id = ${userId};
     `;
     const user = userResult.rows[0];
-
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
         { status: 404 }
       );
     }
+    console.log('User Found:', user.username);
 
+    // Insert or update like record
     const postResult = await sql`
       INSERT INTO likes (username, url, isliked)
       VALUES (${user.username}, ${url}, TRUE)
       ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
       RETURNING username, url;
     `;
-
     if (postResult.rowCount === 0) {
       return new Response(
         JSON.stringify({ message: 'Item already liked' }),
         { status: 409 }
       );
     }
+    console.log('Item Liked:', postResult.rows[0]);
 
     return new Response(
       JSON.stringify({ message: 'Item liked' }),
       { status: 201 }
     );
   } catch (error) {
+    console.error('Add like error:', error);  // Log full error
     return new Response(
       JSON.stringify({ message: 'Failed to add like' }),
       { status: 500 }
