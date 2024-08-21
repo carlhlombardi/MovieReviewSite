@@ -165,12 +165,6 @@ export default function ProfilePage() {
     fetchCommentsForSelectedMovie();
   }, [selectedMovieUrl, router, username]);
 
-  // Function to format the date
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, options);
-  };
 
   if (isLoading) {
     return (
@@ -180,6 +174,11 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
+  };
 
   return (
     <div className="container mt-5">
