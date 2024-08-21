@@ -44,10 +44,10 @@ const fetchMovieStatus = async (url) => {
     if (!token) return { isLiked: false, isInWatchlist: false };
 
     const [likedResponse, watchlistResponse] = await Promise.all([
-      fetch(`https://movie-review-site-seven.vercel.app/api/liked/status?url=${encodeURIComponent(url)}`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/liked/status?url=${encodeURIComponent(url)}`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch(`https://movie-review-site-seven.vercel.app/api/watchlist/status?url=${encodeURIComponent(url)}`, {
+      fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/status?url=${encodeURIComponent(url)}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ]);
@@ -72,7 +72,7 @@ const fetchMovieStatus = async (url) => {
 const handleMovieAction = async (url, genre, action, shouldAdd) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/${action}/${shouldAdd ? 'add' : 'remove'}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/${action}/${shouldAdd ? 'add' : 'remove'}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
