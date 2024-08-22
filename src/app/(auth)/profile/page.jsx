@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 <ul>
                   {likedMovies.map((movie) => (
                     <li key={movie.url}>
-                      <Link href={`${baseUrl}/genre/${movie.genre}/${movie.url}`} passHref>
+                      <Link href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`} passHref>
                         <a>{movie.title}</a>
                       </Link>
                     </li>
