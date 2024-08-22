@@ -1,6 +1,106 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// Define your movie tables
+const movieTables = ['movies_table1', 'movies_table2', 'movies_table3', 'movies_table4', 'movies_table5', 'movies_table6', 'movies_table7'];
+
+export async function GET(request) {
+  try {
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+
+    if (!movieUrl) {
+      return new Response(
+        JSON.stringify({ message: 'Movie URL is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Get the total like count for the movie
+    const likecountResult = await sql`
+      SELECT COUNT(*) AS likecount
+      FROM likes
+      WHERE url = ${movieUrl} AND isliked = TRUE;
+    `;
+    const likecount = parseInt(likecountResult.rows[0].likecount, 10);
+
+    console.log(`Like count for ${movieUrl}: ${likecount}`); // Log like count
+
+    // Check if the user has liked the movie
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ likecount, isliked: false, title: '' }),
+        { status: 200 }
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    console.log(`Decoded userId: ${userId}`); // Log userId
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+
+    console.log(`Fetched user: ${JSON.stringify(user)}`); // Log user
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+
+    // Check if the user has liked the movie and fetch the title from the correct table
+    let title = '';
+    for (const table of movieTables) {
+      const titleResult = await sql`
+        SELECT title
+        FROM ${sql(table)}
+        WHERE url = ${movieUrl}
+        LIMIT 1;
+      `;
+
+      if (titleResult.rowCount > 0) {
+        title = titleResult.rows[0].title;
+        break;
+      }
+    }
+
+    const islikedResult = await sql`
+      SELECT isliked
+      FROM likes
+      WHERE username = ${user.username} AND url = ${movieUrl};
+    `;
+
+    console.log(`Query result for isliked: ${JSON.stringify(islikedResult.rows)}`); // Log isliked result
+
+    const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
+
+    // Log final isliked value and movie title
+    console.log(`Is liked by user: ${isliked}`);
+    console.log(`Movie title: ${title}`);
+
+    return new Response(
+      JSON.stringify({ likecount, isliked, title }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Failed to fetch likes:', error); // Log full error
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch likes' }),
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request) {
   try {
     const { url, title } = await request.json(); // Extract both URL and title from the request body
@@ -37,8 +137,7 @@ export async function POST(request) {
     const postResult = await sql`
       INSERT INTO likes (username, url, title, isliked)
       VALUES (${user.username}, ${url}, ${title}, TRUE)
-      ON CONFLICT (username, url) DO UPDATE
-      SET title = EXCLUDED.title, isliked = TRUE
+      ON CONFLICT (username, url) DO UPDATE SET title = ${title}, isliked = TRUE
       RETURNING username, url, title;
     `;
     console.log('POST Result:', postResult);
@@ -97,12 +196,20 @@ export async function DELETE(request) {
     console.log('User Found:', user.username);
 
     // Fetch the current title before deleting
-    const titleResult = await sql`
-      SELECT title
-      FROM likes
-      WHERE username = ${user.username} AND url = ${movieUrl};
-    `;
-    const currentTitle = titleResult.rowCount > 0 ? titleResult.rows[0].title : null;
+    let currentTitle = '';
+    for (const table of movieTables) {
+      const titleResult = await sql`
+        SELECT title
+        FROM ${sql(table)}
+        WHERE url = ${movieUrl}
+        LIMIT 1;
+      `;
+
+      if (titleResult.rowCount > 0) {
+        currentTitle = titleResult.rows[0].title;
+        break;
+      }
+    }
 
     // Update the like record to set isliked to FALSE
     const deleteResult = await sql`
