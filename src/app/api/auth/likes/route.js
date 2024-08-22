@@ -100,21 +100,35 @@ export async function POST(request) {
     }
     console.log('User Found:', user.username);
 
-    // Query the horrormovies table to get the title (film) associated with the URL
-    const movieResult = await sql`
-      SELECT film, genre
-      FROM horrormovies
-      WHERE url = ${url};
-    `;
-    const movie = movieResult.rows[0];
-    if (!movie) {
-      return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
-      );
-    }
-    const title = movie.film;
-    const genre = movie.genre;
+// Query the horrormovies table
+let movieResult = await sql`
+  SELECT film, genre
+  FROM horrormovies
+  WHERE url = ${url};
+`;
+
+let movie = movieResult.rows[0];
+
+if (!movie) {
+  // If not found in horrormovies, query the scifimovies table
+  movieResult = await sql`
+    SELECT film, genre
+    FROM scifimovies
+    WHERE url = ${url};
+  `;
+
+  movie = movieResult.rows[0];
+}
+
+if (!movie) {
+  return new Response(
+    JSON.stringify({ message: 'Movie not found' }),
+    { status: 404 }
+  );
+}
+
+const title = movie.film;
+const genre = movie.genre;
 
     // Insert or update the likes table with username, url, and title
     const postResult = await sql`
