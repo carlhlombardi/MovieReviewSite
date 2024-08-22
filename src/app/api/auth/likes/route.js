@@ -131,60 +131,59 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-      const url = new URL(request.url);
-      const movieUrl = url.searchParams.get('url');
-      console.log('DELETE Request - Movie URL:', movieUrl);
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+    console.log('DELETE Request - Movie URL:', movieUrl);
 
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
-      if (!token || !movieUrl) {
-          return new Response(
-              JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
-              { status: 401 }
-          );
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Decoded JWT:', decoded);
-      const userId = decoded.userId;
-
-      const userResult = await sql`
-          SELECT username
-          FROM users
-          WHERE id = ${userId};
-      `;
-      const user = userResult.rows[0];
-      if (!user) {
-          return new Response(
-              JSON.stringify({ message: 'User not found' }),
-              { status: 404 }
-          );
-      }
-
-      const deleteResult = await sql`
-          UPDATE likes
-          SET isliked = FALSE
-          WHERE username = ${user.username} AND url = ${movieUrl}
-          RETURNING username, url;
-      `;
-      console.log('DELETE Result:', deleteResult);
-
-      if (deleteResult.rowCount === 0) {
-          return new Response(
-              JSON.stringify({ message: 'Like not found' }),
-              { status: 404 }
-          );
-      }
-
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token || !movieUrl) {
       return new Response(
-          JSON.stringify({ message: 'Like removed' }),
-          { status: 200 }
+        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
+        { status: 401 }
       );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+
+    const deleteResult = await sql`
+      DELETE FROM likes
+      WHERE username = ${user.username} AND url = ${movieUrl}
+      RETURNING username, url;
+    `;
+    console.log('DELETE Result:', deleteResult);
+
+    if (deleteResult.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Like not found' }),
+        { status: 404 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Like removed' }),
+      { status: 200 }
+    );
   } catch (error) {
-      console.error('Delete like error:', error);  // Log full error
-      return new Response(
-          JSON.stringify({ message: 'Failed to remove like' }),
-          { status: 500 }
-      );
+    console.error('Delete like error:', error);  // Log full error
+    return new Response(
+      JSON.stringify({ message: 'Failed to remove like' }),
+      { status: 500 }
+    );
   }
 }
