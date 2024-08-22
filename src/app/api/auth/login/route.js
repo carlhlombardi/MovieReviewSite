@@ -14,7 +14,7 @@ export async function POST(request) {
 
     // Query the database for the user
     const result = await sql`
-      SELECT id, password
+      SELECT id, username, password
       FROM users
       WHERE username = ${username};
     `;
