@@ -102,7 +102,7 @@ export async function POST(request) {
 
     // Query the horrormovies table to get the title (film) associated with the URL
     const movieResult = await sql`
-      SELECT film
+      SELECT film, genre
       FROM horrormovies
       WHERE url = ${url};
     `;
@@ -114,14 +114,14 @@ export async function POST(request) {
       );
     }
     const title = movie.film;
-    console.log('Movie Title:', title);
+    const genre = movie.genre;
 
     // Insert or update the likes table with username, url, and title
     const postResult = await sql`
-      INSERT INTO likes (username, url, title, isliked)
-      VALUES (${user.username}, ${url}, ${title}, TRUE)
+      INSERT INTO likes (username, url, title, genre, isliked)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE)
       ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
-      RETURNING username, url, title;
+      RETURNING username, url, title, genre;
     `;
     console.log('POST Result:', postResult);
 
