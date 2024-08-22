@@ -2,7 +2,7 @@ import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
 // Define your movie tables
-const movieTables = ['movies_table1', 'movies_table2', 'movies_table3', 'movies_table4', 'movies_table5', 'movies_table6', 'movies_table7'];
+const movieTables = ['actionmovies', 'comedymovies', 'dramamovies', 'documentarymovies', 'classicmovies', 'horrormovies', 'scifimovies'];
 
 export async function GET(request) {
   try {
