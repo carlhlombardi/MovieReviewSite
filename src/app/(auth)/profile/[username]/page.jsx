@@ -86,7 +86,7 @@ export default function ProfilePage() {
         setProfile(profileData);
         setUsername(profileData.username); // Store the username for later use
     
-        // Fetch liked movies directly
+        // Fetch liked movies
         const likedMoviesResponse = await fetch(`${baseUrl}/api/auth/liked-movies`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -183,19 +183,6 @@ export default function ProfilePage() {
               <Card.Text>
                 <strong>Name:</strong> {isOwnProfile ? `${profile.firstname} ${profile.lastname}` : profileUsername}
               </Card.Text>
-              {isOwnProfile && (
-                <>
-                  <Card.Text>
-                    <strong>User Name:</strong> {profile.username}
-                  </Card.Text>
-                  <Card.Text>
-                    <strong>Email:</strong> {profile.email}
-                  </Card.Text>
-                  <Card.Text>
-                    <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
-                  </Card.Text>
-                </>
-              )}
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
