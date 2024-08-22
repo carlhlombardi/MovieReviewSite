@@ -55,6 +55,7 @@ export async function GET(request) {
       );
     }
 
+    // Check if the user has liked the movie
     const islikedResult = await sql`
       SELECT isliked
       FROM likes
@@ -64,6 +65,9 @@ export async function GET(request) {
     console.log(`Query result for isliked: ${JSON.stringify(islikedResult.rows)}`); // Log isliked result
 
     const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
+
+    // Log final isliked value
+    console.log(`Is liked by user: ${isliked}`);
 
     return new Response(
       JSON.stringify({ likecount, isliked }),
