@@ -21,6 +21,8 @@ export async function GET(request) {
     `;
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
+    console.log(`Like count for ${movieUrl}: ${likecount}`); // Log like count
+
     // Check if the user has liked the movie
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
@@ -35,12 +37,16 @@ export async function GET(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
+    console.log(`Decoded userId: ${userId}`); // Log userId
+
     const userResult = await sql`
       SELECT username
       FROM users
       WHERE id = ${userId};
     `;
     const user = userResult.rows[0];
+
+    console.log(`Fetched user: ${JSON.stringify(user)}`); // Log user
 
     if (!user) {
       return new Response(
@@ -54,6 +60,9 @@ export async function GET(request) {
       FROM likes
       WHERE username = ${user.username} AND url = ${movieUrl};
     `;
+
+    console.log(`Query result for isliked: ${JSON.stringify(islikedResult.rows)}`); // Log isliked result
+
     const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
 
     return new Response(
@@ -61,6 +70,7 @@ export async function GET(request) {
       { status: 200 }
     );
   } catch (error) {
+    console.error('Failed to fetch likes:', error); // Log full error
     return new Response(
       JSON.stringify({ message: 'Failed to fetch likes' }),
       { status: 500 }
