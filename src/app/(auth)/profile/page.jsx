@@ -27,55 +27,40 @@ const fetchMovies = async () => {
   }
 };
 
-const fetchComments = async (movieUrl, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    return [];
-  }
-};
-
+// Function to fetch liked status of a movie
 const fetchLikedStatus = async (movieUrl, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likedMovies?url=${encodeURIComponent(movieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
       throw new Error('Failed to fetch liked status');
     }
-    return await response.json();
+    return await response.json(); // Returns { liked: true/false }
   } catch (error) {
     console.error('Error fetching liked status:', error);
-    return { liked: false };
+    return { liked: false }; // Default to not liked if there's an error
   }
 };
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [movies, setMovies] = useState([]);
-  const [filteredMovies, setFilteredMovies] = useState([]);
-  const [likedMovies, setLikedMovies] = useState([]);
-  const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
-  const [username, setUsername] = useState(null);
-  const [error, setError] = useState('');
+  const [profile, setProfile] = useState(null); // State to hold user profile data
+  const [isLoading, setIsLoading] = useState(true); // State to manage loading state
+  const [movies, setMovies] = useState([]); // State to hold all movies
+  const [likedMovies, setLikedMovies] = useState([]); // State to hold liked movies
+  const [username, setUsername] = useState(null); // State to hold the username
+  const [error, setError] = useState(''); // State to hold any error messages
 
-  const router = useRouter();
-  const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API
+  const router = useRouter(); // Router instance for navigation
+  const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API requests
 
   useEffect(() => {
     const fetchDataAsync = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token'); // Get the JWT token from local storage
 
         if (!token) {
+          // If token is not present, redirect to login page
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
@@ -83,46 +68,53 @@ export default function ProfilePage() {
 
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         if (!profileResponse.ok) {
+          // If profile fetch fails, handle the error and redirect to login
           const errorData = await profileResponse.json();
           setError(errorData.message || 'An error occurred');
           router.push('/login');
           return;
         }
 
+        // Parse and set user profile data
         const profileData = await profileResponse.json();
         setProfile(profileData);
-        console.log(profileData);
-        console.log(profileData.username);
-        setUsername(profileData.username); // Set username from profile
+        setUsername(profileData.username); // Store the username for later use
 
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
-        // Check which movies are liked
+        // Check which movies are liked by the user
         const likedMoviesPromises = moviesData.map(async (movie) => {
-          const { liked } = await fetchLikedStatus(movie.url, token);
-          return liked ? movie : null;
+          const { liked } = await fetchLikedStatus(movie.url, token); // Check if movie is liked
+          console.log(`Movie URL: ${movie.url}, Liked: ${liked}`); // Log the movie URL and liked status
+          return liked ? movie : null; // Include movie if liked, otherwise return null
         });
 
+        // Wait for all promises to resolve
         const likedMoviesResults = await Promise.all(likedMoviesPromises);
-        setLikedMovies(likedMoviesResults.filter(movie => movie !== null));
+        // Filter out null values (i.e., movies that are not liked)
+        const filteredLikedMovies = likedMoviesResults.filter(movie => movie !== null);
+        setLikedMovies(filteredLikedMovies);
+
+        console.log('Liked Movies:', filteredLikedMovies); // Log the final list of liked movies
 
       } catch (err) {
+        // Handle errors and redirect to login if something goes wrong
         console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
         router.push('/login');
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Set loading state to false after data fetching is complete
       }
     };
 
-    fetchDataAsync();
-  }, [router]);
+    fetchDataAsync(); // Invoke the async function to fetch data
+  }, [router]); // Dependency array ensures this effect runs on mount and when `router` changes
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
