@@ -70,121 +70,121 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-      const { url } = await request.json();
-      console.log('POST Request - URL:', url);
+    const { url } = await request.json();
+    console.log('POST Request - URL:', url);
 
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
-      if (!token) {
-          return new Response(
-              JSON.stringify({ message: 'Unauthorized' }),
-              { status: 401 }
-          );
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Decoded JWT:', decoded);
-      const userId = decoded.userId;
-
-      const userResult = await sql`
-          SELECT username
-          FROM users
-          WHERE id = ${userId};
-      `;
-      const user = userResult.rows[0];
-      if (!user) {
-          return new Response(
-              JSON.stringify({ message: 'User not found' }),
-              { status: 404 }
-          );
-      }
-      console.log('User Found:', user.username);
-
-      const postResult = await sql`
-          INSERT INTO likes (username, url, isliked)
-          VALUES (${user.username}, ${url}, TRUE)
-          ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
-          RETURNING username, url;
-      `;
-      console.log('POST Result:', postResult);
-
-      if (postResult.rowCount === 0) {
-          return new Response(
-              JSON.stringify({ message: 'Item already liked' }),
-              { status: 409 }
-          );
-      }
-
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token) {
       return new Response(
-          JSON.stringify({ message: 'Item liked' }),
-          { status: 201 }
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
       );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+    console.log('User Found:', user.username);
+
+    const postResult = await sql`
+      INSERT INTO likes (username, url, isliked)
+      VALUES (${user.username}, ${url}, TRUE)
+      ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
+      RETURNING username, url;
+    `;
+    console.log('POST Result:', postResult);
+
+    if (postResult.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Item already liked' }),
+        { status: 409 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Item liked' }),
+      { status: 201 }
+    );
   } catch (error) {
-      console.error('Add like error:', error);  // Log full error
-      return new Response(
-          JSON.stringify({ message: 'Failed to add like' }),
-          { status: 500 }
-      );
+    console.error('Add like error:', error);  // Log full error
+    return new Response(
+      JSON.stringify({ message: 'Failed to add like' }),
+      { status: 500 }
+    );
   }
 }
 
 
 export async function DELETE(request) {
   try {
-      const url = new URL(request.url);
-      const movieUrl = url.searchParams.get('url');
-      console.log('DELETE Request - Movie URL:', movieUrl);
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+    console.log('DELETE Request - Movie URL:', movieUrl);
 
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
-      if (!token || !movieUrl) {
-          return new Response(
-              JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
-              { status: 401 }
-          );
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Decoded JWT:', decoded);
-      const userId = decoded.userId;
-
-      const userResult = await sql`
-          SELECT username
-          FROM users
-          WHERE id = ${userId};
-      `;
-      const user = userResult.rows[0];
-      if (!user) {
-          return new Response(
-              JSON.stringify({ message: 'User not found' }),
-              { status: 404 }
-          );
-      }
-
-      const deleteResult = await sql`
-          UPDATE likes
-          SET isliked = FALSE
-          WHERE username = ${user.username} AND url = ${movieUrl}
-          RETURNING username, url;
-      `;
-      console.log('DELETE Result:', deleteResult);
-
-      if (deleteResult.rowCount === 0) {
-          return new Response(
-              JSON.stringify({ message: 'Like not found' }),
-              { status: 404 }
-          );
-      }
-
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token || !movieUrl) {
       return new Response(
-          JSON.stringify({ message: 'Like removed' }),
-          { status: 200 }
+        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
+        { status: 401 }
       );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+
+    const deleteResult = await sql`
+      UPDATE likes
+      SET isliked = FALSE
+      WHERE username = ${user.username} AND url = ${movieUrl}
+      RETURNING username, url;
+    `;
+    console.log('DELETE Result:', deleteResult);
+
+    if (deleteResult.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Like not found' }),
+        { status: 404 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Like removed' }),
+      { status: 200 }
+    );
   } catch (error) {
-      console.error('Delete like error:', error);  // Log full error
-      return new Response(
-          JSON.stringify({ message: 'Failed to remove like' }),
-          { status: 500 }
-      );
+    console.error('Delete like error:', error);  // Log full error
+    return new Response(
+      JSON.stringify({ message: 'Failed to remove like' }),
+      { status: 500 }
+    );
   }
 }
