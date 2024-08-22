@@ -100,11 +100,28 @@ export async function POST(request) {
     }
     console.log('User Found:', user.username);
 
+    // Query the horrormovies table to get the title (film) associated with the URL
+    const movieResult = await sql`
+      SELECT film
+      FROM horrormovies
+      WHERE url = ${url};
+    `;
+    const movie = movieResult.rows[0];
+    if (!movie) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
+    const title = movie.film;
+    console.log('Movie Title:', title);
+
+    // Insert or update the likes table with username, url, and title
     const postResult = await sql`
-      INSERT INTO likes (username, url, isliked)
-      VALUES (${user.username}, ${url}, TRUE)
+      INSERT INTO likes (username, url, title, isliked)
+      VALUES (${user.username}, ${url}, ${title}, TRUE)
       ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
-      RETURNING username, url;
+      RETURNING username, url, title;
     `;
     console.log('POST Result:', postResult);
 
