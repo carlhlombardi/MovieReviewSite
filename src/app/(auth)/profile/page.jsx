@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, Spinner, Card, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, Form, ListGroup } from 'react-bootstrap';
 import Comments from '@/app/components/comments/comments.jsx';
 
 // Function to fetch movies from multiple endpoints
@@ -27,6 +27,22 @@ const fetchMovies = async () => {
   }
 };
 
+// Function to fetch liked movies for the authenticated user
+const fetchLikedMovies = async (token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/likes', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch liked movies');
+    }
+    return await response.json(); // Assuming this returns a list of liked movie URLs
+  } catch (error) {
+    console.error('Error fetching liked movies:', error);
+    return [];
+  }
+};
+
 const fetchComments = async (movieUrl, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
@@ -46,8 +62,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
-  const [filteredMovies, setFilteredMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
+  const [movieComments, setMovieComments] = useState([]);
   const [username, setUsername] = useState(null);
   const [error, setError] = useState('');
 
@@ -85,6 +102,14 @@ export default function ProfilePage() {
         const moviesData = await fetchMovies();
         setMovies(moviesData);
 
+        // Fetch liked movies
+        const likedMoviesData = await fetchLikedMovies(token);
+        const likedMoviesUrls = new Set(likedMoviesData.map(movie => movie.url));
+
+        // Filter movies based on liked status
+        const filteredMoviesData = moviesData.filter(movie => likedMoviesUrls.has(movie.url));
+        setLikedMovies(filteredMoviesData);
+
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
         setError('An error occurred');
@@ -98,44 +123,39 @@ export default function ProfilePage() {
   }, [router]);
 
   useEffect(() => {
-    const fetchFilteredMovies = async () => {
-      if (!username) {
-        console.log('No username, skipping fetchFilteredMovies');
+    const fetchCommentsForSelectedMovie = async () => {
+      if (!selectedMovieUrl || !username) {
+        console.log('No movie selected or username missing');
         return;
       }
 
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          console.log('No token, skipping fetchFilteredMovies');
+          console.log('No token, skipping fetchCommentsForSelectedMovie');
           return;
         }
 
-        // Fetch comments for each movie and filter movies with comments
-        const moviesWithComments = await Promise.all(movies.map(async (movie) => {
-          const commentsData = await fetchComments(movie.url, token);
-          // Filter comments by username
-          const userComments = commentsData.filter(comment => comment.username === username);
-          return { ...movie, hasComments: userComments.length > 0, comments: userComments };
-        }));
-
-        // Filter movies that have comments
-        setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
+        // Fetch comments for the selected movie
+        const commentsData = await fetchComments(selectedMovieUrl, token);
+        // Filter comments by username
+        const userComments = commentsData.filter(comment => comment.username === username);
+        setMovieComments(userComments);
       } catch (err) {
-        console.error('Error in fetchFilteredMovies:', err);
+        console.error('Error in fetchCommentsForSelectedMovie:', err);
         setError('An error occurred while fetching comments');
       }
     };
 
-    fetchFilteredMovies();
-  }, [movies, username]);
+    fetchCommentsForSelectedMovie();
+  }, [selectedMovieUrl, username]);
 
-    // Function to format the date
-    const formatDate = (dateString) => {
-      if (!dateString) return 'N/A'; // Handle empty or undefined date strings
-      const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-      return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
-    };
+  // Function to format the date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A'; // Handle empty or undefined date strings
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    return new Intl.DateTimeFormat('en-US', options).format(new Date(dateString));
+  };
 
   if (isLoading) {
     return (
@@ -170,25 +190,48 @@ export default function ProfilePage() {
             </Card.Body>
           </Card>
 
+          {/* Liked Movies Section */}
           <Card className="mb-4">
-            <Card.Header as="h5">Select Movie to View Comments</Card.Header>
+            <Card.Header as="h5">Liked Movies</Card.Header>
             <Card.Body>
-              <Form.Control
-                as="select"
-                value={selectedMovieUrl}
-                onChange={(e) => setSelectedMovieUrl(e.target.value)}
-              >
-                <option value="">Select a movie</option>
-                {filteredMovies.map((movie) => (
-                  <option key={movie.url} value={movie.url}>{movie.film}</option>
-                ))}
-              </Form.Control>
+              {likedMovies.length === 0 ? (
+                <p>No liked movies found.</p>
+              ) : (
+                <ListGroup>
+                  {likedMovies.map((movie) => (
+                    <ListGroup.Item
+                      key={movie.url}
+                      action
+                      onClick={() => setSelectedMovieUrl(movie.url)}
+                    >
+                      {movie.film}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              )}
             </Card.Body>
           </Card>
 
-          {/* Use the Comments component here */}
+          {/* Comments Section */}
           {selectedMovieUrl && (
-            <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
+            <>
+              <Card className="mb-4">
+                <Card.Header as="h5">Comments for Selected Movie</Card.Header>
+                <Card.Body>
+                  {movieComments.length === 0 ? (
+                    <p>No comments found for this movie.</p>
+                  ) : (
+                    <ListGroup>
+                      {movieComments.map((comment, index) => (
+                        <ListGroup.Item key={index}>
+                          <strong>{comment.username}</strong>: {comment.text}
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  )}
+                </Card.Body>
+              </Card>
+            </>
           )}
         </>
       )}
