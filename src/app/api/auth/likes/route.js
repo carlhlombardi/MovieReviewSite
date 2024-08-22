@@ -1,9 +1,6 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Define your movie tables
-const movieTables = ['actionmovies', 'comedymovies', 'dramamovies', 'documentarymovies', 'classicmovies', 'horrormovies', 'scifimovies'];
-
 export async function GET(request) {
   try {
     const url = new URL(request.url);
@@ -58,31 +55,17 @@ export async function GET(request) {
       );
     }
 
-    // Check if the user has liked the movie and fetch the title from the correct table
-    let title = '';
-    for (const table of movieTables) {
-      const titleResult = await sql`
-        SELECT film
-        FROM ${sql(table)}
-        WHERE url = ${movieUrl}
-        LIMIT 1;
-      `;
-
-      if (titleResult.rowCount > 0) {
-        title = titleResult.rows[0].title;
-        break;
-      }
-    }
-
-    const islikedResult = await sql`
-      SELECT isliked
+    // Fetch like status and movie title
+    const likeDetailsResult = await sql`
+      SELECT isliked, title
       FROM likes
       WHERE username = ${user.username} AND url = ${movieUrl};
     `;
 
-    console.log(`Query result for isliked: ${JSON.stringify(islikedResult.rows)}`); // Log isliked result
+    console.log(`Query result for like details: ${JSON.stringify(likeDetailsResult.rows)}`); // Log like details
 
-    const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
+    const isliked = likeDetailsResult.rowCount > 0 ? likeDetailsResult.rows[0].isliked : false;
+    const title = likeDetailsResult.rowCount > 0 ? likeDetailsResult.rows[0].title : '';
 
     // Log final isliked value and movie title
     console.log(`Is liked by user: ${isliked}`);
@@ -162,6 +145,7 @@ export async function POST(request) {
   }
 }
 
+
 export async function DELETE(request) {
   try {
     const url = new URL(request.url);
@@ -196,20 +180,12 @@ export async function DELETE(request) {
     console.log('User Found:', user.username);
 
     // Fetch the current title before deleting
-    let currentTitle = '';
-    for (const table of movieTables) {
-      const titleResult = await sql`
-        SELECT film
-        FROM ${sql(table)}
-        WHERE url = ${movieUrl}
-        LIMIT 1;
-      `;
-
-      if (titleResult.rowCount > 0) {
-        currentTitle = titleResult.rows[0].title;
-        break;
-      }
-    }
+    const titleResult = await sql`
+      SELECT title
+      FROM likes
+      WHERE username = ${user.username} AND url = ${movieUrl};
+    `;
+    const currentTitle = titleResult.rowCount > 0 ? titleResult.rows[0].title : null;
 
     // Update the like record to set isliked to FALSE
     const deleteResult = await sql`
