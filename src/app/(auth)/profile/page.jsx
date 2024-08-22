@@ -27,22 +27,6 @@ const fetchMovies = async () => {
   }
 };
 
-// Function to fetch liked status of a movie
-const fetchLikedStatus = async (movieUrl, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch liked status');
-    }
-    return await response.json(); // Returns { liked: true/false }
-  } catch (error) {
-    console.error('Error fetching liked status:', error);
-    return { liked: false }; // Default to not liked if there's an error
-  }
-};
-
 // Function to fetch comments for a movie
 const fetchComments = async (movieUrl, token) => {
   try {
@@ -212,9 +196,9 @@ export default function ProfilePage() {
               {likedMovies.length > 0 ? (
                 <ul>
                   {likedMovies.map((movie) => (
-                    <li key={movie.url}>
+                    <ol key={movie.url}>
                         {movie.title}
-                    </li>
+                    </ol>
                   ))}
                 </ul>
               ) : (
