@@ -42,11 +42,27 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
+const fetchLikedStatus = async (movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch liked status');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching liked status:', error);
+    return { liked: false };
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [movies, setMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState('');
   const [username, setUsername] = useState(null);
   const [error, setError] = useState('');
@@ -84,6 +100,15 @@ export default function ProfilePage() {
         // Fetch movies from multiple endpoints
         const moviesData = await fetchMovies();
         setMovies(moviesData);
+
+        // Check which movies are liked
+        const likedMoviesPromises = moviesData.map(async (movie) => {
+          const { liked } = await fetchLikedStatus(movie.url, token);
+          return liked ? movie : null;
+        });
+
+        const likedMoviesResults = await Promise.all(likedMoviesPromises);
+        setLikedMovies(likedMoviesResults.filter(movie => movie !== null));
 
       } catch (err) {
         console.error('Error in fetchDataAsync:', err);
@@ -167,6 +192,25 @@ export default function ProfilePage() {
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-4">
+            <Card.Header as="h5">Liked Movies</Card.Header>
+            <Card.Body>
+              {likedMovies.length > 0 ? (
+                <ul>
+                  {likedMovies.map((movie) => (
+                    <li key={movie.url}>
+                      <a href={movie.url} target="_blank" rel="noopener noreferrer">
+                        {movie.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No liked movies found.</p>
+              )}
             </Card.Body>
           </Card>
 
