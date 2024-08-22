@@ -95,6 +95,8 @@ export default function ProfilePage() {
 
         const profileData = await profileResponse.json();
         setProfile(profileData);
+        console.log(profileData);
+        console.log(profileData.username);
         setUsername(profileData.username); // Set username from profile
 
         // Fetch movies from multiple endpoints
