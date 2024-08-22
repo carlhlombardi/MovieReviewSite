@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
-import Comments from '@/app/components/comments/comments.jsx';
+import Comments from '@/app/components/comments/comments.jsx'; // Ensure this path is correct
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -30,7 +30,7 @@ const fetchMovies = async () => {
 // Function to fetch liked status of a movie
 const fetchLikedStatus = async (movieUrl, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likedMovies?url=${encodeURIComponent(movieUrl)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(movieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
@@ -43,13 +43,31 @@ const fetchLikedStatus = async (movieUrl, token) => {
   }
 };
 
+// Function to fetch comments for a movie
+const fetchComments = async (movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments?url=${encodeURIComponent(movieUrl)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+    return await response.json(); // Returns comments array
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return []; // Return empty array if there's an error
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null); // State to hold user profile data
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
   const [movies, setMovies] = useState([]); // State to hold all movies
   const [likedMovies, setLikedMovies] = useState([]); // State to hold liked movies
+  const [filteredMovies, setFilteredMovies] = useState([]); // State to hold movies with comments
   const [username, setUsername] = useState(null); // State to hold the username
   const [error, setError] = useState(''); // State to hold any error messages
+  const [selectedMovieUrl, setSelectedMovieUrl] = useState(''); // State to hold selected movie URL
 
   const router = useRouter(); // Router instance for navigation
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API requests
