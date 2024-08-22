@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
 import Comments from '@/app/components/comments/comments.jsx'; // Ensure this path is correct
 
@@ -44,7 +44,7 @@ const fetchComments = async (movieUrl, token) => {
 };
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(null); // State to hold profile data
+  const [profile, setProfile] = useState(null); // State to hold user profile data
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
   const [movies, setMovies] = useState([]); // State to hold all movies
   const [likedMovies, setLikedMovies] = useState([]); // State to hold liked movies
@@ -54,7 +54,6 @@ export default function ProfilePage() {
   const [selectedMovieUrl, setSelectedMovieUrl] = useState(''); // State to hold selected movie URL
 
   const router = useRouter(); // Router instance for navigation
-  const { username: profileUsername } = useParams(); // Extract username from URL parameter
   const baseUrl = 'https://movie-review-site-seven.vercel.app'; // Base URL for API requests
 
   useEffect(() => {
@@ -163,17 +162,15 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="container mt-5 text-center">
-        <h2>Loading profile...</h2>
+        <h2>Loading your profile...</h2>
         <Spinner animation="border" />
       </div>
     );
   }
 
-  const isOwnProfile = profile?.username === profileUsername;
-
   return (
     <div className="container mt-5">
-      <h2>{isOwnProfile ? `Welcome back, ${profile.firstname}!` : `Profile of ${profileUsername}`}</h2>
+      <h2>Welcome back, {profile?.firstname}!</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {profile && (
         <>
@@ -181,66 +178,55 @@ export default function ProfilePage() {
             <Card.Header as="h5">Profile Details</Card.Header>
             <Card.Body>
               <Card.Text>
-                <strong>Name:</strong> {isOwnProfile ? `${profile.firstname} ${profile.lastname}` : profileUsername}
+                <strong>Name:</strong> {profile.firstname} {profile.lastname}
               </Card.Text>
-              {isOwnProfile && (
-                <>
-                  <Card.Text>
-                    <strong>User Name:</strong> {profile.username}
-                  </Card.Text>
-                  <Card.Text>
-                    <strong>Email:</strong> {profile.email}
-                  </Card.Text>
-                  <Card.Text>
-                    <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
-                  </Card.Text>
-                </>
-              )}
+              <Card.Text>
+                <strong>User Name:</strong> {profile.username}
+              </Card.Text>
+              <Card.Text>
+                <strong>Email:</strong> {profile.email}
+              </Card.Text>
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
               </Card.Text>
             </Card.Body>
           </Card>
 
-          {isOwnProfile && (
-            <Card className="mb-4">
-              <Card.Header as="h5">Liked Movies</Card.Header>
-              <Card.Body>
-                {likedMovies.length > 0 ? (
-                  <ul>
-                    {likedMovies.map((movie) => (
-                      <li key={movie.url}>
+          <Card className="mb-4">
+            <Card.Header as="h5">Liked Movies</Card.Header>
+            <Card.Body>
+              {likedMovies.length > 0 ? (
+                <ul>
+                  {likedMovies.map((movie) => (
+                    <li key={movie.url}>
                         <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No liked movies found.</p>
-                )}
-              </Card.Body>
-            </Card>
-          )}
-
-          {isOwnProfile && (
-            <Card className="mb-4">
-              <Card.Header as="h5">Select Movie to View Comments</Card.Header>
-              <Card.Body>
-                <Form.Control
-                  as="select"
-                  value={selectedMovieUrl}
-                  onChange={(e) => setSelectedMovieUrl(e.target.value)}
-                >
-                  <option value="">Select a movie</option>
-                  {filteredMovies.map((movie) => (
-                    <option key={movie.url} value={movie.url}>{movie.film}</option>
+                    </li>
                   ))}
-                </Form.Control>
-              </Card.Body>
-            </Card>
-          )}
+                </ul>
+              ) : (
+                <p>No liked movies found.</p>
+              )}
+            </Card.Body>
+          </Card>
+
+          <Card className="mb-4">
+            <Card.Header as="h5">Select Movie to View Comments</Card.Header>
+            <Card.Body>
+              <Form.Control
+                as="select"
+                value={selectedMovieUrl}
+                onChange={(e) => setSelectedMovieUrl(e.target.value)}
+              >
+                <option value="">Select a movie</option>
+                {filteredMovies.map((movie) => (
+                  <option key={movie.url} value={movie.url}>{movie.film}</option>
+                ))}
+              </Form.Control>
+            </Card.Body>
+          </Card>
 
           {/* Use the Comments component here */}
-          {selectedMovieUrl && isOwnProfile && (
+          {selectedMovieUrl && (
             <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
           )}
         </>
