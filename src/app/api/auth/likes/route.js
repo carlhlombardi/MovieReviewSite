@@ -14,12 +14,12 @@ export async function GET(request) {
     }
 
     // Get the total like count for the movie
-    const likeCountResult = await sql`
-      SELECT SUM(likedCount) AS likecount
+    const likecountResult = await sql`
+      SELECT COUNT(*) AS likecount
       FROM likes
       WHERE url = ${movieUrl} AND isliked = TRUE;
     `;
-    const likeCount = parseInt(likeCountResult.rows[0].likecount || 0, 10);
+    const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
     // Check if the user has liked the movie
     const authHeader = request.headers.get('Authorization');
@@ -27,7 +27,7 @@ export async function GET(request) {
 
     if (!token) {
       return new Response(
-        JSON.stringify({ likeCount, isliked: false }),
+        JSON.stringify({ likecount, isliked: false }),
         { status: 200 }
       );
     }
@@ -49,15 +49,15 @@ export async function GET(request) {
       );
     }
 
-    const isLikedResult = await sql`
+    const islikedResult = await sql`
       SELECT isliked
       FROM likes
       WHERE username = ${user.username} AND url = ${movieUrl};
     `;
-    const isLiked = isLikedResult.rowCount > 0 ? isLikedResult.rows[0].isliked : false;
+    const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
 
     return new Response(
-      JSON.stringify({ likeCount, isLiked }),
+      JSON.stringify({ likecount, isliked }),
       { status: 200 }
     );
   } catch (error) {
@@ -100,29 +100,20 @@ export async function POST(request) {
     }
     console.log('User Found:', user.username);
 
-    // Check if the like already exists
-    const existingLikeResult = await sql`
-      SELECT isliked
-      FROM likes
-      WHERE username = ${user.username} AND url = ${url};
+    const postResult = await sql`
+      INSERT INTO likes (username, url, isliked)
+      VALUES (${user.username}, ${url}, TRUE)
+      ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
+      RETURNING username, url;
     `;
-    const existingLike = existingLikeResult.rowCount > 0 ? existingLikeResult.rows[0].isliked : false;
+    console.log('POST Result:', postResult);
 
-    if (existingLike) {
+    if (postResult.rowCount === 0) {
       return new Response(
         JSON.stringify({ message: 'Item already liked' }),
         { status: 409 }
       );
     }
-
-    // Insert or update like record and increment like count
-    await sql`
-      INSERT INTO likes (username, url, isliked, likedCount)
-      VALUES (${user.username}, ${url}, TRUE, 1)
-      ON CONFLICT (username, url) 
-      DO UPDATE SET isliked = TRUE, likedCount = likedCount + 1
-      RETURNING username, url;
-    `;
 
     return new Response(
       JSON.stringify({ message: 'Item liked' }),
@@ -140,68 +131,60 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const url = new URL(request.url);
-    const movieUrl = url.searchParams.get('url');
-    console.log('DELETE Request - Movie URL:', movieUrl);
+      const url = new URL(request.url);
+      const movieUrl = url.searchParams.get('url');
+      console.log('DELETE Request - Movie URL:', movieUrl);
 
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-    if (!token || !movieUrl) {
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.split(' ')[1];
+      if (!token || !movieUrl) {
+          return new Response(
+              JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
+              { status: 401 }
+          );
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded JWT:', decoded);
+      const userId = decoded.userId;
+
+      const userResult = await sql`
+          SELECT username
+          FROM users
+          WHERE id = ${userId};
+      `;
+      const user = userResult.rows[0];
+      if (!user) {
+          return new Response(
+              JSON.stringify({ message: 'User not found' }),
+              { status: 404 }
+          );
+      }
+
+      const deleteResult = await sql`
+          UPDATE likes
+          SET isliked = FALSE
+          WHERE username = ${user.username} AND url = ${movieUrl}
+          RETURNING username, url;
+      `;
+      console.log('DELETE Result:', deleteResult);
+
+      if (deleteResult.rowCount === 0) {
+          return new Response(
+              JSON.stringify({ message: 'Like not found' }),
+              { status: 404 }
+          );
+      }
+
       return new Response(
-        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
-        { status: 401 }
+          JSON.stringify({ message: 'Like removed' }),
+          { status: 200 }
       );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded JWT:', decoded);
-    const userId = decoded.userId;
-
-    const userResult = await sql`
-      SELECT username
-      FROM users
-      WHERE id = ${userId};
-    `;
-    const user = userResult.rows[0];
-    if (!user) {
-      return new Response(
-        JSON.stringify({ message: 'User not found' }),
-        { status: 404 }
-      );
-    }
-
-    // Check if the like exists
-    const existingLikeResult = await sql`
-      SELECT isliked
-      FROM likes
-      WHERE username = ${user.username} AND url = ${movieUrl};
-    `;
-    const existingLike = existingLikeResult.rowCount > 0 ? existingLikeResult.rows[0].isliked : false;
-
-    if (!existingLike) {
-      return new Response(
-        JSON.stringify({ message: 'Like not found or already unliked' }),
-        { status: 404 }
-      );
-    }
-
-    // Update like record and decrement like count
-    await sql`
-      UPDATE likes
-      SET isliked = FALSE, likedCount = likedCount - 1
-      WHERE username = ${user.username} AND url = ${movieUrl}
-      RETURNING username, url;
-    `;
-
-    return new Response(
-      JSON.stringify({ message: 'Like removed' }),
-      { status: 200 }
-    );
   } catch (error) {
-    console.error('Delete like error:', error);  // Log full error
-    return new Response(
-      JSON.stringify({ message: 'Failed to remove like' }),
-      { status: 500 }
-    );
+      console.error('Delete like error:', error);  // Log full error
+      return new Response(
+          JSON.stringify({ message: 'Failed to remove like' }),
+          { status: 500 }
+      );
   }
 }
