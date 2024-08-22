@@ -76,19 +76,19 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token'); // Get the JWT token from local storage
-
+    
         if (!token) {
           // If token is not present, redirect to login page
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
         }
-
+    
         // Fetch user profile
         const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
+    
         if (!profileResponse.ok) {
           // If profile fetch fails, handle the error and redirect to login
           const errorData = await profileResponse.json();
@@ -96,31 +96,30 @@ export default function ProfilePage() {
           router.push('/login');
           return;
         }
-
+    
         // Parse and set user profile data
         const profileData = await profileResponse.json();
         setProfile(profileData);
         setUsername(profileData.username); // Store the username for later use
-
-        // Fetch movies from multiple endpoints
-        const moviesData = await fetchMovies();
-        setMovies(moviesData);
-
-        // Check which movies are liked by the user
-        const likedMoviesPromises = moviesData.map(async (movie) => {
-          const { liked } = await fetchLikedStatus(movie.url, token); // Check if movie is liked
-          console.log(`Movie URL: ${movie.url}, Liked: ${liked}`); // Log the movie URL and liked status
-          return liked ? movie : null; // Include movie if liked, otherwise return null
+    
+        // Fetch liked movies directly
+        const likedMoviesResponse = await fetch(`${baseUrl}/api/auth/liked-movies`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-
-        // Wait for all promises to resolve
-        const likedMoviesResults = await Promise.all(likedMoviesPromises);
-        // Filter out null values (i.e., movies that are not liked)
-        const filteredLikedMovies = likedMoviesResults.filter(movie => movie !== null);
-        setLikedMovies(filteredLikedMovies);
-
-        console.log('Liked Movies:', filteredLikedMovies); // Log the final list of liked movies
-
+    
+        if (!likedMoviesResponse.ok) {
+          const errorData = await likedMoviesResponse.json();
+          setError(errorData.message || 'An error occurred');
+          router.push('/login');
+          return;
+        }
+    
+        // Parse and set liked movies data
+        const likedMoviesData = await likedMoviesResponse.json();
+        setLikedMovies(likedMoviesData.likedMovies);
+    
+        console.log('Liked Movies:', likedMoviesData.likedMovies); // Log the final list of liked movies
+    
       } catch (err) {
         // Handle errors and redirect to login if something goes wrong
         console.error('Error in fetchDataAsync:', err);
