@@ -13,22 +13,14 @@ export async function GET(request) {
       );
     }
 
-    // Get the total like count for the movie
-    const likecountResult = await sql`
-      SELECT COUNT(*) AS likecount
-      FROM likes
-      WHERE url = ${movieUrl} AND isliked = TRUE;
-    `;
-    const likecount = parseInt(likecountResult.rows[0].likecount, 10);
-
-    // Check if the user has liked the movie
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
+      // Handle unauthorized access
       return new Response(
-        JSON.stringify({ likecount, isliked: false }),
-        { status: 200 }
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
       );
     }
 
@@ -61,6 +53,7 @@ export async function GET(request) {
       { status: 200 }
     );
   } catch (error) {
+    console.error('Failed to fetch likes:', error); // Log the error
     return new Response(
       JSON.stringify({ message: 'Failed to fetch likes' }),
       { status: 500 }
