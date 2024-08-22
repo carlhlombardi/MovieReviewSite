@@ -62,7 +62,6 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token'); // Get the JWT token from local storage
     
         if (!token) {
-          // If token is not present, redirect to login page
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
@@ -102,6 +101,10 @@ export default function ProfilePage() {
         const likedMoviesData = await likedMoviesResponse.json();
         setLikedMovies(likedMoviesData.likedMovies);
     
+        // Fetch all movies
+        const allMovies = await fetchMovies();
+        setMovies(allMovies);
+    
         console.log('Liked Movies:', likedMoviesData.likedMovies); // Log the final list of liked movies
     
       } catch (err) {
@@ -115,7 +118,7 @@ export default function ProfilePage() {
     };
 
     fetchDataAsync(); // Invoke the async function to fetch data
-  }, [router]); // Dependency array ensures this effect runs on mount and when `router` changes
+  }, [router]);
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
@@ -134,7 +137,6 @@ export default function ProfilePage() {
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
           const commentsData = await fetchComments(movie.url, token);
-          // Filter comments by username
           const userComments = commentsData.filter(comment => comment.username === username);
           return { ...movie, hasComments: userComments.length > 0, comments: userComments };
         }));
@@ -148,7 +150,7 @@ export default function ProfilePage() {
     };
 
     fetchFilteredMovies();
-  }, [movies, username]);
+  }, [movies, username]); // Ensure this effect runs when `movies` or `username` changes
 
   // Function to format the date
   const formatDate = (dateString) => {
@@ -196,9 +198,9 @@ export default function ProfilePage() {
               {likedMovies.length > 0 ? (
                 <ul>
                   {likedMovies.map((movie) => (
-                    <ol key={movie.url}>
-                        {movie.title}
-                    </ol>
+                    <li key={movie.url}>
+                      {movie.title}
+                    </li>
                   ))}
                 </ul>
               ) : (
