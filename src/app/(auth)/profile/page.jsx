@@ -214,7 +214,7 @@ export default function ProfilePage() {
                   {likedMovies.map((movie) => (
                     <li key={movie.url}>
                       <a href={movie.url} target="_blank" rel="noopener noreferrer">
-                        {movie.film}
+                        {movie.url}
                       </a>
                     </li>
                   ))}

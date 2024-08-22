@@ -29,7 +29,7 @@ export async function GET(request) {
 
     // Fetch the liked movies for the user
     const likedMoviesResult = await sql`
-      SELECT url
+      SELECT url, title
       FROM likes
       WHERE username = ${username} AND isliked = TRUE;
     `;
