@@ -213,7 +213,7 @@ export default function ProfilePage() {
                 <ul>
                   {likedMovies.map((movie) => (
                     <li key={movie.url}>
-                        {movie.url}
+                        {movie.title}
                     </li>
                   ))}
                 </ul>
