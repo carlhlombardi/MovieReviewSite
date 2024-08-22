@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Link } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
 import Comments from '@/app/components/comments/comments.jsx'; // Ensure this path is correct
 
@@ -200,9 +199,7 @@ export default function ProfilePage() {
                 <ul>
                   {likedMovies.map((movie) => (
                     <li key={movie.url}>
-                      <Link href={`/genre/${movie.genre}/${movie.url}`}>
-                        {movie.title}
-                      </Link>
+                        <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
                     </li>
                   ))}
                 </ul>
