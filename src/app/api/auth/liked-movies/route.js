@@ -16,7 +16,7 @@ export async function GET(request) {
   
       // Fetch the liked movies directly
       const likedMoviesResult = await sql`
-        SELECT url, film
+        SELECT url
         FROM likes
         WHERE user_id = ${userId} AND isliked = TRUE;
       `;
