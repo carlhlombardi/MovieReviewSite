@@ -76,7 +76,7 @@ export default function ProfilePage() {
       try {
         const token = localStorage.getItem('token'); // Get the JWT token from local storage
 
-        if (!token && profileUsername === username) {
+        if (profileUsername === username && !token) {
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
@@ -119,7 +119,7 @@ export default function ProfilePage() {
     };
 
     fetchDataAsync(); // Invoke the async function to fetch data
-  }, [router, profileUsername, username]);
+  }, [router, profileUsername, username]); // Added `username` to dependencies
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
@@ -222,7 +222,6 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {/* Use the Comments component here */}
           {selectedMovieUrl && profileUsername === username && (
             <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
           )}
