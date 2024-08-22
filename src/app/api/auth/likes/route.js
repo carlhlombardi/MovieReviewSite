@@ -6,29 +6,14 @@ export async function GET(request) {
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
 
-    if (!movieUrl) {
-      return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Get the total like count for the movie
-    const likecountResult = await sql`
-      SELECT COUNT(*) AS likecount
-      FROM likes
-      WHERE url = ${movieUrl} AND isliked = TRUE;
-    `;
-    const likecount = parseInt(likecountResult.rows[0].likecount, 10);
-
-    // Check if the user has liked the movie
+    // Fetch liked movies
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
       return new Response(
-        JSON.stringify({ likecount, isliked: false }),
-        { status: 200 }
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
       );
     }
 
@@ -41,7 +26,7 @@ export async function GET(request) {
       WHERE id = ${userId};
     `;
     const user = userResult.rows[0];
-
+    
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -49,18 +34,44 @@ export async function GET(request) {
       );
     }
 
-    const islikedResult = await sql`
-      SELECT isliked
-      FROM likes
-      WHERE username = ${user.username} AND url = ${movieUrl};
-    `;
-    const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
+    if (movieUrl) {
+      // Check if the specific movie is liked
+      const islikedResult = await sql`
+        SELECT isliked
+        FROM likes
+        WHERE username = ${user.username} AND url = ${movieUrl};
+      `;
+      const isliked = islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
 
-    return new Response(
-      JSON.stringify({ likecount, isliked }),
-      { status: 200 }
-    );
+      // Get the like count for the specific movie
+      const likecountResult = await sql`
+        SELECT COUNT(*) AS likecount
+        FROM likes
+        WHERE url = ${movieUrl} AND isliked = TRUE;
+      `;
+      const likecount = parseInt(likecountResult.rows[0].likecount, 10);
+
+      return new Response(
+        JSON.stringify({ likecount, isliked }),
+        { status: 200 }
+      );
+    } else {
+      // Get all liked movies for the user
+      const likedMoviesResult = await sql`
+        SELECT url
+        FROM likes
+        WHERE username = ${user.username} AND isliked = TRUE;
+      `;
+      
+      const likedMovies = likedMoviesResult.rows.map(row => row.url);
+
+      return new Response(
+        JSON.stringify({ likedMovies }),
+        { status: 200 }
+      );
+    }
   } catch (error) {
+    console.error('Error fetching liked movies:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to fetch likes' }),
       { status: 500 }
