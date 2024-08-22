@@ -30,7 +30,7 @@ const fetchMovies = async () => {
 // Function to fetch comments for a movie
 const fetchComments = async (movieUrl, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/comments?url=${encodeURIComponent(movieUrl)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {
