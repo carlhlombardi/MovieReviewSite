@@ -62,7 +62,7 @@ export async function GET(request) {
     let title = '';
     for (const table of movieTables) {
       const titleResult = await sql`
-        SELECT title
+        SELECT film
         FROM ${sql(table)}
         WHERE url = ${movieUrl}
         LIMIT 1;
@@ -199,7 +199,7 @@ export async function DELETE(request) {
     let currentTitle = '';
     for (const table of movieTables) {
       const titleResult = await sql`
-        SELECT title
+        SELECT film
         FROM ${sql(table)}
         WHERE url = ${movieUrl}
         LIMIT 1;
