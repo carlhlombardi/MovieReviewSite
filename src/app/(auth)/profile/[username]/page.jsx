@@ -43,20 +43,6 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
-// Function to fetch liked movies for a specific user profile
-const fetchLikedMovies = async (profileUsername) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/users/${profileUsername}/liked-movies`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch liked movies');
-    }
-    return await response.json(); // Returns liked movies array
-  } catch (error) {
-    console.error('Error fetching liked movies:', error);
-    return []; // Return empty array if there's an error
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null); // State to hold profile data
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
@@ -75,18 +61,18 @@ export default function ProfilePage() {
     const fetchDataAsync = async () => {
       try {
         const token = localStorage.getItem('token'); // Get the JWT token from local storage
-
-        if (profileUsername === username && !token) {
+    
+        if (!token) {
           console.log('No token found, redirecting to login');
           router.push('/login');
           return;
         }
-
-        // Fetch the profile of the user being viewed
-        const profileResponse = await fetch(`${baseUrl}/api/auth/users/${profileUsername}`, {
-          headers: { Authorization: token ? `Bearer ${token}` : '' }
+    
+        // Fetch user profile
+        const profileResponse = await fetch(`${baseUrl}/api/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-
+    
         if (!profileResponse.ok) {
           // If profile fetch fails, handle the error and redirect to login
           const errorData = await profileResponse.json();
@@ -94,20 +80,34 @@ export default function ProfilePage() {
           router.push('/login');
           return;
         }
-
+    
         // Parse and set user profile data
         const profileData = await profileResponse.json();
         setProfile(profileData);
         setUsername(profileData.username); // Store the username for later use
-
-        // Fetch liked movies for the profile being viewed
-        const likedMoviesData = await fetchLikedMovies(profileUsername);
+    
+        // Fetch liked movies
+        const likedMoviesResponse = await fetch(`${baseUrl}/api/auth/liked-movies`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+    
+        if (!likedMoviesResponse.ok) {
+          const errorData = await likedMoviesResponse.json();
+          setError(errorData.message || 'An error occurred');
+          router.push('/login');
+          return;
+        }
+    
+        // Parse and set liked movies data
+        const likedMoviesData = await likedMoviesResponse.json();
         setLikedMovies(likedMoviesData.likedMovies);
-
+    
         // Fetch all movies
         const allMovies = await fetchMovies();
         setMovies(allMovies);
-
+    
+        console.log('Liked Movies:', likedMoviesData.likedMovies); // Log the final list of liked movies
+    
       } catch (err) {
         // Handle errors and redirect to login if something goes wrong
         console.error('Error in fetchDataAsync:', err);
@@ -119,7 +119,7 @@ export default function ProfilePage() {
     };
 
     fetchDataAsync(); // Invoke the async function to fetch data
-  }, [router, profileUsername, username]); // Added `username` to dependencies
+  }, [router]);
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
@@ -169,9 +169,11 @@ export default function ProfilePage() {
     );
   }
 
+  const isOwnProfile = profile?.username === profileUsername;
+
   return (
     <div className="container mt-5">
-      <h2>{profileUsername === username ? `Welcome back, ${profile?.firstname}!` : `Profile of ${profileUsername}`}</h2>
+      <h2>{isOwnProfile ? `Welcome back, ${profile.firstname}!` : `Profile of ${profileUsername}`}</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       {profile && (
         <>
@@ -179,7 +181,7 @@ export default function ProfilePage() {
             <Card.Header as="h5">Profile Details</Card.Header>
             <Card.Body>
               <Card.Text>
-                <strong>Name:</strong> {profile.firstname} {profile.lastname}
+                <strong>Name:</strong> {isOwnProfile ? `${profile.firstname} ${profile.lastname}` : profileUsername}
               </Card.Text>
               <Card.Text>
                 <strong>Date Joined:</strong> {formatDate(profile.date_joined)}
@@ -187,24 +189,26 @@ export default function ProfilePage() {
             </Card.Body>
           </Card>
 
-          <Card className="mb-4">
-            <Card.Header as="h5">Liked Movies</Card.Header>
-            <Card.Body>
-              {likedMovies.length > 0 ? (
-                <ul>
-                  {likedMovies.map((movie) => (
-                    <li key={movie.url}>
-                      <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No liked movies found.</p>
-              )}
-            </Card.Body>
-          </Card>
+          {isOwnProfile && (
+            <Card className="mb-4">
+              <Card.Header as="h5">Liked Movies</Card.Header>
+              <Card.Body>
+                {likedMovies.length > 0 ? (
+                  <ul>
+                    {likedMovies.map((movie) => (
+                      <li key={movie.url}>
+                        <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No liked movies found.</p>
+                )}
+              </Card.Body>
+            </Card>
+          )}
 
-          {profileUsername === username && (
+          {isOwnProfile && (
             <Card className="mb-4">
               <Card.Header as="h5">Select Movie to View Comments</Card.Header>
               <Card.Body>
@@ -222,7 +226,8 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {selectedMovieUrl && profileUsername === username && (
+          {/* Use the Comments component here */}
+          {selectedMovieUrl && isOwnProfile && (
             <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
           )}
         </>
