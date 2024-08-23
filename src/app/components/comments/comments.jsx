@@ -24,7 +24,7 @@ const fetchComments = async (movieUrl, token) => {
 
 const fetchAllUsers = async (token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/publicusers', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/users/publicusers', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to fetch users');
