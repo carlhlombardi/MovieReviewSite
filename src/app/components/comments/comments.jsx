@@ -168,6 +168,37 @@ const Comments = ({ movieUrl }) => {
     return () => clearInterval(countdownInterval);
   }, []); // No dependencies if countdown only updates based on itself
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setUser(userData);
+          }
+  
+          const commentsData = await fetchComments(movieUrl, token);
+          setComments(commentsData.map(comment => ({
+            ...comment,
+            likedByUser: comment.likedByUser || false // Ensure this property exists
+          })));
+        }
+      } catch (err) {
+        setError('Failed to load data');
+        console.error('Error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchData();
+  }, [movieUrl]);
+
+  
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
