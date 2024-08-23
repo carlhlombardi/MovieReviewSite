@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { Navbar, Container, Offcanvas, Button } from 'react-bootstrap';
-import { useAuth } from '@/app/(auth)/contexts/AuthContext';
+import { useAuth } from '@/app/(auth)/contexts/AuthContext'; // Adjust the path as needed
 import Links from '@/app/components/navbar/links/Links.jsx';
 import Image from 'next/image';
 import styles from './navbar.module.css';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const { isLoggedIn, setIsLoggedIn, username } = useAuth(); // Assuming `user` contains the username
+  const { isLoggedIn, setIsLoggedIn, user } = useAuth(); // Ensure `user` contains `username`
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -21,8 +21,8 @@ const NavbarComponent = () => {
   const handleRegister = () => window.location.href = '/register';
 
   const handleProfile = () => {
-    if (username) {
-      window.location.href = `/profile/${username}`;
+    if (user && user.username) {
+      window.location.href = `/profile/${user.username}`; // Redirect to user's profile page
     } else {
       console.error('Username is required to redirect to profile.');
     }
