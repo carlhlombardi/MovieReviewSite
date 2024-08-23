@@ -47,7 +47,7 @@ const postComment = async (url, text, mentionedUser, token) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ text, mentionedUser }) // Only include text and mentionedUser in the body
+      body: JSON.stringify({ text, mentionedUser }) // Include mentionedUser
     });
 
     // Handle response
