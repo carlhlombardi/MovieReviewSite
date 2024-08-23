@@ -97,6 +97,25 @@ const fetchUserList = async (searchTerm = '') => {
   }
 };
 
+const parseCommentText = (text) => {
+  // Regex to match @username mentions
+  const mentionRegex = /@(\w+)/g;
+  // Split text into parts, replacing mentions with links
+  const parts = text.split(mentionRegex).map((part, index) => {
+    if (index % 2 === 0) {
+      return part;
+    }
+    // Highlight mentions with a span or a link
+    return (
+      <Link key={index} href={`/profile/${part}`}>
+        <a className="mention">@{part}</a>
+      </Link>
+    );
+  });
+
+  return parts;
+};
+
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -269,7 +288,7 @@ const Comments = ({ movieUrl }) => {
     return <Spinner animation="border" />;
   }
 
-  return (
+   return (
     <>
       <h3>Comments</h3>
       {error && <Alert variant="danger">{error}</Alert>}
