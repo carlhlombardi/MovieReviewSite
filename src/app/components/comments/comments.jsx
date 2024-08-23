@@ -5,9 +5,13 @@ import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
 
 // Helper functions for API calls
-const fetchComments = async (movieUrl) => {
+const fetchComments = async (movieUrl, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch comments');
     }
@@ -60,11 +64,13 @@ const deleteComment = async (id, movieUrl, token) => {
 
 const likeComment = async (id, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/like?id=${encodeURIComponent(id)}`, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments/like', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
-      }
+      },
+      body: JSON.stringify({ commentId: id })
     });
     if (!response.ok) {
       throw new Error('Failed to like comment');
@@ -96,10 +102,10 @@ const Comments = ({ movieUrl }) => {
             const userData = await userResponse.json();
             setUser(userData);
           }
+          // Fetch comments
+          const commentsData = await fetchComments(movieUrl, token);
+          setComments(commentsData);
         }
-        // Fetch comments
-        const commentsData = await fetchComments(movieUrl);
-        setComments(commentsData);
       } catch (err) {
         setError('Failed to load comments');
         console.error('Error:', err);
@@ -151,7 +157,6 @@ const Comments = ({ movieUrl }) => {
       if (token) {
         const response = await likeComment(commentId, token);
         if (response) {
-          // Update comment state with the new like status
           setComments(comments.map(comment =>
             comment.id === commentId ? { ...comment, likedByUser: response.likedByUser } : comment
           ));
