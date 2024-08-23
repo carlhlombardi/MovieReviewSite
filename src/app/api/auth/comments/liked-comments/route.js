@@ -65,7 +65,6 @@ export async function POST(request) {
       );
     }
 
-    // Fetch the username of the person who is liking the comment
     const likerData = await sql`
       SELECT username
       FROM users
@@ -73,14 +72,6 @@ export async function POST(request) {
     `;
     const likerUsername = likerData.rows[0]?.username;
 
-    if (!likerUsername) {
-      return new Response(
-        JSON.stringify({ message: 'Liker username not found' }),
-        { status: 404 }
-      );
-    }
-
-    // Fetch the comment details
     const commentData = await sql`
       SELECT username, text
       FROM comments
@@ -89,14 +80,6 @@ export async function POST(request) {
     const commentAuthorUsername = commentData.rows[0]?.username;
     const commentText = commentData.rows[0]?.text;
 
-    if (!commentAuthorUsername || !commentText) {
-      return new Response(
-        JSON.stringify({ message: 'Comment not found' }),
-        { status: 404 }
-      );
-    }
-
-    // Check if the comment is already liked
     const existingLike = await sql`
       SELECT 1
       FROM liked_comments
@@ -105,7 +88,6 @@ export async function POST(request) {
     `;
 
     if (existingLike.rowCount > 0) {
-      // If already liked, unlike the comment
       await sql`
         DELETE FROM liked_comments
         WHERE user_id = ${userId}
@@ -116,7 +98,6 @@ export async function POST(request) {
         { status: 200 }
       );
     } else {
-      // Otherwise, like the comment
       await sql`
         INSERT INTO liked_comments (user_id, comment_id, liker_username, comment_author_username, comment_text)
         VALUES (${userId}, ${commentId}, ${likerUsername}, ${commentAuthorUsername}, ${commentText})
