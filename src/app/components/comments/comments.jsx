@@ -8,13 +8,9 @@ import Link from 'next/link';
 const fetchComments = async (movieUrl, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) {
-      throw new Error('Failed to fetch comments');
-    }
+    if (!response.ok) throw new Error('Failed to fetch comments');
     return await response.json();
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -22,98 +18,17 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
-const postComment = async (url, text, token) => {
+const fetchAllUsers = async (token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ url, text })
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) {
-      throw new Error('Failed to submit comment');
-    }
+    if (!response.ok) throw new Error('Failed to fetch users');
     return await response.json();
   } catch (error) {
-    console.error('Error posting comment:', error);
-    return null;
-  }
-};
-
-const deleteComment = async (id, movieUrl, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error deleting comment:', errorData);
-      throw new Error(`Failed to delete comment: ${errorData.message}`);
-    }
-    return true;
-  } catch (error) {
-    console.error('Error deleting comment:', error);
-    return false;
-  }
-};
-
-const likeComment = async (id, token) => {
-  try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments/liked-comments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ commentId: id })
-    });
-    if (!response.ok) {
-      throw new Error('Failed to like comment');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error liking comment:', error);
-    return null;
-  }
-};
-
-// Fetch and filter users
-const fetchUserList = async (searchTerm = '') => {
-  try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/users');
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
-    }
-    const users = await response.json();
-    return users.filter(user => user.username.toLowerCase().includes(searchTerm.toLowerCase()));
-  } catch (error) {
-    console.error('Error fetching user list:', error);
+    console.error('Error fetching users:', error);
     return [];
   }
-};
-
-const parseCommentText = (text) => {
-  // Regex to match @username mentions
-  const mentionRegex = /@(\w+)/g;
-  // Split text into parts, replacing mentions with links
-  const parts = text.split(mentionRegex).map((part, index) => {
-    if (index % 2 === 0) {
-      return part;
-    }
-    // Highlight mentions with a span or a link
-    return (
-      <Link key={index} href={`/profile/${part}`}>
-        <a className="mention">@{part}</a>
-      </Link>
-    );
-  });
-
-  return parts;
 };
 
 const Comments = ({ movieUrl }) => {
@@ -121,28 +36,33 @@ const Comments = ({ movieUrl }) => {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [user, setUser] = useState(null); // Current logged-in user
-  const [deleteCountdown, setDeleteCountdown] = useState({}); // Track delete countdown for each comment
-  const [userList, setUserList] = useState([]); // List of users for mentions
-  const [filteredUsers, setFilteredUsers] = useState([]); // Filtered list of users based on search
-  const [mentioning, setMentioning] = useState(false); // Whether we're in mention mode
-  const [mentionStart, setMentionStart] = useState(0); // Start position of mention
-  const [mentionEnd, setMentionEnd] = useState(0); // End position of mention
+  const [user, setUser] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [deleteCountdown, setDeleteCountdown] = useState({});
+  const [mentionedUser, setMentionedUser] = useState('');
 
   useEffect(() => {
-    const fetchCommentsAsync = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
+          // Fetch user information
           const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUser(userData);
+            // Fetch users if admin
+            if (userData.is_admin) {
+              const usersData = await fetchAllUsers(token);
+              setAllUsers(usersData);
+            }
           }
+          // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
           setComments(commentsData);
+          // Initialize countdown
           const initialCountdown = {};
           commentsData.forEach(comment => {
             if (comment.username === userData.username) {
@@ -157,14 +77,14 @@ const Comments = ({ movieUrl }) => {
           setDeleteCountdown(initialCountdown);
         }
       } catch (err) {
-        setError('Failed to load comments');
+        setError('Failed to load data');
         console.error('Error:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCommentsAsync();
+    fetchData();
   }, [movieUrl]);
 
   useEffect(() => {
@@ -185,42 +105,6 @@ const Comments = ({ movieUrl }) => {
     return () => clearInterval(countdownInterval);
   }, []);
 
-  useEffect(() => {
-    // Fetch user list for mentions
-    const fetchUsers = async () => {
-      const users = await fetchUserList();
-      setUserList(users);
-    };
-
-    fetchUsers();
-  }, []);
-
-  const handleCommentChange = async (e) => {
-    const text = e.target.value;
-    setNewComment(text);
-
-    // Handle mention logic
-    const mentionIndex = text.lastIndexOf('@');
-    if (mentionIndex > -1) {
-      setMentioning(true);
-      setMentionStart(mentionIndex);
-      setMentionEnd(text.length);
-      const query = text.substring(mentionIndex + 1);
-      const users = await fetchUserList(query);
-      setFilteredUsers(users);
-    } else {
-      setMentioning(false);
-      setFilteredUsers([]);
-    }
-  };
-
-  const handleSuggestionClick = (username) => {
-    const updatedComment = `${newComment.substring(0, mentionStart)}@${username} `;
-    setNewComment(updatedComment);
-    setMentioning(false);
-    setFilteredUsers([]);
-  };
-
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -233,6 +117,7 @@ const Comments = ({ movieUrl }) => {
           const postedTime = new Date();
           setComments([...comments, response]);
           setNewComment('');
+          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
@@ -284,11 +169,16 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
+  const handleMention = (username) => {
+    setMentionedUser(username);
+    setNewComment(prev => `${prev} @${username} `);
+  };
+
   if (isLoading) {
     return <Spinner animation="border" />;
   }
 
-   return (
+  return (
     <>
       <h3>Comments</h3>
       {error && <Alert variant="danger">{error}</Alert>}
@@ -299,20 +189,20 @@ const Comments = ({ movieUrl }) => {
               as="textarea"
               rows={3}
               value={newComment}
-              onChange={handleCommentChange}
+              onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add your comment"
             />
           </Form.Group>
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
-          {mentioning && filteredUsers.length > 0 && (
+          {user.is_admin && (
             <Dropdown className="mt-2">
+              <Dropdown.Toggle variant="success" id="dropdown-basic">
+                Mention User
+              </Dropdown.Toggle>
               <Dropdown.Menu>
-                {filteredUsers.map(user => (
-                  <Dropdown.Item
-                    key={user.id}
-                    onClick={() => handleSuggestionClick(user.username)}
-                  >
-                    {user.username}
+                {allUsers.map(u => (
+                  <Dropdown.Item key={u.id} onClick={() => handleMention(u.username)}>
+                    {u.username}
                   </Dropdown.Item>
                 ))}
               </Dropdown.Menu>
@@ -328,7 +218,7 @@ const Comments = ({ movieUrl }) => {
                 <strong>{comment.username}</strong>
               </a>
             </Link> - {new Date(comment.createdat).toLocaleDateString()}
-            <p>{parseCommentText(comment.text)}</p>
+            <p>{comment.text}</p>
             {user && user.username === comment.username && (
               <>
                 <Button
