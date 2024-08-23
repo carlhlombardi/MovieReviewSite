@@ -9,7 +9,7 @@ import styles from './navbar.module.css';
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const { isLoggedIn, setIsLoggedIn, user } = useAuth(); // Assuming `user` contains the username
+  const { isLoggedIn, setIsLoggedIn, username } = useAuth(); // Assuming `user` contains the username
 
   const handleLogout = () => {
     localStorage.removeItem('token');
