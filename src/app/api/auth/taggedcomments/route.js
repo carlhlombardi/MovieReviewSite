@@ -19,11 +19,13 @@ export async function GET(req) {
 
     // Fetch tagged comments
     const result = await sql`
-    SELECT c.id, c.text AS commentText, u.username AS taggingUser
-    FROM comments c
-    JOIN users u ON c.user_id = u.id
-    LIMIT 1;
-  `;
+    SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, a.genre AS movieGenre, a.film AS movieTitle
+      FROM comments c
+      JOIN users u ON c.id = u.id
+      JOIN actionmovies a ON c.url = a.url
+      WHERE c.text LIKE '%' || ${username} || '%'
+    `;
+
 
     return new Response(JSON.stringify(result.rows), {
       status: 200,
