@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
@@ -43,6 +41,22 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
+// Function to fetch tagged comments for a user
+const fetchTaggedComments = async (username, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/tagged-comments?username=${encodeURIComponent(username)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch tagged comments');
+    }
+    return await response.json(); // Returns tagged comments array
+  } catch (error) {
+    console.error('Error fetching tagged comments:', error);
+    return []; // Return empty array if there's an error
+  }
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null); // State to hold profile data
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
@@ -52,6 +66,7 @@ export default function ProfilePage() {
   const [username, setUsername] = useState(null); // State to hold the username
   const [error, setError] = useState(''); // State to hold any error messages
   const [selectedMovieUrl, setSelectedMovieUrl] = useState(''); // State to hold selected movie URL
+  const [taggedComments, setTaggedComments] = useState([]); // State to hold tagged comments
 
   const router = useRouter(); // Router instance for navigation
   const { username: profileUsername } = useParams(); // Extract username from URL parameter
@@ -105,6 +120,10 @@ export default function ProfilePage() {
         // Fetch all movies
         const allMovies = await fetchMovies();
         setMovies(allMovies);
+    
+        // Fetch tagged comments
+        const taggedCommentsData = await fetchTaggedComments(profileData.username, token);
+        setTaggedComments(taggedCommentsData);
     
         console.log('Liked Movies:', likedMoviesData.likedMovies); // Log the final list of liked movies
     
@@ -229,6 +248,29 @@ export default function ProfilePage() {
           {/* Use the Comments component here */}
           {selectedMovieUrl && isOwnProfile && (
             <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
+          )}
+
+          {/* Display tagged comments */}
+          {isOwnProfile && taggedComments.length > 0 && (
+            <Card className="mb-4">
+                <Card.Header as="h5">Tagged By</Card.Header>
+    <Card.Body>
+      {taggedComments.length > 0 ? (
+        <ul>
+          {taggedComments.map(comment => (
+            <li key={comment.id}>
+              <strong>{comment.taggingUser}</strong> tagged you in a comment on
+              <a href={`https://movie-review-site-seven.vercel.app/genre/${comment.movieGenre}/${comment.movieUrl}`}>
+                {comment.movieTitle}
+              </a>: {comment.commentText}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No tagged comments found.</p>
+      )}
+    </Card.Body>
+            </Card>
           )}
         </>
       )}
