@@ -263,6 +263,7 @@ const Comments = ({ movieUrl }) => {
                 <strong>{comment.username}</strong>
               </a>
             </Link> - {new Date(comment.createdat).toLocaleDateString()}
+            <p>{comment.text}</p>
             {user && user.username === comment.username && (
               <>
                 {deleteCountdown[comment.id] > 0 ? (
