@@ -21,7 +21,7 @@ const NavbarComponent = () => {
   const handleRegister = () => window.location.href = '/register';
 
   const handleProfile = () => {
-    if (user && user.username) {
+    if (username) {
       window.location.href = `/profile/${username}`;
     } else {
       console.error('Username is required to redirect to profile.');
