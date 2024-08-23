@@ -8,9 +8,13 @@ import Link from 'next/link';
 const fetchComments = async (movieUrl, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(movieUrl)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
-    if (!response.ok) throw new Error('Failed to fetch comments');
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments');
+    }
     return await response.json();
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -31,18 +35,66 @@ const fetchAllUsers = async (token) => {
   }
 };
 
-// Assuming these functions exist and handle API calls
-const postComment = async (movieUrl, commentText, token) => {
-  // Implement the post comment API call
+const postComment = async (url, text, token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ url, text })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to submit comment');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    return null;
+  }
 };
 
-const deleteComment = async (commentId, movieUrl, token) => {
-  // Implement the delete comment API call
+const deleteComment = async (id, movieUrl, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error deleting comment:', errorData);
+      throw new Error(`Failed to delete comment: ${errorData.message}`);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return false;
+  }
 };
 
-const likeComment = async (commentId, token) => {
-  // Implement the like/unlike comment API call
+const likeComment = async (id, token) => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments/liked-comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ commentId: id })
+    });
+    if (!response.ok) {
+      throw new Error('Failed to like comment');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error liking comment:', error);
+    return null;
+  }
 };
+
 
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
