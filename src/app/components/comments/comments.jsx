@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
+import { Button, Form, ListGroup, Alert, Spinner, Dropdown } from 'react-bootstrap';
 import Link from 'next/link';
 
 // Helper functions for API calls
@@ -82,6 +82,21 @@ const likeComment = async (id, token) => {
   }
 };
 
+// Fetch and filter users
+const fetchUserList = async (searchTerm = '') => {
+  try {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/users');
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
+    }
+    const users = await response.json();
+    return users.filter(user => user.username.toLowerCase().includes(searchTerm.toLowerCase()));
+  } catch (error) {
+    console.error('Error fetching user list:', error);
+    return [];
+  }
+};
+
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -89,13 +104,17 @@ const Comments = ({ movieUrl }) => {
   const [error, setError] = useState('');
   const [user, setUser] = useState(null); // Current logged-in user
   const [deleteCountdown, setDeleteCountdown] = useState({}); // Track delete countdown for each comment
+  const [userList, setUserList] = useState([]); // List of users for mentions
+  const [filteredUsers, setFilteredUsers] = useState([]); // Filtered list of users based on search
+  const [mentioning, setMentioning] = useState(false); // Whether we're in mention mode
+  const [mentionStart, setMentionStart] = useState(0); // Start position of mention
+  const [mentionEnd, setMentionEnd] = useState(0); // End position of mention
 
   useEffect(() => {
     const fetchCommentsAsync = async () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          // Fetch user information
           const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -103,10 +122,8 @@ const Comments = ({ movieUrl }) => {
             const userData = await userResponse.json();
             setUser(userData);
           }
-          // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
           setComments(commentsData);
-          // Initialize countdown
           const initialCountdown = {};
           commentsData.forEach(comment => {
             if (comment.username === userData.username) {
@@ -149,6 +166,42 @@ const Comments = ({ movieUrl }) => {
     return () => clearInterval(countdownInterval);
   }, []);
 
+  useEffect(() => {
+    // Fetch user list for mentions
+    const fetchUsers = async () => {
+      const users = await fetchUserList();
+      setUserList(users);
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleCommentChange = async (e) => {
+    const text = e.target.value;
+    setNewComment(text);
+
+    // Handle mention logic
+    const mentionIndex = text.lastIndexOf('@');
+    if (mentionIndex > -1) {
+      setMentioning(true);
+      setMentionStart(mentionIndex);
+      setMentionEnd(text.length);
+      const query = text.substring(mentionIndex + 1);
+      const users = await fetchUserList(query);
+      setFilteredUsers(users);
+    } else {
+      setMentioning(false);
+      setFilteredUsers([]);
+    }
+  };
+
+  const handleSuggestionClick = (username) => {
+    const updatedComment = `${newComment.substring(0, mentionStart)}@${username} `;
+    setNewComment(updatedComment);
+    setMentioning(false);
+    setFilteredUsers([]);
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -161,7 +214,6 @@ const Comments = ({ movieUrl }) => {
           const postedTime = new Date();
           setComments([...comments, response]);
           setNewComment('');
-          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
@@ -228,11 +280,25 @@ const Comments = ({ movieUrl }) => {
               as="textarea"
               rows={3}
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={handleCommentChange}
               placeholder="Add your comment"
             />
           </Form.Group>
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
+          {mentioning && filteredUsers.length > 0 && (
+            <Dropdown className="mt-2">
+              <Dropdown.Menu>
+                {filteredUsers.map(user => (
+                  <Dropdown.Item
+                    key={user.id}
+                    onClick={() => handleSuggestionClick(user.username)}
+                  >
+                    {user.username}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
         </Form>
       )}
       <ListGroup>
@@ -243,7 +309,7 @@ const Comments = ({ movieUrl }) => {
                 <strong>{comment.username}</strong>
               </a>
             </Link> - {new Date(comment.createdat).toLocaleDateString()}
-            <p>{comment.text}</p>
+            <p>{parseCommentText(comment.text)}</p>
             {user && user.username === comment.username && (
               <>
                 <Button
