@@ -151,7 +151,7 @@ const Comments = ({ movieUrl }) => {
 
     fetchData();
   }, [movieUrl]);
-
+  
   useEffect(() => {
     // Countdown logic
     const countdownInterval = setInterval(() => {
