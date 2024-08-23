@@ -37,15 +37,20 @@ const fetchAllUsers = async (token) => {
 
 const postComment = async (url, text, mentionedUser, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
+    // Construct the request URL with the encoded movie URL
+    const requestUrl = `https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(url)}`;
+    
+    // Make the API request
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ url, text, mentionedUser })
+      body: JSON.stringify({ text, mentionedUser }) // Only include text and mentionedUser in the body
     });
 
+    // Handle response
     if (!response.ok) {
       throw new Error('Failed to submit comment');
     }
