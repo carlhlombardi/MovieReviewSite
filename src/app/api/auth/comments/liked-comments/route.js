@@ -43,10 +43,67 @@ export async function GET(request) {
   }
 }
 
-// Handler to like or unlike a comment
+// Handler to like a comment
 export async function POST(request) {
   try {
     const { commentId } = await request.json();
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    if (!commentId) {
+      return new Response(
+        JSON.stringify({ message: 'Comment ID is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Check if the comment is already liked
+    const existingLike = await sql`
+      SELECT 1
+      FROM liked_comments
+      WHERE user_id = ${userId}
+        AND comment_id = ${commentId}
+    `;
+
+    if (existingLike.rowCount > 0) {
+      // If already liked, return a response indicating this
+      return new Response(
+        JSON.stringify({ likedByUser: true }),
+        { status: 200 }
+      );
+    } else {
+      // Otherwise, like the comment
+      await sql`
+        INSERT INTO liked_comments (user_id, comment_id)
+        VALUES (${userId}, ${commentId})
+      `;
+      return new Response(
+        JSON.stringify({ likedByUser: true }),
+        { status: 200 }
+      );
+    }
+  } catch (error) {
+    console.error('Like comment error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to like comment' }),
+      { status: 500 }
+    );
+  }
+}
+
+// Handler to unlike a comment
+export async function DELETE(request) {
+  try {
+    const url = new URL(request.url);
+    const commentId = url.searchParams.get('commentId');
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
@@ -85,20 +142,16 @@ export async function POST(request) {
         { status: 200 }
       );
     } else {
-      // Otherwise, like the comment
-      await sql`
-        INSERT INTO liked_comments (user_id, comment_id)
-        VALUES (${userId}, ${commentId})
-      `;
+      // If not liked, return a response indicating this
       return new Response(
-        JSON.stringify({ likedByUser: true }),
+        JSON.stringify({ likedByUser: false }),
         { status: 200 }
       );
     }
   } catch (error) {
-    console.error('Like/unlike comment error:', error);
+    console.error('Unlike comment error:', error);
     return new Response(
-      JSON.stringify({ message: 'Failed to like/unlike comment' }),
+      JSON.stringify({ message: 'Failed to unlike comment' }),
       { status: 500 }
     );
   }
