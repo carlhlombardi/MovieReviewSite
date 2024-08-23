@@ -31,6 +31,19 @@ const fetchAllUsers = async (token) => {
   }
 };
 
+// Assuming these functions exist and handle API calls
+const postComment = async (movieUrl, commentText, token) => {
+  // Implement the post comment API call
+};
+
+const deleteComment = async (commentId, movieUrl, token) => {
+  // Implement the delete comment API call
+};
+
+const likeComment = async (commentId, token) => {
+  // Implement the like/unlike comment API call
+};
+
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -221,16 +234,24 @@ const Comments = ({ movieUrl }) => {
             <p>{comment.text}</p>
             {user && user.username === comment.username && (
               <>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="float-end"
-                >
-                  Delete
-                </Button>
-                <small className="text-muted float-end me-2">
-                  {deleteCountdown[comment.id] > 0 ? `Delete available for ${deleteCountdown[comment.id]}s` : 'Delete window expired'}
-                </small>
+                {deleteCountdown[comment.id] > 0 ? (
+                  <>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="float-end"
+                    >
+                      Delete
+                    </Button>
+                    <small className="text-muted float-end me-2">
+                      Delete available for {deleteCountdown[comment.id]}s
+                    </small>
+                  </>
+                ) : (
+                  <small className="text-muted float-end me-2">
+                    Delete window expired
+                  </small>
+                )}
               </>
             )}
             {user && (
