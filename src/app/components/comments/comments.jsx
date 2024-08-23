@@ -117,15 +117,16 @@ const Comments = ({ movieUrl }) => {
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUser(userData);
-            // Fetch users if admin
-            if (userData.is_admin) {
-              const usersData = await fetchAllUsers(token);
-              setAllUsers(usersData);
-            }
+
+            // Fetch all users
+            const usersData = await fetchAllUsers(token);
+            setAllUsers(usersData);
           }
+
           // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
           setComments(commentsData);
+
           // Initialize countdown
           const initialCountdown = {};
           commentsData.forEach(comment => {
@@ -149,7 +150,7 @@ const Comments = ({ movieUrl }) => {
     };
 
     fetchData();
-  }, [movieUrl, user]);
+  }, [movieUrl, user]); // Include `user` if it affects data fetching
 
   useEffect(() => {
     const countdownInterval = setInterval(() => {
@@ -166,7 +167,7 @@ const Comments = ({ movieUrl }) => {
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, []);
+  }, []); // No dependencies if countdown only updates based on itself
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -269,20 +270,18 @@ const Comments = ({ movieUrl }) => {
             />
           </Form.Group>
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
-          {user.is_admin && (
-            <Dropdown className="mt-2">
-              <Dropdown.Toggle variant="success" id="dropdown-basic">
-                Mention User
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {allUsers.map(u => (
-                  <Dropdown.Item key={u.id} onClick={() => handleMention(u.username)}>
-                    {u.username}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
-          )}
+          <Dropdown className="mt-2">
+            <Dropdown.Toggle variant="success" id="dropdown-basic">
+              Mention User
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {allUsers.map(u => (
+                <Dropdown.Item key={u.id} onClick={() => handleMention(u.username)}>
+                  {u.username}
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
         </Form>
       )}
       <ListGroup>
@@ -310,7 +309,7 @@ const Comments = ({ movieUrl }) => {
                     </small>
                   </>
                 ) : (
-                  // If the delete countdown is not greater than 0, don't show the delete button or text
+                  // Don't show anything if the countdown has expired
                   <></>
                 )}
               </>
