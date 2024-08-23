@@ -247,10 +247,11 @@ const Comments = ({ movieUrl }) => {
 
   // Function to render comment text with mentions
   const renderCommentText = (text) => {
-    // Replace mentions in the comment text with styled mentions
     return text.split(/(@\w+)/g).map((part, index) => 
       part.startsWith('@') ? (
-        <span key={index} className="mention">{part}</span>
+        <span key={index} className="mention" style={{ color: 'blue', fontWeight: 'bold' }}>
+          {part}
+        </span>
       ) : (
         <span key={index}>{part}</span>
       )
