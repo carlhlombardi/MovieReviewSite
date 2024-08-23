@@ -15,10 +15,28 @@ export async function GET(req) {
 
     // Fetch tagged comments
     const result = await sql`
-      SELECT c.id, c.comment_text AS commentText, c.movie_url AS movieUrl, c.movie_genre AS movieGenre, c.movie_title AS movieTitle, u.username AS taggingUser
-      FROM comments c
-      JOIN users u ON c.user_id = u.id
-      WHERE c.comment_text LIKE '%' || ${username} || '%';
+      WITH tagged_comments AS (
+        SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, m.movie_genre AS movieGenre, m.movie_title AS movieTitle
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        JOIN (
+          SELECT url, genre AS movie_genre, film AS movie_title FROM actionmovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM classicmovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM comedymovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM documentarymovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM dramamovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM horrormovies
+          UNION ALL
+          SELECT url, genre AS movie_genre, film AS movie_title FROM scifimovies
+        ) m ON c.movie_url = m.url
+        WHERE c.comment_text LIKE '%' || ${username} || '%'
+      )
+      SELECT * FROM tagged_comments;
     `;
 
     return new Response(JSON.stringify(result.rows), {
