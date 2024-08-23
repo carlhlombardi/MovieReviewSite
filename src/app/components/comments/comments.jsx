@@ -132,7 +132,7 @@ const Comments = ({ movieUrl }) => {
             if (user && comment.username === user.username) {
               const postedTime = new Date(comment.createdat);
               const now = new Date();
-              const timeDiff = Math.max(0, 10 - (now - postedTime) / 1000);
+              const timeDiff = Math.max(0, 10 - Math.floor((now - postedTime) / 1000));
               if (timeDiff > 0) {
                 initialCountdown[comment.id] = timeDiff;
               }
@@ -152,7 +152,6 @@ const Comments = ({ movieUrl }) => {
   }, [movieUrl, user]);
 
   useEffect(() => {
-    // Countdown logic
     const countdownInterval = setInterval(() => {
       setDeleteCountdown(prevCountdown => {
         const updatedCountdown = { ...prevCountdown };
@@ -238,6 +237,18 @@ const Comments = ({ movieUrl }) => {
     setNewComment(prev => `${prev} @${username} `);
   };
 
+  // Function to render comment text with mentions
+  const renderCommentText = (text) => {
+    // Replace mentions in the comment text with styled mentions
+    return text.split(/(@\w+)/g).map((part, index) => 
+      part.startsWith('@') ? (
+        <span key={index} className="mention">{part}</span>
+      ) : (
+        <span key={index}>{part}</span>
+      )
+    );
+  };
+
   if (isLoading) {
     return <Spinner animation="border" />;
   }
@@ -277,43 +288,43 @@ const Comments = ({ movieUrl }) => {
       <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
-  <Link href={`/profile/${comment.username}`} passHref>
-    <a>
-      <strong>{comment.username}</strong>
-    </a>
-  </Link> - {new Date(comment.createdat).toLocaleDateString()}
-  <p>{comment.text}</p>
-  {user && user.username === comment.username && (
-    <>
-      {deleteCountdown[comment.id] !== undefined ? (
-        <>
-          <Button
-            variant="danger"
-            onClick={() => handleDeleteComment(comment.id)}
-            className="float-end"
-          >
-            Delete
-          </Button>
-          <small className="text-muted float-end me-2">
-            Delete available for {deleteCountdown[comment.id]}s
-          </small>
-        </>
-      ) : (
-        // No content here for expired delete window
-        <></>
-      )}
-    </>
-  )}
-  {user && (
-    <Button
-      variant={comment.likedByUser ? "success" : "outline-success"}
-      onClick={() => handleLikeComment(comment.id)}
-      className="float-end ms-2"
-    >
-      {comment.likedByUser ? "Unlike" : "Like"}
-    </Button>
-  )}
-</ListGroup.Item>
+            <Link href={`/profile/${comment.username}`} passHref>
+              <a>
+                <strong>{comment.username}</strong>
+              </a>
+            </Link> - {new Date(comment.createdat).toLocaleDateString()}
+            <p>{renderCommentText(comment.text)}</p>
+            {user && user.username === comment.username && (
+              <>
+                {deleteCountdown[comment.id] > 0 ? (
+                  <>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="float-end"
+                    >
+                      Delete
+                    </Button>
+                    <small className="text-muted float-end me-2">
+                      Delete available for {deleteCountdown[comment.id]}s
+                    </small>
+                  </>
+                ) : (
+                  // If the delete countdown is not greater than 0, don't show the delete button or text
+                  <></>
+                )}
+              </>
+            )}
+            {user && (
+              <Button
+                variant={comment.likedByUser ? "success" : "outline-success"}
+                onClick={() => handleLikeComment(comment.id)}
+                className="float-end ms-2"
+              >
+                {comment.likedByUser ? "Unlike" : "Like"}
+              </Button>
+            )}
+          </ListGroup.Item>
         ))}
       </ListGroup>
     </>
