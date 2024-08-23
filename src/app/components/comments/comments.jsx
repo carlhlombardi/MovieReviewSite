@@ -35,25 +35,19 @@ const fetchAllUsers = async (token) => {
   }
 };
 
-const postComment = async (url, text, mentionedUser, token) => {
+const postComment = async (url, mentionedUser, text, token) => {
   try {
-    const requestUrl = `https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(url)}`;
-    
-    const response = await fetch(requestUrl, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ text, mentionedUser: mentionedUser || null }) // Handle no mentioned user
+      body: JSON.stringify({ url, text })
     });
-
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error response:', errorData);
-      throw new Error(`Failed to submit comment: ${errorData.message || response.statusText}`);
+      throw new Error('Failed to submit comment');
     }
-
     return await response.json();
   } catch (error) {
     console.error('Error posting comment:', error);
@@ -179,20 +173,21 @@ const Comments = ({ movieUrl }) => {
     e.preventDefault();
     try {
       if (!newComment.trim()) return; // Prevent empty comments
-  
+
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await postComment(movieUrl, newComment, mentionedUser || null, token);
+        const response = await postComment(movieUrl, newComment, token);
         if (response) {
+          const postedTime = new Date();
           setComments([...comments, response]);
           setNewComment('');
+          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
               [response.id]: 10
             }));
           }
-          setMentionedUser(''); // Clear mentioned user after submission
         }
       }
     } catch (err) {
@@ -200,6 +195,7 @@ const Comments = ({ movieUrl }) => {
       console.error('Error:', err);
     }
   };
+
 
   const handleDeleteComment = async (commentId) => {
     try {

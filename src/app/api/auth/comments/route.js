@@ -38,33 +38,20 @@ export async function GET(request) {
 // Handler to add a new comment
 export async function POST(request) {
   try {
-    // Extract JSON body
-    const { url, text, mentionedUser } = await request.json();
-
-    // Validate input
-    if (!text) {
-      return new NextResponse(
-        JSON.stringify({ message: 'Comment text is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Extract token from Authorization header
+    const { url, text } = await request.json();
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
-      return new NextResponse(
+      return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
       );
     }
 
-    // Verify token and extract user ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    // Fetch user details from database
     const userResult = await sql`
       SELECT username
       FROM users
@@ -73,27 +60,25 @@ export async function POST(request) {
     const user = userResult.rows[0];
 
     if (!user) {
-      return new NextResponse(
+      return new Response(
         JSON.stringify({ message: 'User not found' }),
         { status: 404 }
       );
     }
 
-    // Save comment to database
     const result = await sql`
-      INSERT INTO comments (url, text, username, mentioned_user, createdat)
+     INSERT INTO comments (url, text, username, mentioned_user, createdat)
       VALUES (${url}, ${text}, ${user.username}, ${mentionedUser || null}, NOW())
       RETURNING id, username, text, createdat;
     `;
 
-    // Return the new comment
-    return new NextResponse(
+    return new Response(
       JSON.stringify(result.rows[0]),
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error posting comment:', error);
-    return new NextResponse(
+    console.error('Add comment error:', error);
+    return new Response(
       JSON.stringify({ message: 'Failed to add comment' }),
       { status: 500 }
     );
