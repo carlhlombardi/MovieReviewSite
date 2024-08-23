@@ -254,7 +254,9 @@ const Comments = ({ movieUrl }) => {
         const response = await likeComment(commentId, token);
         if (response) {
           setComments(comments.map(comment =>
-            comment.id === commentId ? { ...comment, likedByUser: response.likedByUser } : comment
+            comment.id === commentId
+              ? { ...comment, likedByUser: response.likedByUser }
+              : comment
           ));
         } else {
           console.error('Failed to get like status from server');
