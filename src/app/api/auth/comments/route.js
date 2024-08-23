@@ -38,20 +38,31 @@ export async function GET(request) {
 // Handler to add a new comment
 export async function POST(request) {
   try {
-    const { url, text, mentionedUser } = await request.json(); // Ensure mentionedUser is included in the request
+    const { url, text, mentionedUser } = await request.json();
+
+    if (!text) {
+      return new NextResponse(
+        JSON.stringify({ message: 'Comment text is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Extract token from authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
-      return new Response(
+      return new NextResponse(
         JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
       );
     }
 
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
+    // Fetch user details from database
     const userResult = await sql`
       SELECT username
       FROM users
@@ -60,26 +71,26 @@ export async function POST(request) {
     const user = userResult.rows[0];
 
     if (!user) {
-      return new Response(
+      return new NextResponse(
         JSON.stringify({ message: 'User not found' }),
         { status: 404 }
       );
     }
 
-    // Save comment to the database, including mentionedUser
-    const result = await sql`
-      INSERT INTO comments (url, username, text, createdat, mentioned_user)
-      VALUES (${url}, ${user.username}, ${text}, NOW(), ${mentionedUser || null})
-      RETURNING id, username, text, createdat;
-    `;
+    // Save comment to database
+    const newComment = await saveCommentToDatabase({
+      url,
+      text,
+      mentionedUser: mentionedUser || null
+    });
 
-    return new Response(
-      JSON.stringify(result.rows[0]),
+    return new NextResponse(
+      JSON.stringify(newComment),
       { status: 201 }
     );
   } catch (error) {
-    console.error('Add comment error:', error);
-    return new Response(
+    console.error('Error posting comment:', error);
+    return new NextResponse(
       JSON.stringify({ message: 'Failed to add comment' }),
       { status: 500 }
     );
