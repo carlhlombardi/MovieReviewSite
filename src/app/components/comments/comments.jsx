@@ -37,22 +37,21 @@ const fetchAllUsers = async (token) => {
 
 const postComment = async (url, text, mentionedUser, token) => {
   try {
-    // Construct the request URL with the encoded movie URL
     const requestUrl = `https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(url)}`;
     
-    // Make the API request
     const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ text, mentionedUser }) // Include mentionedUser
+      body: JSON.stringify({ text, mentionedUser: mentionedUser || null }) // Handle no mentioned user
     });
 
-    // Handle response
     if (!response.ok) {
-      throw new Error('Failed to submit comment');
+      const errorData = await response.json();
+      console.error('Error response:', errorData);
+      throw new Error(`Failed to submit comment: ${errorData.message || response.statusText}`);
     }
 
     return await response.json();
@@ -180,21 +179,20 @@ const Comments = ({ movieUrl }) => {
     e.preventDefault();
     try {
       if (!newComment.trim()) return; // Prevent empty comments
-
+  
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await postComment(movieUrl, newComment, token);
+        const response = await postComment(movieUrl, newComment, mentionedUser || null, token);
         if (response) {
-          const postedTime = new Date();
           setComments([...comments, response]);
           setNewComment('');
-          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
               [response.id]: 10
             }));
           }
+          setMentionedUser(''); // Clear mentioned user after submission
         }
       }
     } catch (err) {

@@ -38,7 +38,7 @@ export async function GET(request) {
 // Handler to add a new comment
 export async function POST(request) {
   try {
-    const { url, text } = await request.json();
+    const { url, text, mentionedUser } = await request.json(); // Ensure mentionedUser is included in the request
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -66,9 +66,10 @@ export async function POST(request) {
       );
     }
 
+    // Save comment to the database, including mentionedUser
     const result = await sql`
       INSERT INTO comments (url, username, text, createdat, mentioned_user)
-      VALUES (${url}, ${user.username}, ${text}, NOW(), ${mentionedUser})
+      VALUES (${url}, ${user.username}, ${text}, NOW(), ${mentionedUser || null})
       RETURNING id, username, text, createdat;
     `;
 
