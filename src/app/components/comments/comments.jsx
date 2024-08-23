@@ -217,11 +217,6 @@ const Comments = ({ movieUrl }) => {
                 {comment.likedByUser ? "Unlike" : "Like"}
               </Button>
             )}
-            <div>
-              <small>Liked by: {comment.likerUsername}</small><br />
-              <small>Comment by: {comment.commentAuthorUsername}</small><br />
-              <small>Comment text: {comment.commentText}</small>
-            </div>
           </ListGroup.Item>
         ))}
       </ListGroup>
