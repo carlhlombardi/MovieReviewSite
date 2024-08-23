@@ -155,10 +155,8 @@ const Comments = ({ movieUrl }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        // Call the API to like or unlike the comment
         const response = await likeComment(commentId, token);
         if (response) {
-          // Update the comments state based on the response
           setComments(comments.map(comment =>
             comment.id === commentId ? { ...comment, likedByUser: response.likedByUser } : comment
           ));
@@ -177,51 +175,56 @@ const Comments = ({ movieUrl }) => {
   return (
     <>
       <h3>Comments</h3>
-    {error && <Alert variant="danger">{error}</Alert>}
-    {user && (
-      <Form onSubmit={handleCommentSubmit} className="mb-4">
-        <Form.Group controlId="commentText">
-          <Form.Control
-            as="textarea"
-            rows={3}
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add your comment"
-          />
-        </Form.Group>
-        <Button variant="primary" type="submit" className="mt-2">Submit</Button>
-      </Form>
-    )}
-    <ListGroup>
-      {comments.map(comment => (
-        <ListGroup.Item key={comment.id}>
-          <Link href={`/profile/${comment.username}`} passHref>
-            <a>
-              <strong>{comment.username}</strong>
-            </a>
-          </Link> - {new Date(comment.createdat).toLocaleDateString()}
-          <p>{comment.text}</p>
-          {user && user.username === comment.username && (
-            <Button
-              variant="danger"
-              onClick={() => handleDeleteComment(comment.id)}
-              className="float-end"
-            >
-              Delete
-            </Button>
-          )}
-          {user && (
-            <Button
-              variant={comment.likedByUser ? "success" : "outline-success"}
-              onClick={() => handleLikeComment(comment.id)}
-              className="float-end ms-2"
-            >
-              {comment.likedByUser ? "Unlike" : "Like"}
-            </Button>
-          )}
-        </ListGroup.Item>
-      ))}
-    </ListGroup>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {user && (
+        <Form onSubmit={handleCommentSubmit} className="mb-4">
+          <Form.Group controlId="commentText">
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add your comment"
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit" className="mt-2">Submit</Button>
+        </Form>
+      )}
+      <ListGroup>
+        {comments.map(comment => (
+          <ListGroup.Item key={comment.id}>
+            <Link href={`/profile/${comment.username}`} passHref>
+              <a>
+                <strong>{comment.username}</strong>
+              </a>
+            </Link> - {new Date(comment.createdat).toLocaleDateString()}
+            <p>{comment.text}</p>
+            {user && user.username === comment.username && (
+              <Button
+                variant="danger"
+                onClick={() => handleDeleteComment(comment.id)}
+                className="float-end"
+              >
+                Delete
+              </Button>
+            )}
+            {user && (
+              <Button
+                variant={comment.likedByUser ? "success" : "outline-success"}
+                onClick={() => handleLikeComment(comment.id)}
+                className="float-end ms-2"
+              >
+                {comment.likedByUser ? "Unlike" : "Like"}
+              </Button>
+            )}
+            <div>
+              <small>Liked by: {comment.likerUsername}</small><br />
+              <small>Comment by: {comment.commentAuthorUsername}</small><br />
+              <small>Comment text: {comment.commentText}</small>
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
     </>
   );
 };

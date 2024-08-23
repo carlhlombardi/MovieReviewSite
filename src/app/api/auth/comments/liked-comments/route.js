@@ -43,7 +43,7 @@ export async function GET(request) {
   }
 }
 
-// Handler to like a comment
+// Handler to like or unlike a comment
 export async function POST(request) {
   try {
     const { commentId } = await request.json();
@@ -65,6 +65,23 @@ export async function POST(request) {
       );
     }
 
+    // Fetch the username of the person who is liking the comment
+    const likerData = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId}
+    `;
+    const likerUsername = likerData.rows[0]?.username;
+
+    // Fetch the comment details
+    const commentData = await sql`
+      SELECT username, text
+      FROM comments
+      WHERE id = ${commentId}
+    `;
+    const commentAuthorUsername = commentData.rows[0]?.username;
+    const commentText = commentData.rows[0]?.text;
+
     // Check if the comment is already liked
     const existingLike = await sql`
       SELECT 1
@@ -74,16 +91,21 @@ export async function POST(request) {
     `;
 
     if (existingLike.rowCount > 0) {
-      // If already liked, return a response indicating this
+      // If already liked, unlike the comment
+      await sql`
+        DELETE FROM liked_comments
+        WHERE user_id = ${userId}
+          AND comment_id = ${commentId}
+      `;
       return new Response(
-        JSON.stringify({ likedByUser: true }),
+        JSON.stringify({ likedByUser: false }),
         { status: 200 }
       );
     } else {
       // Otherwise, like the comment
       await sql`
-        INSERT INTO liked_comments (user_id, comment_id)
-        VALUES (${userId}, ${commentId})
+        INSERT INTO liked_comments (user_id, comment_id, liker_username, comment_author_username, comment_text)
+        VALUES (${userId}, ${commentId}, ${likerUsername}, ${commentAuthorUsername}, ${commentText})
       `;
       return new Response(
         JSON.stringify({ likedByUser: true }),
@@ -91,9 +113,9 @@ export async function POST(request) {
       );
     }
   } catch (error) {
-    console.error('Like comment error:', error);
+    console.error('Like/unlike comment error:', error);
     return new Response(
-      JSON.stringify({ message: 'Failed to like comment' }),
+      JSON.stringify({ message: 'Failed to like/unlike comment' }),
       { status: 500 }
     );
   }
