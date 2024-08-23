@@ -35,7 +35,7 @@ const fetchAllUsers = async (token) => {
   }
 };
 
-const postComment = async (url, text, token) => {
+const postComment = async (url, text, mentionedUser, token) => {
   try {
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments', {
       method: 'POST',
@@ -43,11 +43,13 @@ const postComment = async (url, text, token) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ url, text })
+      body: JSON.stringify({ url, text, mentionedUser })
     });
+
     if (!response.ok) {
       throw new Error('Failed to submit comment');
     }
+
     return await response.json();
   } catch (error) {
     console.error('Error posting comment:', error);
