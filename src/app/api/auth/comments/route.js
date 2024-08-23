@@ -1,15 +1,12 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-// Handler to get comments for a specific movie with like status
+// Handler to get comments for a specific movie
 export async function GET(request) {
   try {
     // Extract URL from query parameters
     const url = new URL(request.url);
     const movieUrl = url.searchParams.get('url');
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-    const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
 
     if (!movieUrl) {
       return new Response(
@@ -18,7 +15,6 @@ export async function GET(request) {
       );
     }
 
-    // Fetch comments for the movie
     const result = await sql`
       SELECT id, username, text, createdat
       FROM comments
@@ -26,27 +22,8 @@ export async function GET(request) {
       ORDER BY createdat DESC;
     `;
 
-    let comments = result.rows;
-
-    if (userId) {
-      // Fetch liked comments for the current user
-      const likedComments = await sql`
-        SELECT comment_id
-        FROM liked_comments
-        WHERE user_id = ${userId}
-      `;
-
-      const likedCommentIds = likedComments.rows.map(row => row.comment_id);
-
-      // Map comments to include like status
-      comments = comments.map(comment => ({
-        ...comment,
-        likedByUser: likedCommentIds.includes(comment.id)
-      }));
-    }
-
     return new Response(
-      JSON.stringify(comments),
+      JSON.stringify(result.rows),
       { status: 200 }
     );
   } catch (error) {
@@ -182,12 +159,6 @@ export async function DELETE(request) {
       WHERE id = ${id};
     `;
 
-    // Optionally delete likes associated with the comment
-    await sql`
-      DELETE FROM liked_comments
-      WHERE comment_id = ${id};
-    `;
-
     return new Response(
       JSON.stringify({ message: 'Comment deleted' }),
       { status: 200 }
@@ -196,67 +167,6 @@ export async function DELETE(request) {
     console.error('Delete comment error:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to delete comment' }),
-      { status: 500 }
-    );
-  }
-}
-
-// Handler to like or unlike a comment
-export async function POST_LIKE(request) {
-  try {
-    const { commentId } = await request.json();
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-    const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
-      );
-    }
-
-    if (!commentId) {
-      return new Response(
-        JSON.stringify({ message: 'Comment ID is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Check if the comment is already liked
-    const existingLike = await sql`
-      SELECT 1
-      FROM liked_comments
-      WHERE user_id = ${userId}
-        AND comment_id = ${commentId}
-    `;
-
-    if (existingLike.rowCount > 0) {
-      // If already liked, unlike the comment
-      await sql`
-        DELETE FROM liked_comments
-        WHERE user_id = ${userId}
-          AND comment_id = ${commentId}
-      `;
-      return new Response(
-        JSON.stringify({ likedByUser: false }),
-        { status: 200 }
-      );
-    } else {
-      // Otherwise, like the comment
-      await sql`
-        INSERT INTO liked_comments (user_id, comment_id)
-        VALUES (${userId}, ${commentId})
-      `;
-      return new Response(
-        JSON.stringify({ likedByUser: true }),
-        { status: 200 }
-      );
-    }
-  } catch (error) {
-    console.error('Like/unlike comment error:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to like/unlike comment' }),
       { status: 500 }
     );
   }

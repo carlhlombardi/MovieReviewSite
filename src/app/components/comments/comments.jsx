@@ -64,7 +64,7 @@ const deleteComment = async (id, movieUrl, token) => {
 
 const likeComment = async (id, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments/like', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/comments/liked-comments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
