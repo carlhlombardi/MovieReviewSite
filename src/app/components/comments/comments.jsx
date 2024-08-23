@@ -254,7 +254,7 @@ const Comments = ({ movieUrl }) => {
                   Delete
                 </Button>
                 <small className="text-muted float-end me-2">
-                  {deleteCountdown[comment.id] > 0 ? `Delete available in ${deleteCountdown[comment.id]}s` : 'Delete window expired'}
+                  {deleteCountdown[comment.id] > 0 ? `Delete available for ${deleteCountdown[comment.id]}s` : 'Delete window expired'}
                 </small>
               </>
             )}
