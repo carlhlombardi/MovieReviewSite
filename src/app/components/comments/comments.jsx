@@ -37,7 +37,7 @@ const fetchAllUsers = async (token) => {
 
 const postComment = async (url, text, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?url=${encodeURIComponent(url)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
