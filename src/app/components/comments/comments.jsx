@@ -95,7 +95,6 @@ const likeComment = async (id, token) => {
   }
 };
 
-
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -130,7 +129,7 @@ const Comments = ({ movieUrl }) => {
           // Initialize countdown
           const initialCountdown = {};
           commentsData.forEach(comment => {
-            if (comment.username === userData.username) {
+            if (user && comment.username === user.username) {
               const postedTime = new Date(comment.createdat);
               const now = new Date();
               const timeDiff = Math.max(0, 10 - (now - postedTime) / 1000);
@@ -150,8 +149,8 @@ const Comments = ({ movieUrl }) => {
     };
 
     fetchData();
-  }, [movieUrl]);
-  
+  }, [movieUrl, user]);
+
   useEffect(() => {
     // Countdown logic
     const countdownInterval = setInterval(() => {
@@ -278,44 +277,43 @@ const Comments = ({ movieUrl }) => {
       <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
-            <Link href={`/profile/${comment.username}`} passHref>
-              <a>
-                <strong>{comment.username}</strong>
-              </a>
-            </Link> - {new Date(comment.createdat).toLocaleDateString()}
-            <p>{comment.text}</p>
-            {user && user.username === comment.username && (
-              <>
-                {deleteCountdown[comment.id] > 0 ? (
-                  <>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="float-end"
-                    >
-                      Delete
-                    </Button>
-                    <small className="text-muted float-end me-2">
-                      Delete available for {deleteCountdown[comment.id]}s
-                    </small>
-                  </>
-                ) : (
-                  <small className="text-muted float-end me-2">
-                    Delete window expired
-                  </small>
-                )}
-              </>
-            )}
-            {user && (
-              <Button
-                variant={comment.likedByUser ? "success" : "outline-success"}
-                onClick={() => handleLikeComment(comment.id)}
-                className="float-end ms-2"
-              >
-                {comment.likedByUser ? "Unlike" : "Like"}
-              </Button>
-            )}
-          </ListGroup.Item>
+  <Link href={`/profile/${comment.username}`} passHref>
+    <a>
+      <strong>{comment.username}</strong>
+    </a>
+  </Link> - {new Date(comment.createdat).toLocaleDateString()}
+  <p>{comment.text}</p>
+  {user && user.username === comment.username && (
+    <>
+      {deleteCountdown[comment.id] !== undefined ? (
+        <>
+          <Button
+            variant="danger"
+            onClick={() => handleDeleteComment(comment.id)}
+            className="float-end"
+          >
+            Delete
+          </Button>
+          <small className="text-muted float-end me-2">
+            Delete available for {deleteCountdown[comment.id]}s
+          </small>
+        </>
+      ) : (
+        // No content here for expired delete window
+        <></>
+      )}
+    </>
+  )}
+  {user && (
+    <Button
+      variant={comment.likedByUser ? "success" : "outline-success"}
+      onClick={() => handleLikeComment(comment.id)}
+      className="float-end ms-2"
+    >
+      {comment.likedByUser ? "Unlike" : "Like"}
+    </Button>
+  )}
+</ListGroup.Item>
         ))}
       </ListGroup>
     </>
