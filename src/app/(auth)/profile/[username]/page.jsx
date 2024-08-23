@@ -46,7 +46,7 @@ const fetchComments = async (movieUrl, token) => {
 // Function to fetch tagged comments for a user
 const fetchTaggedComments = async (username, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/tagged-comments?username=${encodeURIComponent(username)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/taggedcomments?username=${encodeURIComponent(username)}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!response.ok) {

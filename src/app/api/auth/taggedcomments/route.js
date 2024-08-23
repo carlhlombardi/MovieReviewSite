@@ -16,25 +16,26 @@ export async function GET(req) {
     // Fetch tagged comments
     const result = await sql`
       WITH tagged_comments AS (
-        SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, m.movie_genre AS movieGenre, m.movie_title AS movieTitle
+        SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, 
+               m.genre AS movieGenre, m.film AS movieTitle
         FROM comments c
         JOIN users u ON c.user_id = u.id
         JOIN (
-          SELECT url, genre AS movie_genre, film AS movie_title FROM actionmovies
+          SELECT url, genre, film FROM horrormovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM classicmovies
+          SELECT url, genre, film FROM actionmovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM comedymovies
+          SELECT url, genre, film FROM classicmovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM documentarymovies
+          SELECT url, genre, film FROM comedymovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM dramamovies
+          SELECT url, genre, film FROM documentarymovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM horrormovies
+          SELECT url, genre, film FROM dramamovies
           UNION ALL
-          SELECT url, genre AS movie_genre, film AS movie_title FROM scifimovies
+          SELECT url, genre, film FROM scifimovies
         ) m ON c.movie_url = m.url
-        WHERE c.comment_text LIKE '%' || ${username} || '%'
+        WHERE c.text LIKE '%' || ${username} || '%'
       )
       SELECT * FROM tagged_comments;
     `;
