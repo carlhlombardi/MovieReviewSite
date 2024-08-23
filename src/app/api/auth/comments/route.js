@@ -67,8 +67,8 @@ export async function POST(request) {
     }
 
     const result = await sql`
-     INSERT INTO comments (url, text, username, mentioned_user, createdat)
-      VALUES (${url}, ${text}, ${user.username}, ${mentionedUser || null}, NOW())
+     INSERT INTO comments (url, text, username, createdat)
+      VALUES (${url}, ${text}, ${user.username}, NOW())
       RETURNING id, username, text, createdat;
     `;
 
