@@ -38,8 +38,10 @@ export async function GET(request) {
 // Handler to add a new comment
 export async function POST(request) {
   try {
+    // Extract JSON body
     const { url, text, mentionedUser } = await request.json();
 
+    // Validate input
     if (!text) {
       return new NextResponse(
         JSON.stringify({ message: 'Comment text is required' }),
@@ -47,7 +49,7 @@ export async function POST(request) {
       );
     }
 
-    // Extract token from authorization header
+    // Extract token from Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -58,7 +60,7 @@ export async function POST(request) {
       );
     }
 
-    // Verify token
+    // Verify token and extract user ID
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
@@ -78,14 +80,15 @@ export async function POST(request) {
     }
 
     // Save comment to database
-    const newComment = await saveCommentToDatabase({
-      url,
-      text,
-      mentionedUser: mentionedUser || null
-    });
+    const result = await sql`
+      INSERT INTO comments (url, text, username, mentioned_user, createdat)
+      VALUES (${url}, ${text}, ${user.username}, ${mentionedUser || null}, NOW())
+      RETURNING id, username, text, createdat;
+    `;
 
+    // Return the new comment
     return new NextResponse(
-      JSON.stringify(newComment),
+      JSON.stringify(result.rows[0]),
       { status: 201 }
     );
   } catch (error) {
