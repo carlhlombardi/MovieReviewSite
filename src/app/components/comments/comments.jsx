@@ -88,6 +88,7 @@ const Comments = ({ movieUrl }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null); // Current logged-in user
+  const [deleteCountdown, setDeleteCountdown] = useState({}); // Track delete countdown for each comment
 
   useEffect(() => {
     const fetchCommentsAsync = async () => {
@@ -105,6 +106,19 @@ const Comments = ({ movieUrl }) => {
           // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
           setComments(commentsData);
+          // Initialize countdown
+          const initialCountdown = {};
+          commentsData.forEach(comment => {
+            if (comment.username === userData.username) {
+              const postedTime = new Date(comment.createdat);
+              const now = new Date();
+              const timeDiff = Math.max(0, 10 - (now - postedTime) / 1000);
+              if (timeDiff > 0) {
+                initialCountdown[comment.id] = timeDiff;
+              }
+            }
+          });
+          setDeleteCountdown(initialCountdown);
         }
       } catch (err) {
         setError('Failed to load comments');
@@ -117,6 +131,24 @@ const Comments = ({ movieUrl }) => {
     fetchCommentsAsync();
   }, [movieUrl]);
 
+  useEffect(() => {
+    // Countdown logic
+    const countdownInterval = setInterval(() => {
+      setDeleteCountdown(prevCountdown => {
+        const updatedCountdown = { ...prevCountdown };
+        Object.keys(updatedCountdown).forEach(id => {
+          updatedCountdown[id] = Math.max(0, updatedCountdown[id] - 1);
+          if (updatedCountdown[id] <= 0) {
+            delete updatedCountdown[id];
+          }
+        });
+        return updatedCountdown;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, []);
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -126,8 +158,16 @@ const Comments = ({ movieUrl }) => {
       if (token && user) {
         const response = await postComment(movieUrl, newComment, token);
         if (response) {
+          const postedTime = new Date();
           setComments([...comments, response]);
           setNewComment('');
+          // Set countdown for new comment
+          if (user.username === response.username) {
+            setDeleteCountdown(prevCountdown => ({
+              ...prevCountdown,
+              [response.id]: 10
+            }));
+          }
         }
       }
     } catch (err) {
@@ -143,6 +183,11 @@ const Comments = ({ movieUrl }) => {
         const success = await deleteComment(commentId, movieUrl, token);
         if (success) {
           setComments(comments.filter(comment => comment.id !== commentId));
+          setDeleteCountdown(prevCountdown => {
+            const updatedCountdown = { ...prevCountdown };
+            delete updatedCountdown[commentId];
+            return updatedCountdown;
+          });
         }
       }
     } catch (err) {
@@ -200,13 +245,18 @@ const Comments = ({ movieUrl }) => {
             </Link> - {new Date(comment.createdat).toLocaleDateString()}
             <p>{comment.text}</p>
             {user && user.username === comment.username && (
-              <Button
-                variant="danger"
-                onClick={() => handleDeleteComment(comment.id)}
-                className="float-end"
-              >
-                Delete
-              </Button>
+              <>
+                <Button
+                  variant="danger"
+                  onClick={() => handleDeleteComment(comment.id)}
+                  className="float-end"
+                >
+                  Delete
+                </Button>
+                <small className="text-muted float-end me-2">
+                  {deleteCountdown[comment.id] > 0 ? `Delete available in ${deleteCountdown[comment.id]}s` : 'Delete window expired'}
+                </small>
+              </>
             )}
             {user && (
               <Button
