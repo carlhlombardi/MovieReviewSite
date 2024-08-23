@@ -225,7 +225,11 @@ const Comments = ({ movieUrl }) => {
           setComments(comments.map(comment =>
             comment.id === commentId ? { ...comment, likedByUser: response.likedByUser } : comment
           ));
+        } else {
+          console.error('Failed to get like status from server');
         }
+      } else {
+        console.error('No token found');
       }
     } catch (err) {
       setError('Failed to like/unlike comment');

@@ -73,6 +73,13 @@ export async function POST(request) {
     `;
     const likerUsername = likerData.rows[0]?.username;
 
+    if (!likerUsername) {
+      return new Response(
+        JSON.stringify({ message: 'Liker username not found' }),
+        { status: 404 }
+      );
+    }
+
     // Fetch the comment details
     const commentData = await sql`
       SELECT username, text
@@ -81,6 +88,13 @@ export async function POST(request) {
     `;
     const commentAuthorUsername = commentData.rows[0]?.username;
     const commentText = commentData.rows[0]?.text;
+
+    if (!commentAuthorUsername || !commentText) {
+      return new Response(
+        JSON.stringify({ message: 'Comment not found' }),
+        { status: 404 }
+      );
+    }
 
     // Check if the comment is already liked
     const existingLike = await sql`
@@ -120,7 +134,6 @@ export async function POST(request) {
     );
   }
 }
-
 // Handler to unlike a comment
 export async function DELETE(request) {
   try {
