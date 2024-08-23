@@ -109,36 +109,23 @@ const Comments = ({ movieUrl }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          // Fetch user information
+          // Fetch user data
           const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUser(userData);
-
-            // Fetch all users
-            const usersData = await fetchAllUsers(token);
-            setAllUsers(usersData);
           }
-
+  
           // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
-          setComments(commentsData);
-
-          // Initialize countdown
-          const initialCountdown = {};
-          commentsData.forEach(comment => {
-            if (user && comment.username === user.username) {
-              const postedTime = new Date(comment.createdat);
-              const now = new Date();
-              const timeDiff = Math.max(0, 10 - Math.floor((now - postedTime) / 1000));
-              if (timeDiff > 0) {
-                initialCountdown[comment.id] = timeDiff;
-              }
-            }
-          });
-          setDeleteCountdown(initialCountdown);
+          
+          // Initialize comments state
+          setComments(commentsData.map(comment => ({
+            ...comment,
+            likedByUser: comment.likedByUser || false // Ensure likedByUser is present
+          })));
         }
       } catch (err) {
         setError('Failed to load data');
@@ -147,9 +134,9 @@ const Comments = ({ movieUrl }) => {
         setIsLoading(false);
       }
     };
-
+  
     fetchData();
-  }, [movieUrl, user]); // Include `user` if it affects data fetching
+  }, [movieUrl]);
 
   useEffect(() => {
     const countdownInterval = setInterval(() => {
@@ -167,36 +154,6 @@ const Comments = ({ movieUrl }) => {
 
     return () => clearInterval(countdownInterval);
   }, []); // No dependencies if countdown only updates based on itself
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            setUser(userData);
-          }
-  
-          const commentsData = await fetchComments(movieUrl, token);
-          setComments(commentsData.map(comment => ({
-            ...comment,
-            likedByUser: comment.likedByUser || false // Ensure this property exists
-          })));
-        }
-      } catch (err) {
-        setError('Failed to load data');
-        console.error('Error:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  
-    fetchData();
-  }, [movieUrl]);
 
   
   const handleCommentSubmit = async (e) => {
@@ -250,19 +207,28 @@ const Comments = ({ movieUrl }) => {
   const handleLikeComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
-      if (token) {
-        const response = await likeComment(commentId, token);
-        if (response) {
-          setComments(comments.map(comment =>
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+  
+      // Call the API to like or unlike the comment
+      const response = await likeComment(commentId, token);
+  
+      if (response) {
+        // Log the response to ensure it’s correct
+        console.log('Like Comment Response:', response);
+  
+        // Update state based on API response
+        setComments(prevComments =>
+          prevComments.map(comment =>
             comment.id === commentId
               ? { ...comment, likedByUser: response.likedByUser }
               : comment
-          ));
-        } else {
-          console.error('Failed to get like status from server');
-        }
+          )
+        );
       } else {
-        console.error('No token found');
+        console.error('Failed to get like status from server');
       }
     } catch (err) {
       setError('Failed to like/unlike comment');
