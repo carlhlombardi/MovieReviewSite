@@ -15,30 +15,14 @@ export async function GET(req) {
 
     // Fetch tagged comments
     const result = await sql`
-      WITH tagged_comments AS (
-        SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, 
-               m.genre AS movieGenre, m.film AS movieTitle
-        FROM comments c
-        JOIN users u ON c.user_id = u.id
-        JOIN (
-          SELECT url, genre, film FROM horrormovies
-          UNION ALL
-          SELECT url, genre, film FROM actionmovies
-          UNION ALL
-          SELECT url, genre, film FROM classicmovies
-          UNION ALL
-          SELECT url, genre, film FROM comedymovies
-          UNION ALL
-          SELECT url, genre, film FROM documentarymovies
-          UNION ALL
-          SELECT url, genre, film FROM dramamovies
-          UNION ALL
-          SELECT url, genre, film FROM scifimovies
-        ) m ON c.movie_url = m.url
-        WHERE c.text LIKE '%' || ${username} || '%'
-      )
-      SELECT * FROM tagged_comments;
-    `;
+  SELECT c.id, c.text AS commentText, c.url AS movieUrl, u.username AS taggingUser, m.movie_genre AS movieGenre, m.movie_title AS movieTitle
+  FROM comments c
+  JOIN users u ON c.user_id = u.id
+  JOIN (
+    SELECT url, genre AS movie_genre, film AS movie_title FROM actionmovies
+  ) m ON c.movie_url = m.url
+  WHERE c.text LIKE '%admin%'
+`;
 
     return new Response(JSON.stringify(result.rows), {
       status: 200,
