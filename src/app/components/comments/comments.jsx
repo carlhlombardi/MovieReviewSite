@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
+import Link from 'next/link';
 
 // Helper functions for API calls
 const fetchComments = async (movieUrl) => {
@@ -150,10 +151,14 @@ const Comments = ({ movieUrl }) => {
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
         </Form>
       )}
-      <ListGroup>
+     <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
-            <strong>{comment.username}</strong> - {new Date(comment.createdat).toLocaleDateString()}
+            <Link href={`/profile/${comment.username}`} passHref>
+              <a>
+                <strong>{comment.username}</strong>
+              </a>
+            </Link> - {new Date(comment.createdat).toLocaleDateString()}
             <p>{comment.text}</p>
             {user && user.username === comment.username && (
               <Button
