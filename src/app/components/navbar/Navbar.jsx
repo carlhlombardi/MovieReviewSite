@@ -19,7 +19,13 @@ const NavbarComponent = () => {
 
   const handleLogin = () => window.location.href = '/login';
   const handleRegister = () => window.location.href = '/register';
-  const handleProfile = () => window.location.href = '/profile';
+  const handleProfile = (username) => {
+    if (username) {
+      window.location.href = `/profile/${username}`;
+    } else {
+      console.error('Username is required to redirect to profile.');
+    }
+  };
 
   return (
     <Navbar expand="lg" className="navbar-dark">
