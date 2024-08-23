@@ -321,13 +321,13 @@ const Comments = ({ movieUrl }) => {
               </>
             )}
             {user && (
-              <Button
-  variant={comment.likedByUser ? "outline-success" : "success"}
-  onClick={() => handleLikeComment(comment.id)}
-  className="float-end ms-2"
->
-  {comment.likedByUser ? "Like" : "Unlike"} 
-</Button>
+             <Button
+             variant={comment.likedByUser ? "outline-success" : "success"}
+             onClick={() => handleLikeComment(comment.id)}
+             className="float-end ms-2"
+           >
+             {comment.likedByUser ? "Unlike" : "Like"}
+           </Button>
             )}
           </ListGroup.Item>
         ))}
