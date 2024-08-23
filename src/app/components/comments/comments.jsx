@@ -39,26 +39,43 @@ const postComment = async (url, text, token) => {
 };
 
 const deleteComment = async (id, movieUrl, token) => {
-    try {
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error deleting comment:', errorData);
-        throw new Error(`Failed to delete comment: ${errorData.message}`);
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments?id=${encodeURIComponent(id)}&url=${encodeURIComponent(movieUrl)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-      return true;
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      return false;
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error deleting comment:', errorData);
+      throw new Error(`Failed to delete comment: ${errorData.message}`);
     }
-  };
+    return true;
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return false;
+  }
+};
 
-// Comments component
+const likeComment = async (id, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/comments/like?id=${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to like comment');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error liking comment:', error);
+    return null;
+  }
+};
+
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -127,7 +144,24 @@ const Comments = ({ movieUrl }) => {
       console.error('Error:', err);
     }
   };
-  
+
+  const handleLikeComment = async (commentId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const response = await likeComment(commentId, token);
+        if (response) {
+          // Update comment state with the new like status
+          setComments(comments.map(comment =>
+            comment.id === commentId ? { ...comment, likedByUser: response.likedByUser } : comment
+          ));
+        }
+      }
+    } catch (err) {
+      setError('Failed to like comment');
+      console.error('Error:', err);
+    }
+  };
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -151,7 +185,7 @@ const Comments = ({ movieUrl }) => {
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
         </Form>
       )}
-     <ListGroup>
+      <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
             <Link href={`/profile/${comment.username}`} passHref>
@@ -167,6 +201,15 @@ const Comments = ({ movieUrl }) => {
                 className="float-end"
               >
                 Delete
+              </Button>
+            )}
+            {user && (
+              <Button
+                variant={comment.likedByUser ? "success" : "outline-success"}
+                onClick={() => handleLikeComment(comment.id)}
+                className="float-end ms-2"
+              >
+                {comment.likedByUser ? "Liked" : "Like"}
               </Button>
             )}
           </ListGroup.Item>
