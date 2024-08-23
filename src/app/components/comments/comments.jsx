@@ -103,7 +103,6 @@ const Comments = ({ movieUrl }) => {
   const [user, setUser] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [deleteCountdown, setDeleteCountdown] = useState({});
-  const [mentionedUser, setMentionedUser] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -234,24 +233,6 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const handleMention = (username) => {
-    setMentionedUser(username);
-    setNewComment(prev => `${prev} @${username} `);
-  };
-
-  // Function to render comment text with mentions
-  const renderCommentText = (text) => {
-    return text.split(/(@\w+)/g).map((part, index) => 
-      part.startsWith('@') ? (
-        <span key={index} className="mention" style={{ color: 'blue', fontWeight: 'bold' }}>
-          {part}
-        </span>
-      ) : (
-        <span key={index}>{part}</span>
-      )
-    );
-  };
-
   if (isLoading) {
     return <Spinner animation="border" />;
   }
@@ -272,18 +253,6 @@ const Comments = ({ movieUrl }) => {
             />
           </Form.Group>
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
-          <Dropdown className="mt-2">
-            <Dropdown.Toggle variant="success" id="dropdown-basic">
-              Mention User
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              {allUsers.map(u => (
-                <Dropdown.Item key={u.id} onClick={() => handleMention(u.username)}>
-                  {u.username}
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
         </Form>
       )}
       <ListGroup>
@@ -294,7 +263,6 @@ const Comments = ({ movieUrl }) => {
                 <strong>{comment.username}</strong>
               </a>
             </Link> - {new Date(comment.createdat).toLocaleDateString()}
-            <p>{renderCommentText(comment.text)}</p>
             {user && user.username === comment.username && (
               <>
                 {deleteCountdown[comment.id] > 0 ? (
