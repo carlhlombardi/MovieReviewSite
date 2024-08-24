@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Form, ListGroup, Alert, Spinner, FormControl, InputGroup } from 'react-bootstrap';
+import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
 
 // Helper functions for API calls
@@ -329,8 +329,8 @@ const Comments = ({ movieUrl }) => {
             )}
             {user && (
               <>
-                <InputGroup className="mt-3">
-                  <FormControl
+                <Form.Group className="mt-3">
+                  <Form.Control
                     as="textarea"
                     rows={2}
                     value={replyText}
@@ -343,7 +343,7 @@ const Comments = ({ movieUrl }) => {
                   >
                     Reply
                   </Button>
-                </InputGroup>
+                </Form.Group>
 
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
