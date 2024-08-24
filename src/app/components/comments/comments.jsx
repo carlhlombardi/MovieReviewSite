@@ -119,6 +119,7 @@ const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyText, setReplyText] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
