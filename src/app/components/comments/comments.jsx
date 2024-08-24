@@ -30,7 +30,7 @@ const postReply = async (commentId, text, token) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ commentId, text })
+      body: JSON.stringify({ commentId, text }) // Ensure "text" is sent
     });
     if (!response.ok) {
       throw new Error('Failed to submit reply');
@@ -119,7 +119,6 @@ const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyText, setReplyText] = useState('');
-  const [replyTo, setReplyTo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
@@ -162,7 +161,6 @@ const Comments = ({ movieUrl }) => {
     fetchData();
   }, [movieUrl]);
 
-
   useEffect(() => {
     const countdownInterval = setInterval(() => {
       setDeleteCountdown(prevCountdown => {
@@ -180,18 +178,16 @@ const Comments = ({ movieUrl }) => {
     return () => clearInterval(countdownInterval);
   }, []);
 
-  
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
       if (!newComment.trim()) return;
-  
+
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postComment(movieUrl, newComment, token);
         if (response) {
-          const postedTime = new Date();
-          setComments(prevComments => [...prevComments, response]); // Updated state correctly
+          setComments(prevComments => [...prevComments, response]);
           setNewComment('');
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
@@ -229,7 +225,6 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
@@ -258,14 +253,9 @@ const Comments = ({ movieUrl }) => {
         return;
       }
   
-      // Call the API to like or unlike the comment
       const response = await likeComment(commentId, token);
   
       if (response) {
-        // Log the response to ensure it’s correct
-        console.log('Like Comment Response:', response);
-  
-        // Update state based on API response
         setComments(prevComments =>
           prevComments.map(comment =>
             comment.id === commentId
