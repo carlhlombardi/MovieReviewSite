@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Button, Form, ListGroup, Alert, Spinner, Dropdown } from 'react-bootstrap';
+import { Button, Form, ListGroup, Alert, Spinner, FormControl, InputGroup } from 'react-bootstrap';
 import Link from 'next/link';
 
 // Helper functions for API calls
@@ -22,15 +22,35 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
-const fetchAllUsers = async (token) => {
+const postReply = async (commentId, text, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/users/publicusers', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ commentId, text })
     });
-    if (!response.ok) throw new Error('Failed to fetch users');
+    if (!response.ok) {
+      throw new Error('Failed to submit reply');
+    }
     return await response.json();
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error posting reply:', error);
+    return null;
+  }
+};
+
+const fetchReplies = async (commentId, token) => {
+  try {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/replies?commentId=${encodeURIComponent(commentId)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch replies');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching replies:', error);
     return [];
   }
 };
@@ -98,18 +118,19 @@ const likeComment = async (id, token) => {
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
   const [deleteCountdown, setDeleteCountdown] = useState({});
+  const [replies, setReplies] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          // Fetch user data
           const userResponse = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -118,14 +139,18 @@ const Comments = ({ movieUrl }) => {
             setUser(userData);
           }
   
-          // Fetch comments
           const commentsData = await fetchComments(movieUrl, token);
-          
-          // Initialize comments state
           setComments(commentsData.map(comment => ({
             ...comment,
-            likedByUser: comment.likedByUser || false // Ensure likedByUser is present
+            likedByUser: comment.likedByUser || false
           })));
+  
+          // Fetch replies for each comment
+          const repliesData = {};
+          for (const comment of commentsData) {
+            repliesData[comment.id] = await fetchReplies(comment.id, token);
+          }
+          setReplies(repliesData);
         }
       } catch (err) {
         setError('Failed to load data');
@@ -137,6 +162,7 @@ const Comments = ({ movieUrl }) => {
   
     fetchData();
   }, [movieUrl]);
+
 
   useEffect(() => {
     const countdownInterval = setInterval(() => {
@@ -153,13 +179,13 @@ const Comments = ({ movieUrl }) => {
     }, 1000);
 
     return () => clearInterval(countdownInterval);
-  }, []); // No dependencies if countdown only updates based on itself
+  }, []);
 
   
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!newComment.trim()) return; // Prevent empty comments
+      if (!newComment.trim()) return; 
 
       const token = localStorage.getItem('token');
       if (token && user) {
@@ -179,6 +205,29 @@ const Comments = ({ movieUrl }) => {
       }
     } catch (err) {
       setError('Failed to submit comment');
+      console.error('Error:', err);
+    }
+  };
+
+  const handleReplySubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!replyText.trim() || !replyTo) return;
+
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        const response = await postReply(replyTo, replyText, token);
+        if (response) {
+          setReplies(prevReplies => ({
+            ...prevReplies,
+            [replyTo]: [...(prevReplies[replyTo] || []), response]
+          }));
+          setReplyText('');
+          setReplyTo(null);
+        }
+      }
+    } catch (err) {
+      setError('Failed to submit reply');
       console.error('Error:', err);
     }
   };
@@ -296,6 +345,41 @@ const Comments = ({ movieUrl }) => {
            >
              {comment.likedByUser ? "Unlike" : "Like"}
            </Button>
+            )}
+            {user && (
+              <>
+                <InputGroup className="mt-3">
+                  <FormControl
+                    as="textarea"
+                    rows={2}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={`Reply to ${comment.username}`}
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={() => setReplyTo(comment.id)}
+                  >
+                    Reply
+                  </Button>
+                </InputGroup>
+                {replyTo === comment.id && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleReplySubmit}
+                    className="mt-2"
+                  >
+                    Submit Reply
+                  </Button>
+                )}
+                <div className="mt-3">
+                  {replies[comment.id]?.map(reply => (
+                    <div key={reply.id} className="border p-2 mb-2">
+                      <strong>{reply.username}</strong>: {reply.text}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </ListGroup.Item>
         ))}
