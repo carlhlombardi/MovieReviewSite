@@ -145,7 +145,6 @@ const Comments = ({ movieUrl }) => {
             likedByUser: comment.likedByUser || false
           })));
   
-          // Fetch replies for each comment
           const repliesData = {};
           for (const comment of commentsData) {
             repliesData[comment.id] = await fetchReplies(comment.id, token);
@@ -185,16 +184,15 @@ const Comments = ({ movieUrl }) => {
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!newComment.trim()) return; 
-
+      if (!newComment.trim()) return;
+  
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postComment(movieUrl, newComment, token);
         if (response) {
           const postedTime = new Date();
-          setComments([...comments, response]);
+          setComments(prevComments => [...prevComments, response]); // Updated state correctly
           setNewComment('');
-          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
@@ -213,14 +211,14 @@ const Comments = ({ movieUrl }) => {
     e.preventDefault();
     try {
       if (!replyText.trim() || !replyTo) return;
-
+  
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(replyTo, replyText, token);
         if (response) {
           setReplies(prevReplies => ({
             ...prevReplies,
-            [replyTo]: [...(prevReplies[replyTo] || []), response]
+            [replyTo]: [...(prevReplies[replyTo] || []), response] // Update replies state
           }));
           setReplyText('');
           setReplyTo(null);
