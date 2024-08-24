@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner, FormControl, InputGroup } from 'react-bootstrap';
 import Link from 'next/link';
@@ -216,8 +214,8 @@ const Comments = ({ movieUrl }) => {
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
           }));
-          setReplyText('');
-          setReplyTo(null); // Reset reply target after submitting
+          setReplyText(''); // Clear the reply input
+          setReplyTo(null); // Reset reply target
         }
       }
     } catch (err) {
@@ -351,7 +349,7 @@ const Comments = ({ movieUrl }) => {
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
                     <div key={reply.id} className="border p-2 mb-2">
-                      <strong>{reply.username}</strong>: {reply.text} - {new Date(comment.createdat).toLocaleDateString()}
+                      <strong>{reply.username}</strong>: {reply.text}
                     </div>
                   ))}
                 </div>
