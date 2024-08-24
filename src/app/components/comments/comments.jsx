@@ -117,7 +117,6 @@ const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyText, setReplyText] = useState('');
-  const [replyTo, setReplyTo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
@@ -205,17 +204,22 @@ const Comments = ({ movieUrl }) => {
   const handleReplyAction = async (commentId) => {
     try {
       if (!replyText.trim()) return;
-
+  
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(commentId, replyText, token);
+        console.log('Reply Response:', response); // Check if the response has correct data
+  
         if (response) {
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), response]
-          }));
+          setReplies(prevReplies => {
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), response]
+            };
+            console.log('Updated Replies State:', updatedReplies); // Log to check the update
+            return updatedReplies;
+          });
           setReplyText(''); // Clear the reply input
-          setReplyTo(null); // Reset reply target
         }
       }
     } catch (err) {
@@ -346,7 +350,7 @@ const Comments = ({ movieUrl }) => {
                     Reply
                   </Button>
                 </InputGroup>
-                
+
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
                     <div key={reply.id} className="border p-2 mb-2">
