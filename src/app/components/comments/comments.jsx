@@ -220,11 +220,15 @@ const Comments = ({ movieUrl }) => {
       if (token && user) {
         const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
+          // Update the replies state
           setReplies(prevReplies => ({
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
           }));
-          setReplyTexts(prev => ({ ...prev, [commentId]: '' })); // Clear the reply input for this comment
+          setReplyTexts(prevReplyTexts => ({
+            ...prevReplyTexts,
+            [commentId]: '' // Clear the reply input for this comment
+          }));
         }
       }
     } catch (err) {
