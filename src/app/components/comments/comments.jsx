@@ -44,7 +44,7 @@ const postReply = async (commentId, text, token) => {
 
 const fetchReplies = async (commentId, token) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/replies?commentId=${encodeURIComponent(commentId)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies?commentId=${encodeURIComponent(commentId)}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to fetch replies');
