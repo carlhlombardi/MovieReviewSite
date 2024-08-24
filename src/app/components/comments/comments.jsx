@@ -117,6 +117,7 @@ const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [replyText, setReplyText] = useState('');
+  const [replyTexts, setReplyTexts] = useState({}); // key: commentId, value: replyText
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
@@ -201,19 +202,23 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
+  const handleReplyChange = (commentId, text) => {
+    setReplyTexts(prev => ({ ...prev, [commentId]: text }));
+  };
+  
   const handleReplyAction = async (commentId) => {
     try {
-      if (!replyText.trim()) return;
+      if (!replyTexts[commentId]?.trim()) return;
   
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await postReply(commentId, replyText, token);
+        const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
           setReplies(prevReplies => ({
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
           }));
-          setReplyText(''); // Clear the reply input
+          setReplyTexts(prev => ({ ...prev, [commentId]: '' })); // Clear the reply input for this comment
         }
       }
     } catch (err) {
@@ -275,22 +280,7 @@ const Comments = ({ movieUrl }) => {
 
   return (
     <>
-      <h3>Comments</h3>
-      {error && <Alert variant="danger">{error}</Alert>}
-      {user && (
-        <Form onSubmit={handleCommentSubmit} className="mb-4">
-          <Form.Group controlId="commentText">
-            <Form.Control
-              as="textarea"
-              rows={3}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add your comment"
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit" className="mt-2">Submit</Button>
-        </Form>
-      )}
+      {/* Comment submission and rendering */}
       <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
@@ -329,26 +319,26 @@ const Comments = ({ movieUrl }) => {
             )}
             {user && (
               <>
-            <Form onSubmit={(e) => { 
-  e.preventDefault(); 
-  handleReplyAction(comment.id); 
-}} className="mb-4">
-  <Form.Group>
-    <Form.Control
-      as="textarea"
-      rows={2}
-      value={replyText}
-      onChange={(e) => setReplyText(e.target.value)}
-      placeholder={`Reply to ${comment.username}`}
-    />
-  </Form.Group>
-  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-</Form>
-
+                <Form onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  handleReplyAction(comment.id); 
+                }} className="mb-4">
+                  <Form.Group>
+                    <Form.Control
+                      as="textarea"
+                      rows={2}
+                      value={replyTexts[comment.id] || ''}
+                      onChange={(e) => handleReplyChange(comment.id, e.target.value)}
+                      placeholder={`Reply to ${comment.username}`}
+                    />
+                  </Form.Group>
+                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+                </Form>
+  
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
                     <div key={reply.id} className="border p-2 mb-2">
-                      <strong>{reply.username}</strong>: {reply.text} - {new Date(comment.createdat).toLocaleDateString()}
+                      <strong>{reply.username}</strong>: {reply.text} - {new Date(reply.createdat).toLocaleDateString()}
                     </div>
                   ))}
                 </div>
