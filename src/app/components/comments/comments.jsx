@@ -207,21 +207,20 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const handleReplySubmit = async (e) => {
-    e.preventDefault();
+  const handleReplyAction = async (commentId) => {
     try {
-      if (!replyText.trim() || !replyTo) return;
-  
+      if (!replyText.trim()) return;
+
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await postReply(replyTo, replyText, token);
+        const response = await postReply(commentId, replyText, token);
         if (response) {
           setReplies(prevReplies => ({
             ...prevReplies,
-            [replyTo]: [...(prevReplies[replyTo] || []), response] // Update replies state
+            [commentId]: [...(prevReplies[commentId] || []), response]
           }));
           setReplyText('');
-          setReplyTo(null);
+          setReplyTo(null); // Reset reply target after submitting
         }
       }
     } catch (err) {
@@ -329,20 +328,17 @@ const Comments = ({ movieUrl }) => {
                       Delete available for {deleteCountdown[comment.id]}s
                     </small>
                   </>
-                ) : (
-                  // Don't show anything if the countdown has expired
-                  <></>
-                )}
+                ) : null}
               </>
             )}
             {user && (
-             <Button
-             variant={comment.likedByUser ? "outline-success" : "success"}
-             onClick={() => handleLikeComment(comment.id)}
-             className="float-end ms-2"
-           >
-             {comment.likedByUser ? "Unlike" : "Like"}
-           </Button>
+              <Button
+                variant={comment.likedByUser ? "outline-success" : "success"}
+                onClick={() => handleLikeComment(comment.id)}
+                className="float-end ms-2"
+              >
+                {comment.likedByUser ? "Unlike" : "Like"}
+              </Button>
             )}
             {user && (
               <>
@@ -356,20 +352,11 @@ const Comments = ({ movieUrl }) => {
                   />
                   <Button
                     variant="primary"
-                    onClick={() => setReplyTo(comment.id)}
+                    onClick={() => handleReplyAction(comment.id)}
                   >
                     Reply
                   </Button>
                 </InputGroup>
-                {replyTo === comment.id && (
-                  <Button
-                    variant="secondary"
-                    onClick={handleReplySubmit}
-                    className="mt-2"
-                  >
-                    Submit Reply
-                  </Button>
-                )}
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
                     <div key={reply.id} className="border p-2 mb-2">
