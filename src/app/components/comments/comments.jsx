@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner, FormControl, InputGroup } from 'react-bootstrap';
 import Link from 'next/link';
@@ -28,7 +30,7 @@ const postReply = async (commentId, text, token) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ commentId, text }) // Ensure "text" is sent
+      body: JSON.stringify({ commentId, text })
     });
     if (!response.ok) {
       throw new Error('Failed to submit reply');
@@ -135,6 +137,7 @@ const Comments = ({ movieUrl }) => {
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUser(userData);
+            console.log('User Data:', userData); // Log user data
           }
   
           const commentsData = await fetchComments(movieUrl, token);
@@ -142,10 +145,13 @@ const Comments = ({ movieUrl }) => {
             ...comment,
             likedByUser: comment.likedByUser || false
           })));
+          console.log('Comments Data:', commentsData); // Log comments data
   
           const repliesData = {};
           for (const comment of commentsData) {
-            repliesData[comment.id] = await fetchReplies(comment.id, token);
+            const repliesForComment = await fetchReplies(comment.id, token);
+            repliesData[comment.id] = repliesForComment;
+            console.log(`Replies for Comment ID ${comment.id}:`, repliesForComment); // Log replies for each comment
           }
           setReplies(repliesData);
         }
@@ -177,17 +183,43 @@ const Comments = ({ movieUrl }) => {
     return () => clearInterval(countdownInterval);
   }, []);
 
+  const handleReplyAction = async (commentId) => {
+    try {
+      if (!replyText.trim()) return;
+
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        const response = await postReply(commentId, replyText, token);
+        console.log('Reply Response:', response); // Log reply response
+        if (response) {
+          setReplies(prevReplies => ({
+            ...prevReplies,
+            [commentId]: [...(prevReplies[commentId] || []), response]
+          }));
+          setReplyText('');
+          setReplyTo(null); // Reset reply target after submitting
+        }
+      }
+    } catch (err) {
+      setError('Failed to submit reply');
+      console.error('Error:', err);
+    }
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!newComment.trim()) return;
+      if (!newComment.trim()) return; 
 
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postComment(movieUrl, newComment, token);
+        console.log('Comment Response:', response); // Log comment response
         if (response) {
-          setComments(prevComments => [...prevComments, response]);
+          const postedTime = new Date();
+          setComments([...comments, response]);
           setNewComment('');
+          // Set countdown for new comment
           if (user.username === response.username) {
             setDeleteCountdown(prevCountdown => ({
               ...prevCountdown,
@@ -198,28 +230,6 @@ const Comments = ({ movieUrl }) => {
       }
     } catch (err) {
       setError('Failed to submit comment');
-      console.error('Error:', err);
-    }
-  };
-
-  const handleReplyAction = async (commentId) => {
-    try {
-      if (!replyText.trim()) return;
-
-      const token = localStorage.getItem('token');
-      if (token && user) {
-        const response = await postReply(commentId, replyText, token);
-        if (response) {
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), response]
-          }));
-          setReplyText(''); // Clear the reply input
-          setReplyTo(null); // Reset reply target
-        }
-      }
-    } catch (err) {
-      setError('Failed to submit reply');
       console.error('Error:', err);
     }
   };
@@ -252,9 +262,14 @@ const Comments = ({ movieUrl }) => {
         return;
       }
   
+      // Call the API to like or unlike the comment
       const response = await likeComment(commentId, token);
   
       if (response) {
+        // Log the response to ensure it’s correct
+        console.log('Like Comment Response:', response);
+  
+        // Update state based on API response
         setComments(prevComments =>
           prevComments.map(comment =>
             comment.id === commentId
@@ -266,8 +281,7 @@ const Comments = ({ movieUrl }) => {
         console.error('Failed to get like status from server');
       }
     } catch (err) {
-      setError('Failed to like/unlike comment');
-      console.error('Error:', err);
+      console.error('Error liking comment:', err);
     }
   };
 
@@ -317,17 +331,10 @@ const Comments = ({ movieUrl }) => {
                       Delete available for {deleteCountdown[comment.id]}s
                     </small>
                   </>
-                ) : null}
+                ) : (
+                  <></>
+                )}
               </>
-            )}
-            {user && (
-              <Button
-                variant={comment.likedByUser ? "outline-success" : "success"}
-                onClick={() => handleLikeComment(comment.id)}
-                className="float-end ms-2"
-              >
-                {comment.likedByUser ? "Unlike" : "Like"}
-              </Button>
             )}
             {user && (
               <>
