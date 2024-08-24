@@ -205,6 +205,12 @@ const Comments = ({ movieUrl }) => {
   const handleReplyChange = (commentId, text) => {
     setReplyTexts(prev => ({ ...prev, [commentId]: text }));
   };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
+  };
+  
   
   const handleReplyAction = async (commentId) => {
     try {
