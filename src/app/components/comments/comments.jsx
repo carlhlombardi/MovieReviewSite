@@ -354,7 +354,7 @@ const Comments = ({ movieUrl }) => {
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
                     <div key={reply.id} className="border p-2 mb-2">
-                      <strong>{replies.reply.username}{replies.username}</strong>: {replies.reply.text}{replies.text}
+                      <strong>{replies.reply.username}{reply.username}</strong>: {replies.reply.text}{reply.text}
                     </div>
                   ))}
                 </div>
