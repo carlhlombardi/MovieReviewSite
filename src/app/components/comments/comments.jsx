@@ -24,7 +24,7 @@ const fetchComments = async (movieUrl, token) => {
 
 const postReply = async (commentId, text, token) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies', {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies?commentId=${encodeURIComponent(commentId)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
