@@ -329,7 +329,8 @@ const Comments = ({ movieUrl }) => {
             )}
             {user && (
               <>
-                <Form.Group className="mt-3">
+            <Form onSubmit={handleReplyAction(comment.id)} className="mb-4">
+                <Form.Group controlId="replyText">
                   <Form.Control
                     as="textarea"
                     rows={2}
@@ -337,13 +338,9 @@ const Comments = ({ movieUrl }) => {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder={`Reply to ${comment.username}`}
                   />
-                  <Button
-                    variant="primary"
-                    onClick={() => handleReplyAction(comment.id)}
-                  >
-                    Reply
-                  </Button>
-                </Form.Group>
+                  </Form.Group>
+                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+                </Form>
 
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
