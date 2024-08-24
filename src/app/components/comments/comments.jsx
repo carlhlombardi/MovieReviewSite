@@ -329,18 +329,21 @@ const Comments = ({ movieUrl }) => {
             )}
             {user && (
               <>
-            <Form onSubmit={handleReplyAction(comment.id)} className="mb-4">
-                <Form.Group controlId="replyText">
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={`Reply to ${comment.username}`}
-                  />
-                  </Form.Group>
-                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                </Form>
+            <Form onSubmit={(e) => { 
+  e.preventDefault(); 
+  handleReplyAction(comment.id); 
+}} className="mb-4">
+  <Form.Group>
+    <Form.Control
+      as="textarea"
+      rows={2}
+      value={replyText}
+      onChange={(e) => setReplyText(e.target.value)}
+      placeholder={`Reply to ${comment.username}`}
+    />
+  </Form.Group>
+  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+</Form>
 
                 <div className="mt-3">
                   {replies[comment.id]?.map(reply => (
