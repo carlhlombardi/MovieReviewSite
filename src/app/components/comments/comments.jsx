@@ -208,17 +208,11 @@ const Comments = ({ movieUrl }) => {
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(commentId, replyText, token);
-        console.log('Reply Response:', response); // Check if the response has correct data
-  
         if (response) {
-          setReplies(prevReplies => {
-            const updatedReplies = {
-              ...prevReplies,
-              [commentId]: [...(prevReplies[commentId] || []), response]
-            };
-            console.log('Updated Replies State:', updatedReplies); // Log to check the update
-            return updatedReplies;
-          });
+          setReplies(prevReplies => ({
+            ...prevReplies,
+            [commentId]: [...(prevReplies[commentId] || []), response]
+          }));
           setReplyText(''); // Clear the reply input
         }
       }
