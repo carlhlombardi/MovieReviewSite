@@ -280,75 +280,90 @@ const Comments = ({ movieUrl }) => {
 
   return (
     <>
-      {/* Comment submission and rendering */}
-      <ListGroup>
-        {comments.map(comment => (
-          <ListGroup.Item key={comment.id}>
-            <Link href={`/profile/${comment.username}`} passHref>
-              <a>
-                <strong>{comment.username}</strong>
-              </a>
-            </Link> - {new Date(comment.createdat).toLocaleDateString()}
-            <p>{comment.text}</p>
-            {user && user.username === comment.username && (
-              <>
-                {deleteCountdown[comment.id] > 0 ? (
-                  <>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="float-end"
-                    >
-                      Delete
-                    </Button>
-                    <small className="text-muted float-end me-2">
-                      Delete available for {deleteCountdown[comment.id]}s
-                    </small>
-                  </>
-                ) : null}
-              </>
-            )}
-            {user && (
-              <Button
-                variant={comment.likedByUser ? "outline-success" : "success"}
-                onClick={() => handleLikeComment(comment.id)}
-                className="float-end ms-2"
-              >
-                {comment.likedByUser ? "Unlike" : "Like"}
-              </Button>
-            )}
-            {user && (
-              <>
-                <Form onSubmit={(e) => { 
-                  e.preventDefault(); 
-                  handleReplyAction(comment.id); 
-                }} className="mb-4">
-                  <Form.Group>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      value={replyTexts[comment.id] || ''}
-                      onChange={(e) => handleReplyChange(comment.id, e.target.value)}
-                      placeholder={`Reply to ${comment.username}`}
-                    />
-                  </Form.Group>
-                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                </Form>
-  
-                <div className="mt-3">
-                  {replies[comment.id]?.map(reply => (
-                    <div key={reply.id} className="border p-2 mb-2">
-                      <strong>{reply.username}</strong>: {reply.text} - {new Date(reply.createdat).toLocaleDateString()}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
-    </>
-  );
+      <h3>Comments</h3>
+      {error && <Alert variant="danger">{error}</Alert>}
+      {user && (
+        <Form onSubmit={handleCommentSubmit} className="mb-4">
+          <Form.Group controlId="commentText">
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add your comment"
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit" className="mt-2">Submit</Button>
+        </Form>
+      )}
+<ListGroup>
+      {comments.map(comment => (
+        <ListGroup.Item key={comment.id}>
+          <Link href={`/profile/${comment.username}`} passHref>
+            <a>
+              <strong>{comment.username}</strong>
+            </a>
+          </Link> - {formatDate(comment.createdat)}
+          <p>{comment.text}</p>
+          {user && user.username === comment.username && (
+            <>
+              {deleteCountdown[comment.id] > 0 ? (
+                <>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="float-end"
+                  >
+                    Delete
+                  </Button>
+                  <small className="text-muted float-end me-2">
+                    Delete available for {deleteCountdown[comment.id]}s
+                  </small>
+                </>
+              ) : null}
+            </>
+          )}
+          {user && (
+            <Button
+              variant={comment.likedByUser ? "outline-success" : "success"}
+              onClick={() => handleLikeComment(comment.id)}
+              className="float-end ms-2"
+            >
+              {comment.likedByUser ? "Unlike" : "Like"}
+            </Button>
+          )}
+          {user && (
+            <>
+              <Form onSubmit={(e) => { 
+                e.preventDefault(); 
+                handleReplyAction(comment.id); 
+              }} className="mb-4">
+                <Form.Group>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    value={replyTexts[comment.id] || ''}
+                    onChange={(e) => handleReplyChange(comment.id, e.target.value)}
+                    placeholder={`Reply to ${comment.username}`}
+                  />
+                </Form.Group>
+                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+              </Form>
+
+              <div className="mt-3">
+                {replies[comment.id]?.map(reply => (
+                  <div key={reply.id} className="border p-2 mb-2">
+                    <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+  </>
+);
 };
 
 export default Comments;
