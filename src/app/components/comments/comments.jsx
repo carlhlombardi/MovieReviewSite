@@ -252,6 +252,10 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
+  useEffect(() => {
+    console.log('Rendering replies:', replies);
+  }, [replies]);
+
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
@@ -376,14 +380,14 @@ const Comments = ({ movieUrl }) => {
           </Form>
 
           <div className="mt-3">
-  {Array.isArray(replies[comment.id]) ? (
+  {replies[comment.id]?.length ? (
     replies[comment.id].map(reply => (
       <div key={reply.id} className="border p-2 mb-2">
         <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
       </div>
     ))
   ) : (
-    <p>No replies yet.</p>
+    <div>No replies yet.</div>
   )}
 </div>
             </>
