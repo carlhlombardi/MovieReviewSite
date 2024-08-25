@@ -144,7 +144,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
       return;
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply?commentId${encodeURIComponent(commentId)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
