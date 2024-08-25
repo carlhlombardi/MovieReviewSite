@@ -162,18 +162,12 @@ const postReplyToReply = async (parentReplyId, text) => {
     }
 
     const replyData = await response.json();
-    console.log('Reply posted successfully:', replyData);
-
-    // Update state with new reply
-    setReplies(prevReplies => ({
-      ...prevReplies,
-      [parentReplyId]: [...(prevReplies[parentReplyId] || []), replyData]
-    }));
+    return replyData;
   } catch (error) {
     console.error('Failed to post reply:', error);
+    return null;
   }
 };
-
 
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
@@ -397,13 +391,23 @@ const Comments = ({ movieUrl }) => {
       const replyText = replyTexts[parentReplyId]?.trim();
       if (!replyText) return; // No text to post
   
-      await postReplyToReply(parentReplyId, replyText);
-  
-      // Clear the reply text after submission
-      setReplyTexts(prevReplyTexts => ({
-        ...prevReplyTexts,
-        [parentReplyId]: ''
-      }));
+      const replyData = await postReplyToReply(parentReplyId, replyText);
+      if (replyData) {
+        setReplies(prevReplies => {
+          // Add the new reply to the correct parent reply's replies
+          const updatedReplies = { ...prevReplies };
+          const parentReplyId = replyData.parentReplyId; // Assuming backend returns parentReplyId
+          if (!updatedReplies[parentReplyId]) {
+            updatedReplies[parentReplyId] = [];
+          }
+          updatedReplies[parentReplyId] = [...updatedReplies[parentReplyId], replyData];
+          return updatedReplies;
+        });
+        setReplyTexts(prevReplyTexts => ({
+          ...prevReplyTexts,
+          [parentReplyId]: ''
+        }));
+      }
     } catch (error) {
       console.error('Failed to post reply:', error);
       setError('Failed to post reply');
