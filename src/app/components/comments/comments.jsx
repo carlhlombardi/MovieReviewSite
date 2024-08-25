@@ -136,7 +136,7 @@ const likeReply = async (replyId) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text, commentId) => {
+const postReplyToReply = async (parentReplyId, text, comment_id)=> {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -144,7 +144,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
       return;
     }
 
-    console.log('Posting reply with:', { parentReplyId, text, commentId });
+    console.log('Posting reply with:', { parentReplyId, text, comment_id });
 
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
@@ -152,7 +152,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text, commentId })
+      body: JSON.stringify({ replyId: parentReplyId, text, comment_id })
     });
 
     if (!response.ok) {
@@ -170,6 +170,8 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
     return null;
   }
 };
+
+
 
 
 
@@ -383,19 +385,19 @@ const Comments = ({ movieUrl }) => {
     }
   };
   
-  const handlePostReplyToReply = async (parentReplyId, commentId) => {
+  const handlePostReplyToReply = async (parentReplyId, comment_id) => {
     try {
       const replyText = replyTexts[parentReplyId]?.trim();
       console.log('Reply text for parentReplyId', parentReplyId, ':', replyText);
-      console.log('Comment ID:', commentId);
+      console.log('Comment ID:', comment_id);
   
       if (!replyText) {
         console.log('No text to post for parentReplyId', parentReplyId);
         return; // No text to post
       }
   
-      console.log('Calling postReplyToReply with:', { parentReplyId, replyText, commentId });
-      const replyData = await postReplyToReply(parentReplyId, replyText, commentId);
+      console.log('Calling postReplyToReply with:', { parentReplyId, replyText, comment_id });
+      const replyData = await postReplyToReply(parentReplyId, replyText, comment_id);
   
       if (replyData) {
         console.log('Reply data received:', replyData);
