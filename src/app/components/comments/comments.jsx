@@ -172,6 +172,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
 };
 
 
+
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -386,6 +387,7 @@ const Comments = ({ movieUrl }) => {
     try {
       const replyText = replyTexts[parentReplyId]?.trim();
       console.log('Reply text for parentReplyId', parentReplyId, ':', replyText);
+      console.log('Comment ID:', commentId);
   
       if (!replyText) {
         console.log('No text to post for parentReplyId', parentReplyId);
