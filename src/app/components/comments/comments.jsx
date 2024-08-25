@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
-import ReplyComponent from './ReplyComponent';
+import ReplyComponent from './replycomponent';
 import { 
   fetchComments, 
   postReply, 
