@@ -157,6 +157,8 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
 
     if (!response.ok) {
       console.error('Failed to post reply, response status:', response.status);
+      const errorText = await response.text();
+      console.error('Error response body:', errorText);
       throw new Error('Failed to post reply');
     }
 
@@ -390,7 +392,8 @@ const Comments = ({ movieUrl }) => {
         return; // No text to post
       }
   
-      const replyData = await postReplyToReply(parentReplyId, replyText, commentId); // Ensure commentId is passed
+      console.log('Calling postReplyToReply with:', { parentReplyId, replyText, commentId });
+      const replyData = await postReplyToReply(parentReplyId, replyText, commentId);
   
       if (replyData) {
         console.log('Reply data received:', replyData);
@@ -413,6 +416,7 @@ const Comments = ({ movieUrl }) => {
       setError('Failed to post reply');
     }
   };
+  
   
   
   
