@@ -29,13 +29,14 @@ export async function POST(request) {
     `;
     const username = userData.rows[0]?.username;
 
-    await sql`
+    const result = await sql`
       INSERT INTO replies (comment_id, user_id, username, text)
       VALUES (${commentId}, ${userId}, ${username}, ${text})
+      RETURNING id, comment_id, user_id, username, text, createdat
     `;
 
     return new Response(
-      JSON.stringify({ message: 'Reply added successfully' }),
+      JSON.stringify(result.rows[0]),
       { status: 201 }
     );
   } catch (error) {
