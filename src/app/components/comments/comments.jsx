@@ -138,18 +138,20 @@ const Comments = ({ movieUrl }) => {
             const userData = await userResponse.json();
             setUser(userData);
           }
+  // Fetch comments
+  const commentsData = await fetchComments(movieUrl, token);
+  setComments(commentsData.map(comment => ({
+    ...comment,
+    likedByUser: comment.likedByUser || false
+  })));
   
-          const commentsData = await fetchComments(movieUrl, token);
-          setComments(commentsData.map(comment => ({
-            ...comment,
-            likedByUser: comment.likedByUser || false
-          })));
-  
-          const repliesData = {};
-          for (const comment of commentsData) {
-            repliesData[comment.id] = await fetchReplies(comment.id, token);
-          }
-          setReplies(repliesData);
+          // Fetch replies for each comment
+        const repliesData = {};
+        for (const comment of commentsData) {
+          const commentReplies = await fetchReplies(comment.id, token);
+          repliesData[comment.id] = commentReplies;
+        }
+        setReplies(repliesData);
         }
       } catch (err) {
         setError('Failed to load data');
@@ -219,32 +221,29 @@ const Comments = ({ movieUrl }) => {
     });
   };
   
-const handleReplyAction = async (commentId) => {
-  try {
-    if (!replyTexts[commentId]?.trim()) return;
-
-    const token = localStorage.getItem('token');
-    if (token && user) {
-      const response = await postReply(commentId, replyTexts[commentId], token);
-      if (response) {
-        setReplies(prevReplies => {
-          const updatedReplies = {
+  const handleReplyAction = async (commentId) => {
+    try {
+      if (!replyTexts[commentId]?.trim()) return;
+  
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        const response = await postReply(commentId, replyTexts[commentId], token);
+        if (response) {
+          setReplies(prevReplies => ({
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
-          };
-          return updatedReplies;
-        });
-        setReplyTexts(prevReplyTexts => ({
-          ...prevReplyTexts,
-          [commentId]: '' 
-        }));
+          }));
+          setReplyTexts(prevReplyTexts => ({
+            ...prevReplyTexts,
+            [commentId]: '' // Clear the reply input for this comment
+          }));
+        }
       }
+    } catch (err) {
+      setError('Failed to submit reply');
+      console.error('Error:', err);
     }
-  } catch (err) {
-    setError('Failed to submit reply');
-    console.error('Error:', err);
-  }
-};
+  };
 
   const handleDeleteComment = async (commentId) => {
     try {
