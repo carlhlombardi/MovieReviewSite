@@ -3,25 +3,31 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
   try {
+    // Parse the request body
     const { commentId, text } = await request.json();
+    
+    // Extract and verify the token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
 
+    // Check if userId is valid
     if (!userId) {
       return new Response(
         JSON.stringify({ message: 'Unauthorized' }),
-        { status: 401 }
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Validate input
     if (!commentId || !text) {
       return new Response(
         JSON.stringify({ message: 'Comment ID and text are required' }),
-        { status: 400 }
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    // Fetch the username from the database
     const userData = await sql`
       SELECT username
       FROM users
@@ -29,20 +35,23 @@ export async function POST(request) {
     `;
     const username = userData.rows[0]?.username;
 
-    await sql`
+    // Insert the new reply and return the inserted reply
+    const result = await sql`
       INSERT INTO replies (comment_id, user_id, username, text)
       VALUES (${commentId}, ${userId}, ${username}, ${text})
+      RETURNING id, comment_id, user_id, username, text, createdat
     `;
 
-        return new Response(
-            JSON.stringify(result.rows[0]),
-            { status: 201 }
+    // Return the newly inserted reply
+    return new Response(
+      JSON.stringify(result.rows[0]),
+      { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Reply error:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to add reply' }),
-      { status: 500 }
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
