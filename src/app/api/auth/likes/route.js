@@ -13,11 +13,26 @@ export async function GET(request) {
       );
     }
 
-    // Get the total like count for the movie
+    // Get the total like count for the movie across all tables
     const likecountResult = await sql`
       SELECT COUNT(*) AS likecount
-      FROM likes
-      WHERE url = ${movieUrl} AND isliked = TRUE;
+      FROM (
+        SELECT url FROM horrormovies
+        UNION ALL
+        SELECT url FROM scifimovies
+        UNION ALL
+        SELECT url FROM comedymovies
+        UNION ALL
+        SELECT url FROM actionmovies
+        UNION ALL
+        SELECT url FROM documentarymovies
+        UNION ALL
+        SELECT url FROM classicmovies
+        UNION ALL
+        SELECT url FROM dramamovies
+      ) AS all_movies
+      JOIN likes ON all_movies.url = likes.url
+      WHERE likes.url = ${movieUrl} AND likes.isliked = TRUE;
     `;
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
@@ -100,35 +115,48 @@ export async function POST(request) {
     }
     console.log('User Found:', user.username);
 
-// Query the horrormovies table
-let movieResult = await sql`
-  SELECT film, genre
-  FROM horrormovies
-  WHERE url = ${url};
-`;
+    // Query the different movie tables
+    let movieResult = await sql`
+      SELECT film, genre
+      FROM horrormovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM scifimovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM comedymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM actionmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM documentarymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM classicmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM dramamovies
+      WHERE url = ${url};
+    `;
 
-let movie = movieResult.rows[0];
+    let movie = movieResult.rows[0];
 
-if (!movie) {
-  // If not found in horrormovies, query the scifimovies table
-  movieResult = await sql`
-    SELECT film, genre
-    FROM scifimovies
-    WHERE url = ${url};
-  `;
+    if (!movie) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
 
-  movie = movieResult.rows[0];
-}
-
-if (!movie) {
-  return new Response(
-    JSON.stringify({ message: 'Movie not found' }),
-    { status: 404 }
-  );
-}
-
-const title = movie.film;
-const genre = movie.genre;
+    const title = movie.film;
+    const genre = movie.genre;
 
     // Insert or update the likes table with username, url, and title
     const postResult = await sql`
@@ -162,60 +190,60 @@ const genre = movie.genre;
 
 export async function DELETE(request) {
   try {
-      const url = new URL(request.url);
-      const movieUrl = url.searchParams.get('url');
-      console.log('DELETE Request - Movie URL:', movieUrl);
+    const url = new URL(request.url);
+    const movieUrl = url.searchParams.get('url');
+    console.log('DELETE Request - Movie URL:', movieUrl);
 
-      const authHeader = request.headers.get('Authorization');
-      const token = authHeader?.split(' ')[1];
-      if (!token || !movieUrl) {
-          return new Response(
-              JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
-              { status: 401 }
-          );
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('Decoded JWT:', decoded);
-      const userId = decoded.userId;
-
-      const userResult = await sql`
-          SELECT username
-          FROM users
-          WHERE id = ${userId};
-      `;
-      const user = userResult.rows[0];
-      if (!user) {
-          return new Response(
-              JSON.stringify({ message: 'User not found' }),
-              { status: 404 }
-          );
-      }
-
-      const deleteResult = await sql`
-          UPDATE likes
-          SET isliked = FALSE
-          WHERE username = ${user.username} AND url = ${movieUrl}
-          RETURNING username, url;
-      `;
-      console.log('DELETE Result:', deleteResult);
-
-      if (deleteResult.rowCount === 0) {
-          return new Response(
-              JSON.stringify({ message: 'Like not found' }),
-              { status: 404 }
-          );
-      }
-
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token || !movieUrl) {
       return new Response(
-          JSON.stringify({ message: 'Like removed' }),
-          { status: 200 }
+        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
+        { status: 401 }
       );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+
+    const deleteResult = await sql`
+      UPDATE likes
+      SET isliked = FALSE
+      WHERE username = ${user.username} AND url = ${movieUrl}
+      RETURNING username, url;
+    `;
+    console.log('DELETE Result:', deleteResult);
+
+    if (deleteResult.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Like not found' }),
+        { status: 404 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Like removed' }),
+      { status: 200 }
+    );
   } catch (error) {
-      console.error('Delete like error:', error);  // Log full error
-      return new Response(
-          JSON.stringify({ message: 'Failed to remove like' }),
-          { status: 500 }
-      );
+    console.error('Delete like error:', error);  // Log full error
+    return new Response(
+      JSON.stringify({ message: 'Failed to remove like' }),
+      { status: 500 }
+    );
   }
 }
