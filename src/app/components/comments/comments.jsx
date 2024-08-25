@@ -252,7 +252,6 @@ const Comments = ({ movieUrl }) => {
 
   useEffect(() => {
     console.log('Rendering replies:', replies);
-    console.log('Reply Data:', replyData);
   }, [replies]);
 
   const handleDeleteComment = async (commentId) => {
