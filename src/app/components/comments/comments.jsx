@@ -503,7 +503,7 @@ const Comments = ({ movieUrl }) => {
                           </div>
                         ))
                       ) : (
-                        <div>No replies yet.</div>
+                        <div>No replies</div>
                       )}
                     </div>
                   </div>
