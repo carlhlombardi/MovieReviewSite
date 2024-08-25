@@ -35,7 +35,7 @@ export async function POST(request) {
     `;
 
     return new Response(
-      JSON.stringify({ message: 'Reply added successfully' }),
+      JSON.stringify(result.rows[0]),
       { status: 201 }
     );
   } catch (error) {
