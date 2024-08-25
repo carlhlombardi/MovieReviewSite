@@ -136,7 +136,7 @@ const likeReply = async (replyId) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text) => {
+const postReplyToReply = async (parentReplyId, text, commentId) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -144,7 +144,7 @@ const postReplyToReply = async (parentReplyId, text) => {
       return;
     }
 
-    console.log('Posting reply with:', { parentReplyId, text});
+    console.log('Posting reply with:', { parentReplyId, text, commentId });
 
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply`, {
       method: 'POST',
@@ -152,7 +152,7 @@ const postReplyToReply = async (parentReplyId, text) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text})
+      body: JSON.stringify({ replyId: parentReplyId, text, commentId }) // Ensure commentId is included
     });
 
     if (!response.ok) {
@@ -168,6 +168,7 @@ const postReplyToReply = async (parentReplyId, text) => {
     return null;
   }
 };
+
 
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
@@ -379,7 +380,7 @@ const Comments = ({ movieUrl }) => {
     }
   };
   
-  const handlePostReplyToReply = async (parentReplyId) => {
+  const handlePostReplyToReply = async (parentReplyId, commentId) => {
     try {
       const replyText = replyTexts[parentReplyId]?.trim();
       console.log('Reply text for parentReplyId', parentReplyId, ':', replyText);
@@ -389,17 +390,17 @@ const Comments = ({ movieUrl }) => {
         return; // No text to post
       }
   
-      const replyData = await postReplyToReply(parentReplyId, replyText, commentId);
+      const replyData = await postReplyToReply(parentReplyId, replyText, commentId); // Ensure commentId is passed
+  
       if (replyData) {
         console.log('Reply data received:', replyData);
         setReplies(prevReplies => {
-          // Add the new reply to the correct parent reply's replies
           const updatedReplies = { ...prevReplies };
-          const parentReplyId = replyData.parent_reply_id; // Assuming backend returns parentReplyId
           if (!updatedReplies[parentReplyId]) {
             updatedReplies[parentReplyId] = [];
           }
           updatedReplies[parentReplyId] = [...updatedReplies[parentReplyId], replyData];
+          console.log('Updated replies:', updatedReplies);
           return updatedReplies;
         });
         setReplyTexts(prevReplyTexts => ({
@@ -412,6 +413,8 @@ const Comments = ({ movieUrl }) => {
       setError('Failed to post reply');
     }
   };
+  
+  
   
 
   if (isLoading) {

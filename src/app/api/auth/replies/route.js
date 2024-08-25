@@ -55,21 +55,25 @@ export async function GET(request) {
     const commentId = url.searchParams.get('commentId');
 
     if (!commentId) {
+      console.log('Comment ID is required but not provided.');
       return new Response(
         JSON.stringify({ message: 'Comment ID is required' }),
         { status: 400 }
       );
     }
 
-    // Fetch top-level replies
+    console.log('Fetching replies for comment ID:', commentId);
+
+    // Fetch top-level replies for the given commentId
     const replies = await sql`
       SELECT id, parent_reply_id, username, text, createdat
       FROM replies
       WHERE comment_id = ${commentId}
       ORDER BY createdat ASC
     `;
+    console.log('Top-level replies:', replies.rows);
 
-    // Fetch nested replies
+    // Fetch nested replies for each top-level reply
     const repliesWithChildren = await Promise.all(replies.rows.map(async (reply) => {
       const children = await sql`
         SELECT id, parent_reply_id, username, text, createdat
@@ -77,9 +81,11 @@ export async function GET(request) {
         WHERE parent_reply_id = ${reply.id}
         ORDER BY createdat ASC
       `;
+      console.log('Children for reply ID', reply.id, ':', children.rows);
       return { ...reply, children: children.rows };
     }));
 
+    console.log('Replies with nested children:', repliesWithChildren);
     return new Response(
       JSON.stringify(repliesWithChildren),
       { status: 200 }
