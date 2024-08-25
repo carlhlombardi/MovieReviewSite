@@ -3,8 +3,13 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
   try {
+    // Log the request headers and body
+    console.log('Request headers:', request.headers);
+    const requestBody = await request.json();
+    console.log('Request body:', requestBody);
+
     // Parse the request body
-    const { commentId, text } = await request.json();
+    const { commentId, text } = requestBody;
     
     // Extract and verify the token
     const authHeader = request.headers.get('Authorization');
