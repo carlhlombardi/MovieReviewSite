@@ -1,56 +1,158 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import {Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
+import Comments from '@/app/components/comments/comments';
 
-// Function to fetch data from the API
+// Function to fetch movie data
 const fetchData = async (url) => {
   try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/actionmovies`);
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/data/actionmovies?url=${encodeURIComponent(url)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
-    const data = await response.json();
-    // Filter data to find the row that matches the URL
-    const filteredData = data.filter(item => item.url === url);
-    return filteredData.length > 0 ? filteredData[0] : null;
+    return await response.json();
   } catch (error) {
-    console.error(error);
+    console.error('Fetch data error:', error);
     return null;
+  }
+};
+
+// Function to check if the user is logged in
+const checkUserLoggedIn = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return false;
+    }
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to check login status', error);
+    return false;
+  }
+};
+
+const fetchLikeStatus = async (url) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch like status');
+    }
+
+    const result = await response.json();
+    return {
+      isLiked: result.isliked || false,
+      likeCount: result.likecount || 0,
+    };
+  } catch (error) {
+    console.error('Fetch like status error:', error);
+    return { isLiked: false, likeCount: 0 }; // Default values
+  }
+};
+
+const toggleLike = async (url, action) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes${action === 'unlike' ? `?url=${encodeURIComponent(url)}` : ''}`, {
+      method: action === 'like' ? 'POST' : 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: action === 'like' ? JSON.stringify({ url }) : undefined
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle like');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Toggle like error:', error);
+    return null; // Default error handling
   }
 };
 
 // Page component that fetches and displays data
 const ActionPage = ({ params }) => {
   const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [likedCount, setLikedCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    const fetchDataAsync = async () => {
-      const result = await fetchData(params.url);
-      setData(result);
+    const fetchDataAndStatus = async () => {
+      try {
+        const movieData = await fetchData(params.url);
+        if (movieData) {
+          setData(movieData);
+        }
+
+        const userLoggedIn = await checkUserLoggedIn();
+        setIsLoggedIn(userLoggedIn);
+
+        if (userLoggedIn) {
+          const { isLiked, likeCount } = await fetchLikeStatus(params.url);
+          setIsLiked(isLiked);
+          setLikedCount(likeCount);
+        }
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchDataAsync();
+    fetchDataAndStatus();
   }, [params.url]);
 
-  // Handle the case where data might be null or undefined
+  const handleLike = async () => {
+    const action = isLiked ? 'unlike' : 'like';
+    const result = await toggleLike(params.url, action);
+
+    if (result) {
+      setIsLiked(action === 'like');
+      setLikedCount(result.likeCount || 0); // Ensure correct likeCount
+    }
+  };
+
+  if (isLoading) {
+    return <Spinner animation="border" />;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
   if (!data) {
     return <div>No data found</div>;
   }
-
-  // Destructure necessary fields from the fetched data
-  const { film, year, studio, director, screenwriters, producer, run_time, my_rating, review,  image_url } = data;
+  const { film, year, studio, director, screenwriters, producer, my_rating, review, image_url } = data;
 
   return (
     <Container>
       <Row>
-      <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
-          <div className="imagewrapper">
+        <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
+          <div className="image-wrapper">
             {image_url ? (
               <Image
-                src={image_url} // Use the image URL directly from the database
-                alt={film}      // Alt text for accessibility
+                src={image_url}
+                alt={film}
                 width={300}
                 height={450}
               />
@@ -59,14 +161,13 @@ const ActionPage = ({ params }) => {
             )}
           </div>
         </Col>
-      <Col xs={12} md={6} className="text-center m-auto order-md-1">
+        <Col xs={12} md={6} className="text-center m-auto order-md-1">
           <h1 className='mb-4'>{film}</h1>
           <h5>Director: {director}</h5>
           <h5>Screenwriter(s): {screenwriters}</h5>
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
-          <h6>Run Time: {run_time} Minutes</h6>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
           <h3 className='mb-4'>Review of {film}</h3>
@@ -74,8 +175,27 @@ const ActionPage = ({ params }) => {
           <h3>My Rating: {my_rating} Stars</h3>
         </Col>
       </Row>
+      <Row>
+        <Col xs={12} className="text-center mt-5">
+          {isLoggedIn ? (
+            <>
+             <Button
+                variant={isLiked ? "danger" : "primary"}
+                onClick={handleLike}
+                className="me-2"
+              >
+                {isLiked ? 'Unlike' : 'Like'}
+              </Button>
+              <Comments movieUrl={params.url} />
+            </>
+          ) : (
+            <Alert variant="info">Please log in to like or add to favorites and to view and post comments.</Alert>
+          )}
+        </Col>
+      </Row>
     </Container>
   );
 };
+
 
 export default ActionPage;
