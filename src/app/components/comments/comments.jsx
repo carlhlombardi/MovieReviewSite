@@ -144,6 +144,8 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
       return;
     }
 
+    console.log('Posting reply with:', { parentReplyId, text, commentId });
+
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply`, {
       method: 'POST',
       headers: {
@@ -154,10 +156,12 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
     });
 
     if (!response.ok) {
+      console.error('Failed to post reply, response status:', response.status);
       throw new Error('Failed to post reply');
     }
 
     const replyData = await response.json();
+    console.log('Reply posted successfully:', replyData);
     return replyData;
   } catch (error) {
     console.error('Failed to post reply:', error);
@@ -378,14 +382,20 @@ const Comments = ({ movieUrl }) => {
   const handlePostReplyToReply = async (parentReplyId) => {
     try {
       const replyText = replyTexts[parentReplyId]?.trim();
-      if (!replyText) return; // No text to post
+      console.log('Reply text for parentReplyId', parentReplyId, ':', replyText);
   
-      const replyData = await postReplyToReply(parentReplyId, replyText);
+      if (!replyText) {
+        console.log('No text to post for parentReplyId', parentReplyId);
+        return; // No text to post
+      }
+  
+      const replyData = await postReplyToReply(parentReplyId, replyText, commentId);
       if (replyData) {
+        console.log('Reply data received:', replyData);
         setReplies(prevReplies => {
           // Add the new reply to the correct parent reply's replies
           const updatedReplies = { ...prevReplies };
-          const parentReplyId = replyData.parentReplyId; // Assuming backend returns parentReplyId
+          const parentReplyId = replyData.parent_reply_id; // Assuming backend returns parentReplyId
           if (!updatedReplies[parentReplyId]) {
             updatedReplies[parentReplyId] = [];
           }
