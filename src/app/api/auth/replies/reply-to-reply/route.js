@@ -40,7 +40,7 @@ export async function POST(request) {
     
     const username = userData.rows[0]?.username;
 
-    // Insert the new reply
+    // Insert the new reply with the given parent_reply_id
     const result = await sql`
       INSERT INTO replies (parent_reply_id, comment_id, user_id, username, text)
       VALUES (${replyId}, ${commentId}, ${userId}, ${username}, ${text})
@@ -60,3 +60,46 @@ export async function POST(request) {
   }
 }
 
+export async function GET(request) {
+    try {
+      const url = new URL(request.url);
+      const commentId = url.searchParams.get('commentId');
+  
+      if (!commentId) {
+        return new Response(
+          JSON.stringify({ message: 'Comment ID is required' }),
+          { status: 400 }
+        );
+      }
+  
+      // Fetch top-level replies for the given commentId
+      const replies = await sql`
+        SELECT id, parent_reply_id, username, text, createdat
+        FROM replies
+        WHERE comment_id = ${commentId}
+        ORDER BY createdat ASC
+      `;
+  
+      // Fetch nested replies for each top-level reply
+      const repliesWithChildren = await Promise.all(replies.rows.map(async (reply) => {
+        const children = await sql`
+          SELECT id, parent_reply_id, username, text, createdat
+          FROM replies
+          WHERE parent_reply_id = ${reply.id}
+          ORDER BY createdat ASC
+        `;
+        return { ...reply, children: children.rows };
+      }));
+  
+      return new Response(
+        JSON.stringify(repliesWithChildren),
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error('Fetch replies error:', error);
+      return new Response(
+        JSON.stringify({ message: 'Failed to fetch replies' }),
+        { status: 500 }
+      );
+    }
+  }
