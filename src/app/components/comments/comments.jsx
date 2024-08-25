@@ -42,9 +42,6 @@ const postReply = async (commentId, text, token) => {
   }
 };
 
-const replyData = await response.json();
-console.log('Reply Data:', replyData);
-
 const fetchReplies = async (commentId, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies?commentId=${encodeURIComponent(commentId)}`, {
@@ -242,6 +239,8 @@ const Comments = ({ movieUrl }) => {
             ...prevReplyTexts,
             [commentId]: ''
           }));
+          const replyData = await response.json();
+console.log('Reply Data:', replyData);
         } else {
           console.error('Failed to submit reply:', replyData.message);
         }
