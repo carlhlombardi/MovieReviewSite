@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
@@ -43,6 +45,7 @@ const postReply = async (commentId, text, token) => {
 const fetchReplies = async (commentId, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies?commentId=${encodeURIComponent(commentId)}`, {
+      method: 'GET', // Explicitly specify the GET method
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to fetch replies');
@@ -227,10 +230,14 @@ const Comments = ({ movieUrl }) => {
         const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
           // Update the replies state
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), response]
-          }));
+          setReplies(prevReplies => {
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), response]
+            };
+            console.log('Updated replies state:', updatedReplies); // Debug log
+            return updatedReplies;
+          });
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
             [commentId]: '' // Clear the reply input for this comment
