@@ -136,7 +136,7 @@ const likeReply = async (replyId) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text) => {
+const postReplyToReply = async (parentReplyId, text, commentId) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -150,7 +150,7 @@ const postReplyToReply = async (parentReplyId, text) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text })
+      body: JSON.stringify({ replyId: parentReplyId, text, commentId })
     });
 
     if (!response.ok) {
