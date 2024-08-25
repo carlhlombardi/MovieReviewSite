@@ -116,7 +116,7 @@ const likeReply = async (replyId) => {
       console.error('No token found');
       return;
     }
-    
+
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
       method: 'POST',
       headers: {
@@ -125,18 +125,14 @@ const likeReply = async (replyId) => {
       },
       body: JSON.stringify({ replyId })
     });
-    
+
     if (!response.ok) throw new Error('Failed to like reply');
-    
+
     const data = await response.json();
-    
-    // Update the state with the new liked status
-    setLikedReplies(prev => ({
-      ...prev,
-      [replyId]: data.likedByUser
-    }));
+    return data; // Return the data to handle in the calling function
   } catch (error) {
     console.error('Error liking reply:', error);
+    return null; // Return null to indicate failure
   }
 };
 
@@ -322,21 +318,14 @@ const Comments = ({ movieUrl }) => {
 
   const handleLikeReply = async (replyId) => {
     try {
-      // Get the token from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      
       // Call the likeReply function to update the server
-      const response = await likeReply(replyId);
+      const data = await likeReply(replyId);
       
-      // Update the local state based on the server response
-      if (response) {
+      // Check if data is returned and update the local state
+      if (data) {
         setLikedReplies(prev => ({
           ...prev,
-          [replyId]: response.likedByUser // Assuming `likedByUser` contains the like status
+          [replyId]: data.likedByUser // Update state with the new liked status
         }));
       } else {
         console.error('Failed to get like status from server');

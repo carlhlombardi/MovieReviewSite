@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
   try {
-    const { replyId, text } = await request.json();
+    const { replyId, text, commentId } = await request.json();
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     
@@ -17,9 +17,9 @@ export async function POST(request) {
       );
     }
 
-    if (!replyId || !text) {
+    if (!replyId || !text || !commentId) {
       return new Response(
-        JSON.stringify({ message: 'Reply ID and text are required' }),
+        JSON.stringify({ message: 'Reply ID, comment ID, and text are required' }),
         { status: 400 }
       );
     }
@@ -42,9 +42,9 @@ export async function POST(request) {
 
     // Insert the new reply
     const result = await sql`
-      INSERT INTO replies (parent_reply_id, user_id, username, text)
-      VALUES (${replyId}, ${userId}, ${username}, ${text})
-      RETURNING id, parent_reply_id, user_id, username, text, createdat
+      INSERT INTO replies (parent_reply_id, comment_id, user_id, username, text)
+      VALUES (${replyId}, ${commentId}, ${userId}, ${username}, ${text})
+      RETURNING id, parent_reply_id, comment_id, user_id, username, text, createdat
     `;
 
     return new Response(
