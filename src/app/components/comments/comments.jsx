@@ -23,23 +23,14 @@ const fetchComments = async (movieUrl, token) => {
 };
 
 const postReply = async (commentId, text, token) => {
-  try {
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ commentId, text }) // Ensure "text" is sent
-    });
-    if (!response.ok) {
-      throw new Error('Failed to submit reply');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error posting reply:', error);
-    return null;
-  }
+  return fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ commentId, text })
+  });
 };
 
 const fetchReplies = async (commentId, token) => {
@@ -229,19 +220,26 @@ const Comments = ({ movieUrl }) => {
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(commentId, replyText, token);
+        console.log('Response:', response); // Log raw response
+        const replyData = await response.json();
+        console.log('Reply Data:', replyData); // Log parsed reply data
   
         if (response.ok) {
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), replyData]
-          }));
+          setReplies(prevReplies => {
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), replyData]
+            };
+            console.log('Updated replies state:', updatedReplies);
+            return updatedReplies;
+          });
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
             [commentId]: ''
           }));
-
         } else {
-          console.error('Failed to submit reply:', replyData.message);
+          const errorData = await response.json();
+          console.error('Failed to submit reply:', errorData.message);
         }
       }
     } catch (err) {
