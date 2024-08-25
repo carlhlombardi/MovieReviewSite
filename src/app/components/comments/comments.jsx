@@ -229,17 +229,20 @@ const Comments = ({ movieUrl }) => {
       if (!replyTexts[commentId]?.trim()) return;
   
       const token = localStorage.getItem('token');
-      if (token) {
+      if (token && user) {
         const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), response]
-          }));
+          setReplies(prevReplies => {
+            // Initialize replies[commentId] if it doesn't exist
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), response]
+            };
+            return updatedReplies;
+          });
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
-            [commentId]: '' 
-             // Clear the reply input for this comment
+            [commentId]: ''
           }));
         }
       }
@@ -373,12 +376,16 @@ const Comments = ({ movieUrl }) => {
           </Form>
 
           <div className="mt-3">
-            {replies[comment.id]?.map(reply => (
-              <div key={reply.id} className="border p-2 mb-2">
-                <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-              </div>
-                ))}
-              </div>
+  {Array.isArray(replies[comment.id]) ? (
+    replies[comment.id].map(reply => (
+      <div key={reply.id} className="border p-2 mb-2">
+        <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
+      </div>
+    ))
+  ) : (
+    <p>No replies yet.</p>
+  )}
+</div>
             </>
           )}
         </ListGroup.Item>
