@@ -146,13 +146,13 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
 
     console.log('Posting reply with:', { parentReplyId, text, commentId });
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply`, {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text, commentId }) // Ensure commentId is included
+      body: JSON.stringify({ replyId: parentReplyId, text, commentId })
     });
 
     if (!response.ok) {
