@@ -392,6 +392,24 @@ const Comments = ({ movieUrl }) => {
     }
   };
   
+  const handlePostReplyToReply = async (parentReplyId) => {
+    try {
+      const replyText = replyTexts[parentReplyId]?.trim();
+      if (!replyText) return; // No text to post
+  
+      await postReplyToReply(parentReplyId, replyText);
+  
+      // Clear the reply text after submission
+      setReplyTexts(prevReplyTexts => ({
+        ...prevReplyTexts,
+        [parentReplyId]: ''
+      }));
+    } catch (error) {
+      console.error('Failed to post reply:', error);
+      setError('Failed to post reply');
+    }
+  };
+  
 
   if (isLoading) {
     return <Spinner animation="border" />;
