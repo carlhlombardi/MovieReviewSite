@@ -380,7 +380,7 @@ const handleReplyAction = async (commentId) => {
               <div className="mt-3">
                 {replies[comment.id]?.map(reply => (
                   <div key={reply.id} className="border p-2 mb-2">
-                    <strong>{user.username}</strong>: {text} - {formatDate(reply.createdat)}
+                    <strong>{user.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
                   </div>
                 ))}
               </div>
