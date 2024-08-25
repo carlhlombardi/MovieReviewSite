@@ -8,7 +8,10 @@ export async function POST(request) {
   
       const authHeader = request.headers.get('Authorization');
       const token = authHeader?.split(' ')[1];
+      console.log('Authorization token:', token);
+  
       const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
+      console.log('User ID:', userId);
   
       if (!userId) {
         console.log('Unauthorized user');
@@ -31,6 +34,8 @@ export async function POST(request) {
         FROM users
         WHERE id = ${userId}
       `;
+      console.log('User data:', userData);
+  
       if (userData.rowCount === 0) {
         console.log('User not found:', userId);
         return new Response(
@@ -47,18 +52,17 @@ export async function POST(request) {
         VALUES (${replyId}, ${commentId}, ${userId}, ${username}, ${text})
         RETURNING id, parent_reply_id, comment_id, user_id, username, text, createdat
       `;
-  
       console.log('Reply inserted:', result.rows[0]);
+  
       return new Response(
         JSON.stringify(result.rows[0]),
         { status: 201 }
       );
     } catch (error) {
-      console.error('Reply error:', error);
+      console.error('Reply error:', error.message);
       return new Response(
         JSON.stringify({ message: 'Failed to add reply' }),
         { status: 500 }
       );
     }
   }
-  
