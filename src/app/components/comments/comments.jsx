@@ -350,6 +350,68 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
+  const handleLikeReply = async (replyId) => {
+    try {
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+      
+      // Call the likeReply function to update the server
+      const response = await likeReply(replyId);
+      
+      // Update the local state based on the server response
+      if (response) {
+        setLikedReplies(prev => ({
+          ...prev,
+          [replyId]: response.likedByUser // Assuming `likedByUser` contains the like status
+        }));
+      } else {
+        console.error('Failed to get like status from server');
+      }
+    } catch (error) {
+      setError('Failed to like/unlike reply');
+      console.error('Error liking reply:', error);
+    }
+  };
+
+  const handlePostReplyToReply = async (parentReplyId) => {
+    try {
+      // Get the reply text from the state
+      const replyText = replyTexts[parentReplyId]?.trim();
+      if (!replyText) return; // No text to post
+  
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+  
+      // Call the postReplyToReply function to post the reply
+      const response = await postReplyToReply(parentReplyId, replyText);
+      
+      // Update the local state with the new reply
+      if (response) {
+        setReplies(prevReplies => ({
+          ...prevReplies,
+          [parentReplyId]: [...(prevReplies[parentReplyId] || []), response]
+        }));
+        setReplyTexts(prevReplyTexts => ({
+          ...prevReplyTexts,
+          [parentReplyId]: '' // Clear the reply text after submission
+        }));
+      } else {
+        console.error('Failed to post reply');
+      }
+    } catch (error) {
+      setError('Failed to post reply');
+      console.error('Error posting reply to reply:', error);
+    }
+  };
+
   if (isLoading) {
     return <Spinner animation="border" />;
   }
@@ -372,101 +434,101 @@ const Comments = ({ movieUrl }) => {
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
         </Form>
       )}
-<ListGroup>
-  {comments.map(comment => (
-    <ListGroup.Item key={comment.id}>
-      <Link href={`/profile/${comment.username}`} passHref>
-        <a>
-          <strong>{comment.username}</strong>
-        </a>
-      </Link> - {formatDate(comment.createdat)}
-      <p>{comment.text}</p>
-      {user && user.username === comment.username && (
-        <>
-          {deleteCountdown[comment.id] > 0 && (
-            <>
+      <ListGroup>
+        {comments.map(comment => (
+          <ListGroup.Item key={comment.id}>
+            <Link href={`/profile/${comment.username}`} passHref>
+              <a>
+                <strong>{comment.username}</strong>
+              </a>
+            </Link> - {formatDate(comment.createdat)}
+            <p>{comment.text}</p>
+            {user && user.username === comment.username && (
+              <>
+                {deleteCountdown[comment.id] > 0 && (
+                  <>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="float-end"
+                    >
+                      Delete
+                    </Button>
+                    <small className="text-muted float-end me-2">
+                      Delete available for {deleteCountdown[comment.id]}s
+                    </small>
+                  </>
+                )}
+              </>
+            )}
+            {user && (
               <Button
-                variant="danger"
-                onClick={() => handleDeleteComment(comment.id)}
-                className="float-end"
+                variant={comment.likedByUser ? "outline-success" : "success"}
+                onClick={() => handleLikeComment(comment.id)}
+                className="float-end ms-2"
               >
-                Delete
+                {comment.likedByUser ? "Unlike" : "Like"}
               </Button>
-              <small className="text-muted float-end me-2">
-                Delete available for {deleteCountdown[comment.id]}s
-              </small>
-            </>
-          )}
-        </>
-      )}
-      {user && (
-        <Button
-          variant={comment.likedByUser ? "outline-success" : "success"}
-          onClick={() => handleLikeComment(comment.id)}
-          className="float-end ms-2"
-        >
-          {comment.likedByUser ? "Unlike" : "Like"}
-        </Button>
-      )}
-      {user && (
-        <Form onSubmit={(e) => { 
-          e.preventDefault(); 
-          handleReplyAction(comment.id); 
-        }} className="mb-4">
-          <Form.Group>
-            <Form.Control
-              as="textarea"
-              rows={2}
-              value={replyTexts[comment.id] || ''}
-              onChange={(e) => handleReplyChange(comment.id, e.target.value)}
-              placeholder={`Reply to ${comment.username}`}
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-        </Form>
-      )}
-      <div className="mt-3">
-        {replies[comment.id]?.length ? (
-          replies[comment.id].map(reply => (
-            <div key={reply.id} className="border p-2 mb-2">
-              <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-              {user && (
-                <Button
-                  variant={likedReplies[reply.id] ? "outline-success" : "success"}
-                  onClick={() => likeReply(reply.id)}
-                  className="float-end ms-2"
-                >
-                  {likedReplies[reply.id] ? "Unlike" : "Like"}
-                </Button>
-              )}
-              {user && (
-                <Form onSubmit={(e) => { 
-                  e.preventDefault(); 
-                  postReplyToReply(reply.id, replyTexts[reply.id]); 
-                }} className="mb-4">
-                  <Form.Group>
-                    <Form.Control
-                      as="textarea"
-                      rows={2}
-                      value={replyTexts[reply.id] || ''}
-                      onChange={(e) => handleReplyChange(reply.id, e.target.value)}
-                      placeholder={`Reply to ${reply.username}`}
-                    />
-                  </Form.Group>
-                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                </Form>
+            )}
+            {user && (
+              <Form onSubmit={(e) => { 
+                e.preventDefault(); 
+                handleReplyAction(comment.id); 
+              }} className="mb-4">
+                <Form.Group>
+                  <Form.Control
+                    as="textarea"
+                    rows={2}
+                    value={replyTexts[comment.id] || ''}
+                    onChange={(e) => handleReplyChange(comment.id, e.target.value)}
+                    placeholder={`Reply to ${comment.username}`}
+                  />
+                </Form.Group>
+                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+              </Form>
+            )}
+            <div className="mt-3">
+              {replies[comment.id]?.length ? (
+                replies[comment.id].map(reply => (
+                  <div key={reply.id} className="border p-2 mb-2">
+                    <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
+                    {user && (
+                      <Button
+                        variant={likedReplies[reply.id] ? "outline-success" : "success"}
+                        onClick={() => handleLikeReply(reply.id)}
+                        className="float-end ms-2"
+                      >
+                        {likedReplies[reply.id] ? "Unlike" : "Like"}
+                      </Button>
+                    )}
+                    {user && (
+                      <Form onSubmit={(e) => { 
+                        e.preventDefault(); 
+                        handlePostReplyToReply(reply.id); 
+                      }} className="mb-4">
+                        <Form.Group>
+                          <Form.Control
+                            as="textarea"
+                            rows={2}
+                            value={replyTexts[reply.id] || ''}
+                            onChange={(e) => handleReplyChange(reply.id, e.target.value)}
+                            placeholder={`Reply to ${reply.username}`}
+                          />
+                        </Form.Group>
+                        <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+                      </Form>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div>No replies yet.</div>
               )}
             </div>
-          ))
-        ) : (
-          <div>No replies yet.</div>
-        )}
-      </div>
-    </ListGroup.Item>
-  ))}
-</ListGroup>
-  </>
-);
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+    </>
+  );
 };
 
 export default Comments;
