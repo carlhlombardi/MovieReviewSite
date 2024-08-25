@@ -45,8 +45,10 @@ const postReply = async (commentId, text, token) => {
 const fetchReplies = async (commentId, token) => {
   try {
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies?commentId=${encodeURIComponent(commentId)}`, {
-      method: 'GET', // Explicitly specify the GET method
-      headers: { 'Authorization': `Bearer ${token}` }
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     if (!response.ok) throw new Error('Failed to fetch replies');
     return await response.json();
@@ -226,7 +228,7 @@ const Comments = ({ movieUrl }) => {
       if (!replyTexts[commentId]?.trim()) return;
   
       const token = localStorage.getItem('token');
-      if (token && user) {
+      if (token) {
         const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
           setReplies(prevReplies => ({
@@ -353,22 +355,22 @@ const Comments = ({ movieUrl }) => {
           {user && (
             <>
               <Form onSubmit={(e) => { 
-                e.preventDefault(); 
-                handleReplyAction(comment.id); 
-              }} className="mb-4">
-                <Form.Group>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={replyTexts[comment.id] || ''}
-                    onChange={(e) => handleReplyChange(comment.id, e.target.value)}
-                    placeholder={`Reply to ${comment.username}`}
-                  />
-                </Form.Group>
-                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-              </Form>
+            e.preventDefault(); 
+            handleReplyAction(comment.id); 
+          }} className="mb-4">
+            <Form.Group>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={replyTexts[comment.id] || ''}
+                onChange={(e) => handleReplyChange(comment.id, e.target.value)}
+                placeholder={`Reply to ${comment.username}`}
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+          </Form>
 
-              <div className="mt-3">
+          <div className="mt-3">
             {replies[comment.id]?.map(reply => (
               <div key={reply.id} className="border p-2 mb-2">
                 <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
