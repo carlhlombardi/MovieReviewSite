@@ -208,33 +208,43 @@ const Comments = ({ movieUrl }) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
   };
-
-  const handleReplyAction = async (commentId) => {
-    try {
-      if (!replyTexts[commentId]?.trim()) return;
   
-      const token = localStorage.getItem('token');
-      if (token && user) {
-        const response = await postReply(commentId, replyTexts[commentId], token);
-        if (response) {
-          // Assuming response contains the newly created reply data
-          setReplies(prevReplies => ({
+  const handleReplyChange = (commentId, value) => {
+    setReplyTexts(prevReplyTexts => {
+      const newReplyTexts = {
+        ...prevReplyTexts,
+        [commentId]: value
+      };
+      return newReplyTexts;
+    });
+  };
+  
+const handleReplyAction = async (commentId) => {
+  try {
+    if (!replyTexts[commentId]?.trim()) return;
+
+    const token = localStorage.getItem('token');
+    if (token && user) {
+      const response = await postReply(commentId, replyTexts[commentId], token);
+      if (response) {
+        setReplies(prevReplies => {
+          const updatedReplies = {
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
-          }));
-          
-          // Clear the reply input
-          setReplyTexts(prevReplyTexts => ({
-            ...prevReplyTexts,
-            [commentId]: ''
-          }));
-        }
+          };
+          return updatedReplies;
+        });
+        setReplyTexts(prevReplyTexts => ({
+          ...prevReplyTexts,
+          [commentId]: '' 
+        }));
       }
-    } catch (err) {
-      setError('Failed to submit reply');
-      console.error('Error:', err);
     }
-  };
+  } catch (err) {
+    setError('Failed to submit reply');
+    console.error('Error:', err);
+  }
+};
 
   const handleDeleteComment = async (commentId) => {
     try {
