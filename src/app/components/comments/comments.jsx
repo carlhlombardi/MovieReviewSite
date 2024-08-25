@@ -241,12 +241,6 @@ const Comments = ({ movieUrl }) => {
             [commentId]: '' 
              // Clear the reply input for this comment
           }));
-          console.log('Reply CreatedAt:', comment.id.username);
-          console.log('Reply CreatedAt:', comment.id.text);
-          console.log('Reply CreatedAt:', comment.id.createdat);
-          console.log('Reply CreatedAt:', replies.username);
-          console.log('Reply CreatedAt:', replies.id.text);
-          console.log('Reply CreatedAt:', replies.id.createdat);
         }
       }
     } catch (err) {
