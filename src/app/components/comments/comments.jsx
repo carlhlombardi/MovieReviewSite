@@ -109,7 +109,7 @@ const likeComment = async (id, token) => {
   }
 };
 
-const likeReply = async (replyId, token) => {
+const likedReply = async (replyId, token) => {
   try {
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
       method: 'POST',
@@ -127,7 +127,7 @@ const likeReply = async (replyId, token) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text, token) => {
+const postsReplyToReply = async (parentReplyId, text, token) => {
   try {
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
@@ -249,7 +249,7 @@ const Comments = ({ movieUrl }) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
   };
-  
+
   const handleReplyChange = (commentId, replyId, value) => {
     setReplyTexts(prevReplyTexts => ({
       ...prevReplyTexts,
@@ -342,7 +342,7 @@ const Comments = ({ movieUrl }) => {
         return;
       }
 
-      const response = await likeReply(replyId, token);
+      const response = await likedReply(replyId, token);
 
       if (response) {
         setLikedReplies(prevLikedReplies => ({
@@ -363,7 +363,7 @@ const Comments = ({ movieUrl }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
   
-      const response = await postReplyToReply(parentReplyId, text, token);
+      const response = await postsReplyToReply(parentReplyId, text, token);
       if (response) {
         setReplies(prevReplies => ({
           ...prevReplies,
