@@ -109,9 +109,10 @@ const likeComment = async (id, token) => {
   }
 };
 
-const likedReply = async (replyId, token) => {
+const likeReply = async (replyId) => {
   try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
+    const token = localStorage.getItem('token');
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-replies', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -120,28 +121,36 @@ const likedReply = async (replyId, token) => {
       body: JSON.stringify({ replyId })
     });
     if (!response.ok) throw new Error('Failed to like reply');
-    return await response.json();
+    const data = await response.json();
+    setLikedReplies(prev => ({
+      ...prev,
+      [replyId]: data.likedByUser
+    }));
   } catch (error) {
     console.error('Error liking reply:', error);
-    return null;
   }
 };
 
-const postsReplyToReply = async (parentReplyId, text, token) => {
+const postReplyToReply = async (parentReplyId, text) => {
   try {
+    const token = localStorage.getItem('token');
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ parentReplyId, text })
+      body: JSON.stringify({ replyId: parentReplyId, text })
     });
     if (!response.ok) throw new Error('Failed to post reply');
-    return await response.json();
+    const replyData = await response.json();
+    // Update state with new reply
+    setReplies(prevReplies => ({
+      ...prevReplies,
+      [parentReplyId]: [...(prevReplies[parentReplyId] || []), replyData]
+    }));
   } catch (error) {
     console.error('Error posting reply to reply:', error);
-    return null;
   }
 };
 
@@ -168,29 +177,21 @@ const Comments = ({ movieUrl }) => {
             const userData = await userResponse.json();
             setUser(userData);
           }
-          // Fetch comments
-          const commentsData = await fetchComments(movieUrl, token);
-          setComments(commentsData.map(comment => ({
-            ...comment,
-            likedByUser: comment.likedByUser || false
-          })));
-          
+  // Fetch comments
+  const commentsData = await fetchComments(movieUrl, token);
+  setComments(commentsData.map(comment => ({
+    ...comment,
+    likedByUser: comment.likedByUser || false
+  })));
+  
           // Fetch replies for each comment
           const repliesData = {};
           for (const comment of commentsData) {
             const commentReplies = await fetchReplies(comment.id, token);
             repliesData[comment.id] = commentReplies;
-            // Fetch replies for each reply
-            const replyReplies = {};
-            for (const reply of commentReplies) {
-              const replyRepliesData = await fetchReplies(reply.id, token);
-              replyReplies[reply.id] = replyRepliesData;
-            }
-            setReplies(prevReplies => ({
-              ...prevReplies,
-              ...replyReplies
-            }));
           }
+          console.log('Fetched Replies Data:', repliesData); // Log to check structure
+          setReplies(repliesData);
         }
       } catch (err) {
         setError('Failed to load data');
@@ -249,11 +250,11 @@ const Comments = ({ movieUrl }) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
   };
-
-  const handleReplyChange = (commentId, replyId, value) => {
+  
+  const handleReplyChange = (commentId, value) => {
     setReplyTexts(prevReplyTexts => ({
       ...prevReplyTexts,
-      [`${commentId}-${replyId}`]: value
+      [commentId]: value
     }));
   };
   
@@ -265,13 +266,19 @@ const Comments = ({ movieUrl }) => {
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(commentId, replyText, token);
+        console.log('Response:', response); // Log raw response
         const replyData = await response.json();
+        console.log('Reply Data:', replyData); // Log parsed reply data
   
         if (response.ok) {
-          setReplies(prevReplies => ({
-            ...prevReplies,
-            [commentId]: [...(prevReplies[commentId] || []), replyData]
-          }));
+          setReplies(prevReplies => {
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), replyData]
+            };
+            console.log('Updated replies state:', updatedReplies);
+            return updatedReplies;
+          });
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
             [commentId]: ''
@@ -286,6 +293,10 @@ const Comments = ({ movieUrl }) => {
       console.error('Error:', err);
     }
   };
+
+  useEffect(() => {
+    console.log('Rendering replies:', replies);
+  }, [replies]);
 
   const handleDeleteComment = async (commentId) => {
     try {
@@ -334,52 +345,6 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const likeReply = async (replyId) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-
-      const response = await likedReply(replyId, token);
-
-      if (response) {
-        setLikedReplies(prevLikedReplies => ({
-          ...prevLikedReplies,
-          [replyId]: response.likedByUser
-        }));
-      } else {
-        console.error('Failed to get like status from server');
-      }
-    } catch (err) {
-      setError('Failed to like/unlike reply');
-      console.error('Error:', err);
-    }
-  };
-  
-  const postReplyToReply = async (parentReplyId, text) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-  
-      const response = await postsReplyToReply(parentReplyId, text, token);
-      if (response) {
-        setReplies(prevReplies => ({
-          ...prevReplies,
-          [parentReplyId]: [...(prevReplies[parentReplyId] || []), response]
-        }));
-        setReplyTexts(prevReplyTexts => ({
-          ...prevReplyTexts,
-          [`${parentReplyId}-reply`]: ''
-        }));
-      }
-    } catch (error) {
-      setError('Failed to post reply to reply');
-      console.error('Error:', error);
-    }
-  };
-
   if (isLoading) {
     return <Spinner animation="border" />;
   }
@@ -402,121 +367,101 @@ const Comments = ({ movieUrl }) => {
           <Button variant="primary" type="submit" className="mt-2">Submit</Button>
         </Form>
       )}
-      <ListGroup>
-        {comments.map(comment => (
-          <ListGroup.Item key={comment.id}>
-            <Link href={`/profile/${comment.username}`} passHref>
-              <a>
-                <strong>{comment.username}</strong>
-              </a>
-            </Link> - {formatDate(comment.createdat)}
-            <p>{comment.text}</p>
-            {user && user.username === comment.username && (
-              <>
-                {deleteCountdown[comment.id] > 0 && (
-                  <>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="float-end"
-                    >
-                      Delete
-                    </Button>
-                    <small className="text-muted float-end me-2">
-                      Delete available for {deleteCountdown[comment.id]}s
-                    </small>
-                  </>
-                )}
-              </>
-            )}
-            {user && (
+<ListGroup>
+  {comments.map(comment => (
+    <ListGroup.Item key={comment.id}>
+      <Link href={`/profile/${comment.username}`} passHref>
+        <a>
+          <strong>{comment.username}</strong>
+        </a>
+      </Link> - {formatDate(comment.createdat)}
+      <p>{comment.text}</p>
+      {user && user.username === comment.username && (
+        <>
+          {deleteCountdown[comment.id] > 0 && (
+            <>
               <Button
-                variant={comment.likedByUser ? "outline-success" : "success"}
-                onClick={() => handleLikeComment(comment.id)}
-                className="float-end ms-2"
+                variant="danger"
+                onClick={() => handleDeleteComment(comment.id)}
+                className="float-end"
               >
-                {comment.likedByUser ? "Unlike" : "Like"}
+                Delete
               </Button>
-            )}
-            {user && (
-              <Form onSubmit={(e) => { 
-                e.preventDefault(); 
-                handleReplyAction(comment.id); 
-              }} className="mb-4">
-                <Form.Group>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={replyTexts[comment.id] || ''}
-                    onChange={(e) => handleReplyChange(comment.id, '', e.target.value)}
-                    placeholder={`Reply to ${comment.username}`}
-                  />
-                </Form.Group>
-                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-              </Form>
-            )}
-            <div className="mt-3">
-              {replies[comment.id]?.length ? (
-                replies[comment.id].map(reply => (
-                  <div key={reply.id} className="border p-2 mb-2">
-                    <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-                    {user && (
-                      <Button
-                        variant={likedReplies[reply.id] ? "outline-success" : "success"}
-                        onClick={() => likeReply(reply.id)}
-                        className="float-end ms-2"
-                      >
-                        {likedReplies[reply.id] ? "Unlike" : "Like"}
-                      </Button>
-                    )}
-                    {user && (
-                      <Form onSubmit={(e) => { 
-                        e.preventDefault(); 
-                        postReplyToReply(reply.id, replyTexts[`${reply.id}-reply`]); 
-                      }} className="mb-4">
-                        <Form.Group>
-                          <Form.Control
-                            as="textarea"
-                            rows={2}
-                            value={replyTexts[`${reply.id}-reply`] || ''}
-                            onChange={(e) => handleReplyChange(comment.id, reply.id, e.target.value)}
-                            placeholder={`Reply to ${reply.username}`}
-                          />
-                        </Form.Group>
-                        <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                      </Form>
-                    )}
-                    <div className="mt-3">
-                      {replies[reply.id]?.length ? (
-                        replies[reply.id].map(nestedReply => (
-                          <div key={nestedReply.id} className="border p-2 mb-2 ms-4">
-                            <strong>{nestedReply.username}</strong>: {nestedReply.text} - {formatDate(nestedReply.createdat)}
-                            {user && (
-                              <Button
-                                variant={likedReplies[nestedReply.id] ? "outline-success" : "success"}
-                                onClick={() => likeReply(nestedReply.id)}
-                                className="float-end ms-2"
-                              >
-                                {likedReplies[nestedReply.id] ? "Unlike" : "Like"}
-                              </Button>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div>No replies</div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div>No replies yet.</div>
+              <small className="text-muted float-end me-2">
+                Delete available for {deleteCountdown[comment.id]}s
+              </small>
+            </>
+          )}
+        </>
+      )}
+      {user && (
+        <Button
+          variant={comment.likedByUser ? "outline-success" : "success"}
+          onClick={() => handleLikeComment(comment.id)}
+          className="float-end ms-2"
+        >
+          {comment.likedByUser ? "Unlike" : "Like"}
+        </Button>
+      )}
+      {user && (
+        <Form onSubmit={(e) => { 
+          e.preventDefault(); 
+          handleReplyAction(comment.id); 
+        }} className="mb-4">
+          <Form.Group>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              value={replyTexts[comment.id] || ''}
+              onChange={(e) => handleReplyChange(comment.id, e.target.value)}
+              placeholder={`Reply to ${comment.username}`}
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+        </Form>
+      )}
+      <div className="mt-3">
+        {replies[comment.id]?.length ? (
+          replies[comment.id].map(reply => (
+            <div key={reply.id} className="border p-2 mb-2">
+              <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
+              {user && (
+                <Button
+                  variant={likedReplies[reply.id] ? "outline-success" : "success"}
+                  onClick={() => likeReply(reply.id)}
+                  className="float-end ms-2"
+                >
+                  {likedReplies[reply.id] ? "Unlike" : "Like"}
+                </Button>
+              )}
+              {user && (
+                <Form onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  postReplyToReply(reply.id, replyTexts[reply.id]); 
+                }} className="mb-4">
+                  <Form.Group>
+                    <Form.Control
+                      as="textarea"
+                      rows={2}
+                      value={replyTexts[reply.id] || ''}
+                      onChange={(e) => handleReplyChange(reply.id, e.target.value)}
+                      placeholder={`Reply to ${reply.username}`}
+                    />
+                  </Form.Group>
+                  <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+                </Form>
               )}
             </div>
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
-    </>
-  );
+          ))
+        ) : (
+          <div>No replies yet.</div>
+        )}
+      </div>
+    </ListGroup.Item>
+  ))}
+</ListGroup>
+  </>
+);
 };
 
 export default Comments;
