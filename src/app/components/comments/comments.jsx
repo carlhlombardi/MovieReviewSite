@@ -143,6 +143,11 @@ const likeReply = async (replyId) => {
 const postReplyToReply = async (parentReplyId, text) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
       headers: {
@@ -151,8 +156,14 @@ const postReplyToReply = async (parentReplyId, text) => {
       },
       body: JSON.stringify({ replyId: parentReplyId, text })
     });
-    if (!response.ok) throw new Error('Failed to post reply');
+
+    if (!response.ok) {
+      throw new Error('Failed to post reply');
+    }
+
     const replyData = await response.json();
+    console.log('Reply posted successfully:', replyData);
+
     // Update state with new reply
     setReplies(prevReplies => ({
       ...prevReplies,
@@ -379,36 +390,19 @@ const Comments = ({ movieUrl }) => {
 
   const handlePostReplyToReply = async (parentReplyId) => {
     try {
-      // Get the reply text from the state
       const replyText = replyTexts[parentReplyId]?.trim();
       if (!replyText) return; // No text to post
   
-      // Get the token from localStorage
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
+      await postReplyToReply(parentReplyId, replyText);
   
-      // Call the postReplyToReply function to post the reply
-      const response = await postReplyToReply(parentReplyId, replyText);
-      
-      // Update the local state with the new reply
-      if (response) {
-        setReplies(prevReplies => ({
-          ...prevReplies,
-          [parentReplyId]: [...(prevReplies[parentReplyId] || []), response]
-        }));
-        setReplyTexts(prevReplyTexts => ({
-          ...prevReplyTexts,
-          [parentReplyId]: '' // Clear the reply text after submission
-        }));
-      } else {
-        console.error('Failed to post reply');
-      }
+      // Clear the reply text after submission
+      setReplyTexts(prevReplyTexts => ({
+        ...prevReplyTexts,
+        [parentReplyId]: ''
+      }));
     } catch (error) {
+      console.error('Failed to post reply:', error);
       setError('Failed to post reply');
-      console.error('Error posting reply to reply:', error);
     }
   };
 

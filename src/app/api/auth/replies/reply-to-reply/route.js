@@ -6,6 +6,8 @@ export async function POST(request) {
     const { replyId, text } = await request.json();
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
+    
+    // Verify the token and extract userId
     const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
 
     if (!userId) {
@@ -28,6 +30,14 @@ export async function POST(request) {
       FROM users
       WHERE id = ${userId}
     `;
+    
+    if (userData.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
+    }
+    
     const username = userData.rows[0]?.username;
 
     // Insert the new reply
