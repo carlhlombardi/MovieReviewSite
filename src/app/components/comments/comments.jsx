@@ -109,50 +109,6 @@ const likeComment = async (id, token) => {
   }
 };
 
-const likeReply = async (replyId) => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ replyId })
-    });
-    if (!response.ok) throw new Error('Failed to like reply');
-    const data = await response.json();
-    setLikedReplies(prev => ({
-      ...prev,
-      [replyId]: data.likedByUser
-    }));
-  } catch (error) {
-    console.error('Error liking reply:', error);
-  }
-};
-
-const postReplyToReply = async (parentReplyId, text) => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ replyId: parentReplyId, text })
-    });
-    if (!response.ok) throw new Error('Failed to post reply');
-    const replyData = await response.json();
-    // Update state with new reply
-    setReplies(prevReplies => ({
-      ...prevReplies,
-      [parentReplyId]: [...(prevReplies[parentReplyId] || []), replyData]
-    }));
-  } catch (error) {
-    console.error('Error posting reply to reply:', error);
-  }
-};
 
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
@@ -342,6 +298,51 @@ const Comments = ({ movieUrl }) => {
     } catch (err) {
       setError('Failed to like/unlike comment');
       console.error('Error:', err);
+    }
+  };
+
+  const likeReply = async (replyId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ replyId })
+      });
+      if (!response.ok) throw new Error('Failed to like reply');
+      const data = await response.json();
+      setLikedReplies(prev => ({
+        ...prev,
+        [replyId]: data.likedByUser
+      }));
+    } catch (error) {
+      console.error('Error liking reply:', error);
+    }
+  };
+  
+  const postReplyToReply = async (parentReplyId, text) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ replyId: parentReplyId, text })
+      });
+      if (!response.ok) throw new Error('Failed to post reply');
+      const replyData = await response.json();
+      // Update state with new reply
+      setReplies(prevReplies => ({
+        ...prevReplies,
+        [parentReplyId]: [...(prevReplies[parentReplyId] || []), replyData]
+      }));
+    } catch (error) {
+      console.error('Error posting reply to reply:', error);
     }
   };
 
