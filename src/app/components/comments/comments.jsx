@@ -239,8 +239,7 @@ const Comments = ({ movieUrl }) => {
             ...prevReplyTexts,
             [commentId]: ''
           }));
-          const replyData = await response.json();
-console.log('Reply Data:', replyData);
+
         } else {
           console.error('Failed to submit reply:', replyData.message);
         }
@@ -253,6 +252,7 @@ console.log('Reply Data:', replyData);
 
   useEffect(() => {
     console.log('Rendering replies:', replies);
+    console.log('Reply Data:', replyData);
   }, [replies]);
 
   const handleDeleteComment = async (commentId) => {
