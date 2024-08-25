@@ -112,7 +112,7 @@ const likeComment = async (id, token) => {
 const likeReply = async (replyId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-replies', {
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-reply', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
