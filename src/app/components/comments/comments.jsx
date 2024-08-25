@@ -208,51 +208,33 @@ const Comments = ({ movieUrl }) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
   };
-  
-  const handleReplyChange = (commentId, value) => {
-    console.log('Updating reply text for comment:', commentId, 'with value:', value);
-    setReplyTexts(prevReplyTexts => {
-      const newReplyTexts = {
-        ...prevReplyTexts,
-        [commentId]: value
-      };
-      console.log('New reply texts state:', newReplyTexts);
-      return newReplyTexts;
-    });
-  };
-  
-  const [forceRender, setForceRender] = useState(false);
 
-const handleReplyAction = async (commentId) => {
-  try {
-    if (!replyTexts[commentId]?.trim()) return;
-
-    const token = localStorage.getItem('token');
-    if (token && user) {
-      const response = await postReply(commentId, replyTexts[commentId], token);
-      if (response) {
-        setReplies(prevReplies => {
-          const updatedReplies = {
+  const handleReplyAction = async (commentId) => {
+    try {
+      if (!replyTexts[commentId]?.trim()) return;
+  
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        const response = await postReply(commentId, replyTexts[commentId], token);
+        if (response) {
+          // Assuming response contains the newly created reply data
+          setReplies(prevReplies => ({
             ...prevReplies,
             [commentId]: [...(prevReplies[commentId] || []), response]
-          };
-          console.log('Updated replies state:', updatedReplies); // Debug log
-          return updatedReplies;
-        });
-        setReplyTexts(prevReplyTexts => ({
-          ...prevReplyTexts,
-          [commentId]: '' // Clear the reply input for this comment
-        }));
-        
-        // Force re-render
-        setForceRender(prev => !prev);
+          }));
+          
+          // Clear the reply input
+          setReplyTexts(prevReplyTexts => ({
+            ...prevReplyTexts,
+            [commentId]: ''
+          }));
+        }
       }
+    } catch (err) {
+      setError('Failed to submit reply');
+      console.error('Error:', err);
     }
-  } catch (err) {
-    setError('Failed to submit reply');
-    console.error('Error:', err);
-  }
-};
+  };
 
   const handleDeleteComment = async (commentId) => {
     try {
@@ -378,10 +360,10 @@ const handleReplyAction = async (commentId) => {
               </Form>
 
               <div className="mt-3">
-                {replies[comment.id]?.map(reply => (
-                  <div key={reply.id} className="border p-2 mb-2">
-                    <strong>{user.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-                  </div>
+            {replies[comment.id]?.map(reply => (
+              <div key={reply.id} className="border p-2 mb-2">
+                <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
+              </div>
                 ))}
               </div>
             </>
