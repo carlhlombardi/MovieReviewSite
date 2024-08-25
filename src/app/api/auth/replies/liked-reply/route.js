@@ -3,14 +3,36 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
   try {
+    // Parse JSON from request
     const { replyId } = await request.json();
+    
+    // Extract token from headers
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
-    const userId = token ? jwt.verify(token, process.env.JWT_SECRET).userId : null;
+    
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Token is required' }),
+        { status: 401 }
+      );
+    }
 
+    // Verify token and extract userId
+    let userId;
+    try {
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decodedToken.userId;
+    } catch (err) {
+      console.error('Token verification failed:', err);
+      return new Response(
+        JSON.stringify({ message: 'Invalid token' }),
+        { status: 401 }
+      );
+    }
+    
     if (!userId) {
       return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
+        JSON.stringify({ message: 'User ID could not be extracted from token' }),
         { status: 401 }
       );
     }
