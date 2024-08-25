@@ -112,6 +112,11 @@ const likeComment = async (id, token) => {
 const likeReply = async (replyId) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+    
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/liked-replies', {
       method: 'POST',
       headers: {
@@ -120,8 +125,12 @@ const likeReply = async (replyId) => {
       },
       body: JSON.stringify({ replyId })
     });
+    
     if (!response.ok) throw new Error('Failed to like reply');
+    
     const data = await response.json();
+    
+    // Update the state with the new liked status
     setLikedReplies(prev => ({
       ...prev,
       [replyId]: data.likedByUser
@@ -293,10 +302,6 @@ const Comments = ({ movieUrl }) => {
       console.error('Error:', err);
     }
   };
-
-  useEffect(() => {
-    console.log('Rendering replies:', replies);
-  }, [replies]);
 
   const handleDeleteComment = async (commentId) => {
     try {
