@@ -3,14 +3,14 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(request) {
     try {
-        const { replyId, text, commentId } = await request.json();
-        console.log('POST request payload:', { replyId, text, commentId });
+        const { replyId, text } = await request.json();
+        console.log('POST request payload:', { replyId, text });
 
         // Check if request payload is correctly parsed
-        if (replyId === undefined || text === undefined || commentId === undefined) {
+        if (replyId === undefined || text === undefined) {
             console.log('Missing fields in request payload');
             return new Response(
-                JSON.stringify({ message: 'Required fields are missing' }),
+                JSON.stringify({ message: 'Reply ID and text are required' }),
                 { status: 400 }
             );
         }
@@ -44,7 +44,25 @@ export async function POST(request) {
         const username = userData.rows[0]?.username;
         console.log('Username found:', username);
 
-        // Insert the new reply with the given parent_reply_id
+        // Fetch the comment_id based on the replyId
+        const replyData = await sql`
+            SELECT comment_id
+            FROM replies
+            WHERE id = ${replyId}
+        `;
+        
+        if (replyData.rowCount === 0) {
+            console.log('Parent reply not found:', replyId);
+            return new Response(
+                JSON.stringify({ message: 'Parent reply not found' }),
+                { status: 404 }
+            );
+        }
+
+        const commentId = replyData.rows[0]?.comment_id;
+        console.log('Comment ID found:', commentId);
+
+        // Insert the new reply with the fetched comment_id
         const result = await sql`
             INSERT INTO replies (parent_reply_id, comment_id, user_id, username, text)
             VALUES (${replyId}, ${commentId}, ${userId}, ${username}, ${text})

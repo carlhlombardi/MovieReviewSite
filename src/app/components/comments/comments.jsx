@@ -136,15 +136,15 @@ const likeReply = async (replyId) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text, comment_id)=> {
+const postReplyToReply = async (parentReplyId, text) => {
   try {
+    console.log('postReplyToReply called with:', { parentReplyId, text });
+
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('No token found');
       return;
     }
-
-    console.log('Posting reply with:', { parentReplyId, text, comment_id });
 
     const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply', {
       method: 'POST',
@@ -152,7 +152,7 @@ const postReplyToReply = async (parentReplyId, text, comment_id)=> {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text, comment_id })
+      body: JSON.stringify({ replyId: parentReplyId, text })
     });
 
     if (!response.ok) {
@@ -385,19 +385,18 @@ const Comments = ({ movieUrl }) => {
     }
   };
   
-  const handlePostReplyToReply = async (parentReplyId, comment_id) => {
+  const handlePostReplyToReply = async (parentReplyId) => {
     try {
       const replyText = replyTexts[parentReplyId]?.trim();
       console.log('Reply text for parentReplyId', parentReplyId, ':', replyText);
-      console.log('Comment ID:', comment_id);
   
       if (!replyText) {
         console.log('No text to post for parentReplyId', parentReplyId);
         return; // No text to post
       }
   
-      console.log('Calling postReplyToReply with:', { parentReplyId, replyText, comment_id });
-      const replyData = await postReplyToReply(parentReplyId, replyText, comment_id);
+      console.log('Calling postReplyToReply with:', { parentReplyId, replyText });
+      const replyData = await postReplyToReply(parentReplyId, replyText);
   
       if (replyData) {
         console.log('Reply data received:', replyData);
