@@ -202,8 +202,11 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const handleReplyChange = (commentId, text) => {
-    setReplyTexts(prev => ({ ...prev, [commentId]: text }));
+  const handleReplyChange = (commentId, value) => {
+    setReplyTexts(prevReplyTexts => ({
+      ...prevReplyTexts,
+      [commentId]: value
+    }));
   };
 
   const formatDate = (dateString) => {
