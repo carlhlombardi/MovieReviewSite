@@ -238,8 +238,12 @@ const Comments = ({ movieUrl }) => {
           }));
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
-            [commentId]: '' // Clear the reply input for this comment
+            [commentId]: '' 
+             // Clear the reply input for this comment
           }));
+          console.log('Reply CreatedAt:', reply.username);
+          console.log('Reply CreatedAt:', reply.text);
+          console.log('Reply CreatedAt:', reply.createdat);
         }
       }
     } catch (err) {
