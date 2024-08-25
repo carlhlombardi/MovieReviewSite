@@ -233,11 +233,11 @@ const Comments = ({ movieUrl }) => {
         const response = await postReply(commentId, replyTexts[commentId], token);
         if (response) {
           setReplies(prevReplies => {
-            // Initialize replies[commentId] if it doesn't exist
             const updatedReplies = {
               ...prevReplies,
               [commentId]: [...(prevReplies[commentId] || []), response]
             };
+            console.log('Updated replies in state:', updatedReplies); // Debugging
             return updatedReplies;
           });
           setReplyTexts(prevReplyTexts => ({
