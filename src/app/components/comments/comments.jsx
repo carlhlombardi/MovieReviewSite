@@ -231,19 +231,23 @@ const Comments = ({ movieUrl }) => {
       const token = localStorage.getItem('token');
       if (token && user) {
         const response = await postReply(commentId, replyTexts[commentId], token);
-        if (response) {
+        const replyData = await response.json(); // Parse JSON response
+  
+        if (response.ok) {
           setReplies(prevReplies => {
             const updatedReplies = {
               ...prevReplies,
-              [commentId]: [...(prevReplies[commentId] || []), response]
+              [commentId]: [...(prevReplies[commentId] || []), replyData]
             };
-            console.log('Updated replies in state:', updatedReplies); // Debugging
+            console.log('Updated replies state:', updatedReplies);
             return updatedReplies;
           });
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
-            [commentId]: ''
+            [commentId]: '' // Clear the reply input for this comment
           }));
+        } else {
+          console.error('Failed to submit reply:', replyData.message);
         }
       }
     } catch (err) {

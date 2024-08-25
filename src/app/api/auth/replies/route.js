@@ -34,9 +34,9 @@ export async function POST(request) {
       VALUES (${commentId}, ${userId}, ${username}, ${text})
     `;
 
-    return new Response(
-      JSON.stringify(result.rows[0]),
-      { status: 201 }
+        return new Response(
+            JSON.stringify(result.rows[0]),
+            { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Reply error:', error);
