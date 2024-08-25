@@ -148,12 +148,13 @@ const Comments = ({ movieUrl }) => {
   })));
   
           // Fetch replies for each comment
-        const repliesData = {};
-        for (const comment of commentsData) {
-          const commentReplies = await fetchReplies(comment.id, token);
-          repliesData[comment.id] = commentReplies;
-        }
-        setReplies(repliesData);
+          const repliesData = {};
+          for (const comment of commentsData) {
+            const commentReplies = await fetchReplies(comment.id, token);
+            repliesData[comment.id] = commentReplies;
+          }
+          console.log('Fetched Replies Data:', repliesData); // Log to check structure
+          setReplies(repliesData);
         }
       } catch (err) {
         setError('Failed to load data');
