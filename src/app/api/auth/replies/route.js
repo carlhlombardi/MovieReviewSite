@@ -29,6 +29,7 @@ export async function POST(request) {
     `;
     const username = userData.rows[0]?.username;
 
+    // Insert the new reply
     const result = await sql`
       INSERT INTO replies (comment_id, parent_reply_id, user_id, username, text)
       VALUES (${commentId}, ${parentReplyId || null}, ${userId}, ${username}, ${text})
@@ -71,7 +72,7 @@ export async function GET(request) {
     // Fetch nested replies
     const repliesWithChildren = await Promise.all(replies.rows.map(async (reply) => {
       const children = await sql`
-        SELECT id, username, text, createdat
+        SELECT id, parent_reply_id, username, text, createdat
         FROM replies
         WHERE parent_reply_id = ${reply.id}
         ORDER BY createdat ASC
