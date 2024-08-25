@@ -215,36 +215,29 @@ const Comments = ({ movieUrl }) => {
   };
   
   const handleReplyChange = (commentId, value) => {
-    setReplyTexts(prevReplyTexts => {
-      const newReplyTexts = {
-        ...prevReplyTexts,
-        [commentId]: value
-      };
-      return newReplyTexts;
-    });
+    setReplyTexts(prevReplyTexts => ({
+      ...prevReplyTexts,
+      [commentId]: value
+    }));
   };
   
   const handleReplyAction = async (commentId) => {
     try {
-      if (!replyTexts[commentId]?.trim()) return;
+      const replyText = replyTexts[commentId]?.trim();
+      if (!replyText) return;
   
       const token = localStorage.getItem('token');
       if (token && user) {
-        const response = await postReply(commentId, replyTexts[commentId], token);
-        const replyData = await response.json(); // Parse JSON response
+        const response = await postReply(commentId, replyText, token);
   
         if (response.ok) {
-          setReplies(prevReplies => {
-            const updatedReplies = {
-              ...prevReplies,
-              [commentId]: [...(prevReplies[commentId] || []), replyData]
-            };
-            console.log('Updated replies state:', updatedReplies);
-            return updatedReplies;
-          });
+          setReplies(prevReplies => ({
+            ...prevReplies,
+            [commentId]: [...(prevReplies[commentId] || []), replyData]
+          }));
           setReplyTexts(prevReplyTexts => ({
             ...prevReplyTexts,
-            [commentId]: '' // Clear the reply input for this comment
+            [commentId]: ''
           }));
         } else {
           console.error('Failed to submit reply:', replyData.message);
