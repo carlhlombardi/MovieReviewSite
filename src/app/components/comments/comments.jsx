@@ -329,17 +329,12 @@ const Comments = ({ movieUrl }) => {
 
   const handleLikeReply = async (replyId) => {
     try {
-      // Call the likeReply function to update the server
-      const data = await likeReply(replyId);
-      
-      // Check if data is returned and update the local state
+      const data = await likeReply(replyId); // Assume likeReply updates the server and returns the updated reply
       if (data) {
         setLikedReplies(prev => ({
           ...prev,
-          [replyId]: data.likedByUser // Update state with the new liked status
+          [replyId]: data.likedByUser
         }));
-      } else {
-        console.error('Failed to get like status from server');
       }
     } catch (error) {
       setError('Failed to like/unlike reply');
@@ -504,15 +499,16 @@ const Comments = ({ movieUrl }) => {
               {replies[comment.id]?.length ? (
                 replies[comment.id].map(reply => (
                   <ReplyComponent
-                    key={reply.id}
-                    reply={reply}
-                    user={user}
-                    handleLikeReply={handleLikeReply}
-                    handlePostReplyToReply={handlePostReplyToReply}
-                    replyTexts={replyTexts}
-                    handleReplyChange={handleReplyChange}
-                    replies={replies}
-                    formatDate={formatDate}
+                  key={reply.id}
+                  reply={reply}
+                  user={user}
+                  handleLikeReply={handleLikeReply}
+                  handlePostReplyToReply={handlePostReplyToReply}
+                  replyTexts={replyTexts}
+                  handleReplyChange={handleReplyChange}
+                  replies={replies}
+                  formatDate={formatDate}
+                  likedReplies={likedReplies}
                   />
                 ))
               ) : (

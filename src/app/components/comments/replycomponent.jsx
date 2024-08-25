@@ -9,18 +9,21 @@ const ReplyComponent = ({
   replyTexts,
   handleReplyChange,
   replies,
-  formatDate
+  formatDate,
+  likedReplies // Accept likedReplies as a prop
 }) => {
+  const isLiked = likedReplies[reply.id]; // Determine like status based on likedReplies state
+
   return (
     <div className="border p-2 mb-2">
       <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
       {user && (
         <Button
-          variant={reply.likedByUser ? "outline-success" : "success"}
+          variant={isLiked ? "outline-success" : "success"} // Use isLiked to determine the button style
           onClick={() => handleLikeReply(reply.id)}
           className="float-end ms-2"
         >
-          {reply.likedByUser ? "Unlike" : "Like"}
+          {isLiked ? "Unlike" : "Like"}
         </Button>
       )}
       {user && (
@@ -54,6 +57,7 @@ const ReplyComponent = ({
               handleReplyChange={handleReplyChange}
               replies={replies}
               formatDate={formatDate}
+              likedReplies={likedReplies} // Pass likedReplies down to nested replies
             />
           ))}
         </div>
