@@ -170,9 +170,10 @@ const postReplyToReply = async (parentReplyId, text) => {
       [parentReplyId]: [...(prevReplies[parentReplyId] || []), replyData]
     }));
   } catch (error) {
-    console.error('Error posting reply to reply:', error);
+    console.error('Failed to post reply:', error);
   }
 };
+
 
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
@@ -278,42 +279,6 @@ const Comments = ({ movieUrl }) => {
     }));
   };
   
-  const handleReplyAction = async (commentId) => {
-    try {
-      const replyText = replyTexts[commentId]?.trim();
-      if (!replyText) return;
-  
-      const token = localStorage.getItem('token');
-      if (token && user) {
-        const response = await postReply(commentId, replyText, token);
-        console.log('Response:', response); // Log raw response
-        const replyData = await response.json();
-        console.log('Reply Data:', replyData); // Log parsed reply data
-  
-        if (response.ok) {
-          setReplies(prevReplies => {
-            const updatedReplies = {
-              ...prevReplies,
-              [commentId]: [...(prevReplies[commentId] || []), replyData]
-            };
-            console.log('Updated replies state:', updatedReplies);
-            return updatedReplies;
-          });
-          setReplyTexts(prevReplyTexts => ({
-            ...prevReplyTexts,
-            [commentId]: ''
-          }));
-        } else {
-          const errorData = await response.json();
-          console.error('Failed to submit reply:', errorData.message);
-        }
-      }
-    } catch (err) {
-      setError('Failed to submit reply');
-      console.error('Error:', err);
-    }
-  };
-
   const handleDeleteComment = async (commentId) => {
     try {
       const token = localStorage.getItem('token');
@@ -388,23 +353,45 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const handlePostReplyToReply = async (parentReplyId) => {
+  const handleReplyAction = async (commentId, parentReplyId = null) => {
     try {
-      const replyText = replyTexts[parentReplyId]?.trim();
-      if (!replyText) return; // No text to post
+      const replyText = replyTexts[commentId]?.trim();
+      if (!replyText) return;
   
-      await postReplyToReply(parentReplyId, replyText);
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        const response = parentReplyId
+          ? await postReplyToReply(parentReplyId, replyText)
+          : await postReply(commentId, replyText, token);
+          
+        console.log('Response:', response); // Log raw response
+        const replyData = await response.json();
+        console.log('Reply Data:', replyData); // Log parsed reply data
   
-      // Clear the reply text after submission
-      setReplyTexts(prevReplyTexts => ({
-        ...prevReplyTexts,
-        [parentReplyId]: ''
-      }));
-    } catch (error) {
-      console.error('Failed to post reply:', error);
-      setError('Failed to post reply');
+        if (response.ok) {
+          setReplies(prevReplies => {
+            const updatedReplies = {
+              ...prevReplies,
+              [commentId]: [...(prevReplies[commentId] || []), replyData]
+            };
+            console.log('Updated replies state:', updatedReplies);
+            return updatedReplies;
+          });
+          setReplyTexts(prevReplyTexts => ({
+            ...prevReplyTexts,
+            [commentId]: ''
+          }));
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to submit reply:', errorData.message);
+        }
+      }
+    } catch (err) {
+      setError('Failed to submit reply');
+      console.error('Error:', err);
     }
   };
+  
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -511,6 +498,44 @@ const Comments = ({ movieUrl }) => {
                         </Form.Group>
                         <Button variant="primary" type="submit" className="mt-2">Reply</Button>
                       </Form>
+                    )}
+                    {/* Render nested replies */}
+                    {replies[reply.id]?.length ? (
+                      <div className="ms-3">
+                        {replies[reply.id].map(nestedReply => (
+                          <div key={nestedReply.id} className="border p-2 mb-2">
+                            <strong>{nestedReply.username}</strong>: {nestedReply.text} - {formatDate(nestedReply.createdat)}
+                            {user && (
+                              <Button
+                                variant={likedReplies[nestedReply.id] ? "outline-success" : "success"}
+                                onClick={() => handleLikeReply(nestedReply.id)}
+                                className="float-end ms-2"
+                              >
+                                {likedReplies[nestedReply.id] ? "Unlike" : "Like"}
+                              </Button>
+                            )}
+                            {user && (
+                              <Form onSubmit={(e) => { 
+                                e.preventDefault(); 
+                                handlePostReplyToReply(nestedReply.id); 
+                              }} className="mb-4">
+                                <Form.Group>
+                                  <Form.Control
+                                    as="textarea"
+                                    rows={2}
+                                    value={replyTexts[nestedReply.id] || ''}
+                                    onChange={(e) => handleReplyChange(nestedReply.id, e.target.value)}
+                                    placeholder={`Reply to ${nestedReply.username}`}
+                                  />
+                                </Form.Group>
+                                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
+                              </Form>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>No replies yet.</div>
                     )}
                   </div>
                 ))
