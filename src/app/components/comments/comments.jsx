@@ -221,34 +221,38 @@ const Comments = ({ movieUrl }) => {
     });
   };
   
-  const handleReplyAction = async (commentId) => {
-    try {
-      if (!replyTexts[commentId]?.trim()) return;
-  
-      const token = localStorage.getItem('token');
-      if (token && user) {
-        const response = await postReply(commentId, replyTexts[commentId], token);
-        if (response) {
-          // Update the replies state
-          setReplies(prevReplies => {
-            const updatedReplies = {
-              ...prevReplies,
-              [commentId]: [...(prevReplies[commentId] || []), response]
-            };
-            console.log('Updated replies state:', updatedReplies); // Debug log
-            return updatedReplies;
-          });
-          setReplyTexts(prevReplyTexts => ({
-            ...prevReplyTexts,
-            [commentId]: '' // Clear the reply input for this comment
-          }));
-        }
+  const [forceRender, setForceRender] = useState(false);
+
+const handleReplyAction = async (commentId) => {
+  try {
+    if (!replyTexts[commentId]?.trim()) return;
+
+    const token = localStorage.getItem('token');
+    if (token && user) {
+      const response = await postReply(commentId, replyTexts[commentId], token);
+      if (response) {
+        setReplies(prevReplies => {
+          const updatedReplies = {
+            ...prevReplies,
+            [commentId]: [...(prevReplies[commentId] || []), response]
+          };
+          console.log('Updated replies state:', updatedReplies); // Debug log
+          return updatedReplies;
+        });
+        setReplyTexts(prevReplyTexts => ({
+          ...prevReplyTexts,
+          [commentId]: '' // Clear the reply input for this comment
+        }));
+        
+        // Force re-render
+        setForceRender(prev => !prev);
       }
-    } catch (err) {
-      setError('Failed to submit reply');
-      console.error('Error:', err);
     }
-  };
+  } catch (err) {
+    setError('Failed to submit reply');
+    console.error('Error:', err);
+  }
+};
 
   const handleDeleteComment = async (commentId) => {
     try {
