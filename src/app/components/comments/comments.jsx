@@ -116,8 +116,7 @@ const likeComment = async (id, token) => {
 const Comments = ({ movieUrl }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [replyText, setReplyText] = useState('');
-  const [replyTexts, setReplyTexts] = useState({}); // key: commentId, value: replyText
+  const [replyTexts, setReplyTexts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
@@ -202,18 +201,22 @@ const Comments = ({ movieUrl }) => {
     }
   };
 
-  const handleReplyChange = (commentId, value) => {
-    setReplyTexts(prevReplyTexts => ({
-      ...prevReplyTexts,
-      [commentId]: value
-    }));
-  };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString();
   };
   
+  const handleReplyChange = (commentId, value) => {
+    console.log('Updating reply text for comment:', commentId, 'with value:', value);
+    setReplyTexts(prevReplyTexts => {
+      const newReplyTexts = {
+        ...prevReplyTexts,
+        [commentId]: value
+      };
+      console.log('New reply texts state:', newReplyTexts);
+      return newReplyTexts;
+    });
+  };
   
   const handleReplyAction = async (commentId) => {
     try {
