@@ -136,7 +136,7 @@ const likeReply = async (replyId) => {
   }
 };
 
-const postReplyToReply = async (parentReplyId, text, commentId) => {
+const postReplyToReply = async (parentReplyId, text) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -144,7 +144,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
       return;
     }
 
-    console.log('Posting reply with:', { parentReplyId, text, commentId });
+    console.log('Posting reply with:', { parentReplyId, text});
 
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/replies/reply-to-reply`, {
       method: 'POST',
@@ -152,7 +152,7 @@ const postReplyToReply = async (parentReplyId, text, commentId) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ replyId: parentReplyId, text, commentId })
+      body: JSON.stringify({ replyId: parentReplyId, text})
     });
 
     if (!response.ok) {
