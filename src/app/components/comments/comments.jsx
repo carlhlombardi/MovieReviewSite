@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
+import ReplyComponent from './ReplyComponent';
 
 // Helper functions for API calls
 const fetchComments = async (movieUrl, token) => {
@@ -502,73 +503,17 @@ const Comments = ({ movieUrl }) => {
             <div className="mt-3">
               {replies[comment.id]?.length ? (
                 replies[comment.id].map(reply => (
-                  <div key={reply.id} className="border p-2 mb-2">
-                    <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-                    {user && (
-                      <Button
-                        variant={likedReplies[reply.id] ? "outline-success" : "success"}
-                        onClick={() => handleLikeReply(reply.id)}
-                        className="float-end ms-2"
-                      >
-                        {likedReplies[reply.id] ? "Unlike" : "Like"}
-                      </Button>
-                    )}
-                    {user && (
-                      <Form onSubmit={(e) => { 
-                        e.preventDefault(); 
-                        handlePostReplyToReply(reply.id); 
-                      }} className="mb-4">
-                        <Form.Group>
-                          <Form.Control
-                            as="textarea"
-                            rows={2}
-                            value={replyTexts[reply.id] || ''}
-                            onChange={(e) => handleReplyChange(reply.id, e.target.value)}
-                            placeholder={`Reply to ${reply.username}`}
-                          />
-                        </Form.Group>
-                        <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                      </Form>
-                    )}
-                    {/* Render nested replies */}
-                    {replies[reply.id]?.length ? (
-                      <div className="ms-3">
-                        {replies[reply.id].map(nestedReply => (
-                          <div key={nestedReply.id} className="border p-2 mb-2">
-                            <strong>{nestedReply.username}</strong>: {nestedReply.text} - {formatDate(nestedReply.createdat)}
-                            {user && (
-                              <Button
-                                variant={likedReplies[nestedReply.id] ? "outline-success" : "success"}
-                                onClick={() => handleLikeReply(nestedReply.id)}
-                                className="float-end ms-2"
-                              >
-                                {likedReplies[nestedReply.id] ? "Unlike" : "Like"}
-                              </Button>
-                            )}
-                            {user && (
-                              <Form onSubmit={(e) => { 
-                                e.preventDefault(); 
-                                handlePostReplyToReply(nestedReply.id); 
-                              }} className="mb-4">
-                                <Form.Group>
-                                  <Form.Control
-                                    as="textarea"
-                                    rows={2}
-                                    value={replyTexts[nestedReply.id] || ''}
-                                    onChange={(e) => handleReplyChange(nestedReply.id, e.target.value)}
-                                    placeholder={`Reply to ${nestedReply.username}`}
-                                  />
-                                </Form.Group>
-                                <Button variant="primary" type="submit" className="mt-2">Reply</Button>
-                              </Form>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div>No replies yet.</div>
-                    )}
-                  </div>
+                  <ReplyComponent
+                    key={reply.id}
+                    reply={reply}
+                    user={user}
+                    handleLikeReply={handleLikeReply}
+                    handlePostReplyToReply={handlePostReplyToReply}
+                    replyTexts={replyTexts}
+                    handleReplyChange={handleReplyChange}
+                    replies={replies}
+                    formatDate={formatDate}
+                  />
                 ))
               ) : (
                 <div>No replies yet.</div>
