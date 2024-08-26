@@ -155,7 +155,7 @@ const HorrorPostPage = ({ params }) => {
       {isLiked ? (
         <HeartFill color="red" size={32} />
       ) : (
-        <Heart color="red" size={32} style={{ fill: 'transparent', stroke: 'red', strokeWidth: 2 }} />
+        <Heart color="red" size={32} style={{ fill: 'transparent' }} />
       )}
     </Button>
             </>
