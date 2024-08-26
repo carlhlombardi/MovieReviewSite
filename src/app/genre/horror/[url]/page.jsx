@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
 import Comments from '@/app/components/comments/comments';
+import { Heart } from 'react-bootstrap-icons'
 
 // Function to fetch movie data
 const fetchData = async (url) => {
@@ -186,13 +187,13 @@ const HorrorPostPage = ({ params }) => {
         <Col xs={12} className="text-center mt-5">
           {isLoggedIn ? (
             <>
-             <Button
+             <Heart
                 variant={isLiked ? "danger" : "primary"}
                 onClick={handleLike}
                 className="me-2"
               >
                 {isLiked ? 'Unlike' : 'Like'}
-              </Button>
+              </Heart>
               <Comments movieUrl={params.url} />
             </>
           ) : (
