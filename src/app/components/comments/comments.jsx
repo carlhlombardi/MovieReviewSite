@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
 import ReplyComponent from './replycomponent';
-import { Heart } from 'react-bootstrap-icons';
+import { Heart } from 'react-bootstrap-icons'
 
 // Helper functions for API calls
 const fetchComments = async (movieUrl, token) => {
