@@ -93,6 +93,8 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [userRating, setUserRating] = useState(0); // State for slider
+  const [averageRating, setAverageRating] = useState(0);
 
   useEffect(() => {
     const fetchDataAndStatus = async () => {
@@ -109,6 +111,8 @@ const HorrorPostPage = ({ params }) => {
           const { isLiked, likeCount } = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
           setLikedCount(likeCount);
+
+          await fetchAverageRating(); // Fetch average rating on load
         }
       } catch (err) {
         setError('Failed to load data');
@@ -119,7 +123,7 @@ const HorrorPostPage = ({ params }) => {
     };
 
     fetchDataAndStatus();
-  }, [params.url]);
+  }, [params.url, fetchAverageRating]);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
@@ -128,6 +132,44 @@ const HorrorPostPage = ({ params }) => {
     if (result) {
       setIsLiked(action === 'like');
       setLikedCount(result.likeCount || 0); // Ensure correct likeCount
+    }
+  };
+
+  const fetchAverageRating = useCallback(async () => {
+    try {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/average-rating?url=${encodeURIComponent(params.url)}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch average rating');
+      }
+      const result = await response.json();
+      setAverageRating(result.averageRating || 0);
+    } catch (error) {
+      console.error('Fetch average rating error:', error);
+      setAverageRating(0); // Default value on error
+    }
+  }, [params.url]);
+
+  const handleRatingSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user_id = 'user-id'; // Replace with actual user ID logic
+
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/rate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: params.url, rating: userRating, user_id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      await fetchAverageRating(); // Update average rating after submission
+    } catch (error) {
+      console.error('Rating submission error:', error);
     }
   };
 
@@ -178,6 +220,23 @@ const HorrorPostPage = ({ params }) => {
         <Heart color="grey" size={32} />
       )}
     </Button>
+    <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={userRating}
+                  onChange={(e) => setUserRating(Number(e.target.value))}
+                />
+                <Button 
+                  onClick={handleRatingSubmit}
+                  className='mb-4'
+                >
+                  Submit Rating
+                </Button>
+                <p>Your Rating: {userRating}%</p>
+                <p>Average Rating: {averageRating.toFixed(2)}%</p>
+              </div>
             </>
           )}
           <h5>Director: {director}</h5>
