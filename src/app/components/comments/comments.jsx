@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
-import { Heart } from 'react-bootstrap-icons'
+import { Heart, HeartFill } from 'react-bootstrap-icons'
 import ReplyComponent from './replycomponent';
 
 // Helper functions for API calls
@@ -471,16 +471,17 @@ const Comments = ({ movieUrl }) => {
               </>
             )}
             {user && (
-              <Button
-              variant="link"
-              onClick={() => handleLikeComment(comment.id)}
-              className="float-end ms-2"
-            >
-              <Heart
-                color={comment.likedByUser ? 'red' : 'transparent'} // Adjust colors as needed
-                size={20} // Adjust size as needed
-              />
-            </Button>
+               <Button 
+               variant="link" 
+               onClick={() => handleLikeComment(comment.id)}
+               style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+             >
+               {isLiked ? (
+                 <HeartFill color="red" size={32} />
+               ) : (
+                 <Heart color="grey" size={32} />
+               )}
+             </Button>
             )}
             {user && (
               <Form onSubmit={(e) => { 
