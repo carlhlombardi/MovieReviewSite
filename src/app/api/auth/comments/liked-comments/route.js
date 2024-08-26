@@ -101,10 +101,10 @@ export async function POST(request) {
       await sql`
         INSERT INTO notifications (user_id, type, comment_id, movie_url, liker_username)
         VALUES (
-          (SELECT user_id FROM comments WHERE id = ${commentId}),
+          (SELECT username FROM comments WHERE id = ${commentId}),
           'like',
           ${commentId},
-          (SELECT movie_url FROM comments WHERE id = ${commentId}),
+          (SELECT url FROM comments WHERE id = ${commentId}),
           ${likerUsername}
         )
       `;
