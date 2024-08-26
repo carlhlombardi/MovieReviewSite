@@ -188,7 +188,7 @@ const HorrorPostPage = ({ params }) => {
           {isLoggedIn ? (
             <>
              <Button
-                variant={isLiked ? "like" : "danger"}
+                variant={isLiked ? "outline-danger" : "danger"}
                 onClick={handleLike}
                 className="me-2"
               >
