@@ -149,23 +149,6 @@ const HorrorPostPage = ({ params }) => {
     <Container>
       <Row>
         <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
-        {isLoggedIn && (
-            <>
- <Button 
-      variant="link" 
-      onClick={handleLike} 
-      disabled={!isLoggedIn}
-      style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
-    >
-      {isLiked ? (
-        <HeartFill color="red" size={32} />
-      ) : (
-        <Heart color="grey" size={32} />
-      )}
-    </Button>
-            </>
-          )}
-
           <div className="image-wrapper">
             {image_url ? (
               <Image
@@ -181,6 +164,22 @@ const HorrorPostPage = ({ params }) => {
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-1">
           <h1 className='mb-4'>{film}</h1>
+          {isLoggedIn && (
+            <>
+ <Button 
+      variant="link" 
+      onClick={handleLike} 
+      disabled={!isLoggedIn}
+      style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+    >
+      {isLiked ? (
+        <HeartFill color="red" size={32} />
+      ) : (
+        <Heart color="grey" size={32} />
+      )}
+    </Button>
+            </>
+          )}
           <h5>Director: {director}</h5>
           <h5>Screenwriter(s): {screenwriters}</h5>
           <h5>Producer(s): {producer}</h5>
