@@ -13,23 +13,14 @@ const movieTables = {
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { url, rating, token } = req.body;
-    
+    const { genre, url, rating, token } = req.body;
+
     // Validate inputs
-    if (!url || rating < 0 || rating > 100 || !token) {
+    if (!genre || !url || rating < 0 || rating > 100 || !token) {
       return res.status(400).json({ error: 'Invalid input' });
     }
 
     try {
-      // Extract genre from URL (assuming the genre is passed in the URL as 'genre')
-      const genreMatch = req.headers.referer.match(/\/genre\/([^\/]+)\/(.+)/);
-      if (!genreMatch) {
-        return res.status(400).json({ error: 'Invalid URL structure' });
-      }
-      
-      const genre = genreMatch[1]; // Extract genre from URL
-      const movieUrl = genreMatch[2]; // Extract movie URL from URL
-
       // Determine the movie table based on genre
       const movieTable = movieTables[genre];
       if (!movieTable) {
@@ -47,7 +38,7 @@ export default async function handler(req, res) {
 
       // Check if the URL exists in the determined movie table
       const movieResponse = await sql`
-        SELECT * FROM ${sql(movieTable)} WHERE url = ${movieUrl}
+        SELECT 1 FROM ${sql(movieTable)} WHERE url = ${url}
       `;
       if (movieResponse.rowCount === 0) {
         return res.status(404).json({ error: 'Movie not found' });
@@ -56,7 +47,7 @@ export default async function handler(req, res) {
       // Insert or update the rating
       await sql`
         INSERT INTO movie_ratings (movie_url, user_id, rating)
-        VALUES (${movieUrl}, ${user_id}, ${rating})
+        VALUES (${url}, ${user_id}, ${rating})
         ON CONFLICT (movie_url, user_id)
         DO UPDATE SET rating = EXCLUDED.rating
       `;
