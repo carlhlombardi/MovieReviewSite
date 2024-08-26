@@ -188,12 +188,12 @@ const HorrorPostPage = ({ params }) => {
           {isLoggedIn ? (
             <>
              <Button
-                variant={isLiked ? "danger" : "primary"}
+                variant={isLiked ? "like" : "danger"}
                 onClick={handleLike}
                 className="me-2"
               >
                 <Heart />
-                {isLiked ? 'Unlike' : 'Like'}
+                {isLiked ? ' Unlike' : ' Like'}
               </Button>
               <Comments movieUrl={params.url} />
             </>
