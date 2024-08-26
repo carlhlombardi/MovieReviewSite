@@ -151,7 +151,9 @@ const HorrorPostPage = ({ params }) => {
         <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
         {isLoggedIn && (
             <>
-                <Heart variant={isLiked ? "outline-danger" : "danger"} onClick={handleLike} />
+                <Button variant="link" onClick={handleLike} disabled={!isLoggedIn}>
+                  <Heart color={isLiked ? 'red' : 'transparant'} size={32} />
+                </Button>
             </>
           )}
 
