@@ -66,19 +66,16 @@ export async function POST(request) {
     }
 
     // Fetch user and comment details
-    const [likerData, commentData] = await Promise.all([
+    const [likerData, commentData, existingLike] = await Promise.all([
       sql`SELECT username FROM users WHERE id = ${userId}`,
-      sql`SELECT username, text FROM comments WHERE id = ${commentId}`
+      sql`SELECT username, text, url FROM comments WHERE id = ${commentId}`,
+      sql`SELECT 1 FROM liked_comments WHERE user_id = ${userId} AND comment_id = ${commentId}`
     ]);
 
     const likerUsername = likerData.rows[0]?.username;
     const commentAuthorUsername = commentData.rows[0]?.username;
     const commentText = commentData.rows[0]?.text;
-
-    const existingLike = await sql`
-      SELECT 1 FROM liked_comments
-      WHERE user_id = ${userId} AND comment_id = ${commentId}
-    `;
+    const movieUrl = commentData.rows[0]?.url;
 
     if (existingLike.rowCount > 0) {
       // Unlike comment
@@ -86,6 +83,7 @@ export async function POST(request) {
         DELETE FROM liked_comments
         WHERE user_id = ${userId} AND comment_id = ${commentId}
       `;
+
       return new Response(
         JSON.stringify({ likedByUser: false }),
         { status: 200 }
@@ -95,6 +93,18 @@ export async function POST(request) {
       await sql`
         INSERT INTO liked_comments (user_id, comment_id, liker_username, comment_author_username, comment_text)
         VALUES (${userId}, ${commentId}, ${likerUsername}, ${commentAuthorUsername}, ${commentText})
+      `;
+
+      // Insert notification
+      await sql`
+        INSERT INTO notifications (user_id, type, comment_id, movie_url, liker_username)
+        VALUES (
+          (SELECT user_id FROM comments WHERE id = ${commentId}),
+          'like',
+          ${commentId},
+          ${movieUrl},
+          ${likerUsername}
+        )
       `;
 
       return new Response(
@@ -110,6 +120,7 @@ export async function POST(request) {
     );
   }
 }
+
 
 // Handler to unlike a comment
 export async function DELETE(request) {
