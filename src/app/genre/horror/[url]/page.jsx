@@ -170,7 +170,7 @@ const HorrorPostPage = ({ params }) => {
       variant="link" 
       onClick={handleLike} 
       disabled={!isLoggedIn}
-      style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+      className='mb-4'
     >
       {isLiked ? (
         <HeartFill color="red" size={32} />
