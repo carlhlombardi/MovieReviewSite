@@ -149,6 +149,12 @@ const HorrorPostPage = ({ params }) => {
     <Container>
       <Row>
         <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
+        {isLoggedIn (
+            <>
+                <Heart variant={isLiked ? "outline-danger" : "danger"} onClick={handleLike} />
+            </>
+          )}
+
           <div className="image-wrapper">
             {image_url ? (
               <Image

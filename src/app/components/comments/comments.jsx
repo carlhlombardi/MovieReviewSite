@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
 import ReplyComponent from './replycomponent';
+import { Heart } from 'react-bootstrap-icons';
 
 // Helper functions for API calls
 const fetchComments = async (movieUrl, token) => {
@@ -470,13 +471,7 @@ const Comments = ({ movieUrl }) => {
               </>
             )}
             {user && (
-              <Button
-                variant={comment.likedByUser ? "outline-success" : "success"}
-                onClick={() => handleLikeComment(comment.id)}
-                className="float-end ms-2"
-              >
-                {comment.likedByUser ? "Unlike" : "Like"}
-              </Button>
+            <Heart variant={comment.likedByUser? "outline-danger" : "danger"} onClick={() => handleLikeComment(comment.id)} />
             )}
             {user && (
               <Form onSubmit={(e) => { 
