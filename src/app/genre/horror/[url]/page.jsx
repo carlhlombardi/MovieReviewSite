@@ -151,11 +151,16 @@ const HorrorPostPage = ({ params }) => {
         <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
         {isLoggedIn && (
             <>
-    <Button variant="link" onClick={handleLike} disabled={!isLoggedIn}>
+ <Button 
+      variant="link" 
+      onClick={handleLike} 
+      disabled={!isLoggedIn}
+      style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+    >
       {isLiked ? (
         <HeartFill color="red" size={32} />
       ) : (
-        <Heart color="red" size={32} style={{ fill: 'transparent' }} />
+        <Heart color="grey" size={32} />
       )}
     </Button>
             </>
