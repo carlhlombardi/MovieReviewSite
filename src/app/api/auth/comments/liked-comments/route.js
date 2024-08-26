@@ -65,26 +65,47 @@ export async function POST(request) {
       );
     }
 
-    // Fetch user and comment details
-    const [likerData, commentData] = await Promise.all([
-      sql`SELECT username FROM users WHERE id = ${userId}`,
-      sql`SELECT username, text FROM comments WHERE id = ${commentId}`
+    // Fetch the details of the user who liked the comment and the comment details
+    const [likeData, commentData] = await Promise.all([
+      sql`
+        SELECT user_id, liker_username
+        FROM liked_comments
+        WHERE user_id = ${userId} AND comment_id = ${commentId}
+      `,
+      sql`
+        SELECT url
+        FROM comments
+        WHERE id = ${commentId}
+      `
     ]);
 
-    const likerUsername = likerData.rows[0]?.username;
-    const commentAuthorUsername = commentData.rows[0]?.username;
-    const commentText = commentData.rows[0]?.text;
+    const likedComment = likeData.rows[0];
+    const comment = commentData.rows[0];
+
+    if (!likedComment) {
+      return new Response(
+        JSON.stringify({ message: 'Like not found' }),
+        { status: 404 }
+      );
+    }
+
+    const likerUsername = likedComment.liker_username;
+    const authorUserId = likedComment.user_id;
+    const movieUrl = comment.url;
 
     const existingLike = await sql`
-      SELECT 1 FROM liked_comments
-      WHERE user_id = ${userId} AND comment_id = ${commentId}
+      SELECT 1
+      FROM liked_comments
+      WHERE user_id = ${userId}
+        AND comment_id = ${commentId}
     `;
 
     if (existingLike.rowCount > 0) {
       // Unlike comment
       await sql`
         DELETE FROM liked_comments
-        WHERE user_id = ${userId} AND comment_id = ${commentId}
+        WHERE user_id = ${userId}
+          AND comment_id = ${commentId}
       `;
       return new Response(
         JSON.stringify({ likedByUser: false }),
@@ -93,18 +114,18 @@ export async function POST(request) {
     } else {
       // Like comment
       await sql`
-        INSERT INTO liked_comments (user_id, comment_id, liker_username, comment_author_username, comment_text)
-        VALUES (${userId}, ${commentId}, ${likerUsername}, ${commentAuthorUsername}, ${commentText})
+        INSERT INTO liked_comments (user_id, comment_id, liker_username)
+        VALUES (${userId}, ${commentId}, ${likerUsername})
       `;
 
       // Insert notification
       await sql`
-        INSERT INTO notifications (user_id, type, comment_id, movie_url, liker_username)
+        INSERT INTO notifications (user_id, type, comment_id, url, liker_username)
         VALUES (
-          (SELECT username FROM comments WHERE id = ${commentId}),
+          ${authorUserId},
           'like',
           ${commentId},
-          (SELECT url FROM comments WHERE id = ${commentId}),
+          ${movieUrl},
           ${likerUsername}
         )
       `;
@@ -122,6 +143,7 @@ export async function POST(request) {
     );
   }
 }
+
 
 // Handler to unlike a comment
 export async function DELETE(request) {
