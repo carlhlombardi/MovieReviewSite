@@ -43,22 +43,6 @@ const fetchComments = async (movieUrl, token) => {
   }
 };
 
-// Function to fetch notifications for a user
-const fetchNotifications = async (token) => {
-  try {
-    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/notifications', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch notifications');
-    }
-    return await response.json(); // Returns notifications array
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    return []; // Return empty array if there's an error
-  }
-};
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null); // State to hold profile data
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
@@ -68,7 +52,6 @@ export default function ProfilePage() {
   const [username, setUsername] = useState(null); // State to hold the username
   const [error, setError] = useState(''); // State to hold any error messages
   const [selectedMovieUrl, setSelectedMovieUrl] = useState(''); // State to hold selected movie URL
-  const [notifications, setNotifications] = useState([]);
 
   const router = useRouter(); // Router instance for navigation
   const { username: profileUsername } = useParams(); // Extract username from URL parameter
@@ -122,10 +105,6 @@ export default function ProfilePage() {
         // Fetch all movies
         const allMovies = await fetchMovies();
         setMovies(allMovies);
-    
-      // Fetch notifications
-      const notificationsData = await fetchNotifications(token);
-      setNotifications(notificationsData);
     
       } catch (err) {
         // Handle errors and redirect to login if something goes wrong
@@ -249,28 +228,6 @@ export default function ProfilePage() {
           {selectedMovieUrl && isOwnProfile && (
             <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
           )}
-
-{isOwnProfile && notifications.length > 0 && (
-  <Card className="mb-4">
-    <Card.Header as="h5">Notifications</Card.Header>
-    <Card.Body>
-      {notifications.length > 0 ? (
-        <ul>
-          {notifications.map(notification => (
-            <li key={notification.id}>
-              <strong>{notification.liker_username}</strong> liked your comment on
-              <a href={`https://movie-review-site-seven.vercel.app/genre/${notification.movie_url}`}>
-                {notification.movie_url}
-              </a> on {new Date(notification.created_at).toLocaleDateString()}.
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No notifications found.</p>
-      )}
-    </Card.Body>
-  </Card>
-)}
         </>
       )}
     </div>

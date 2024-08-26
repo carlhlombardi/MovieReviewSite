@@ -65,48 +65,43 @@ export async function POST(request) {
       );
     }
 
-    // Fetch user and comment details
-    const [likerData, commentData, existingLike] = await Promise.all([
-      sql`SELECT username FROM users WHERE id = ${userId}`,
-      sql`SELECT username, text, url FROM comments WHERE id = ${commentId}`,
-      sql`SELECT 1 FROM liked_comments WHERE user_id = ${userId} AND comment_id = ${commentId}`
-    ]);
-
+    const likerData = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId}
+    `;
     const likerUsername = likerData.rows[0]?.username;
+
+    const commentData = await sql`
+      SELECT username, text
+      FROM comments
+      WHERE id = ${commentId}
+    `;
     const commentAuthorUsername = commentData.rows[0]?.username;
     const commentText = commentData.rows[0]?.text;
-    const movieUrl = commentData.rows[0]?.url;
+
+    const existingLike = await sql`
+      SELECT 1
+      FROM liked_comments
+      WHERE user_id = ${userId}
+        AND comment_id = ${commentId}
+    `;
 
     if (existingLike.rowCount > 0) {
-      // Unlike comment
       await sql`
         DELETE FROM liked_comments
-        WHERE user_id = ${userId} AND comment_id = ${commentId}
+        WHERE user_id = ${userId}
+          AND comment_id = ${commentId}
       `;
-
       return new Response(
         JSON.stringify({ likedByUser: false }),
         { status: 200 }
       );
     } else {
-      // Like comment
       await sql`
         INSERT INTO liked_comments (user_id, comment_id, liker_username, comment_author_username, comment_text)
         VALUES (${userId}, ${commentId}, ${likerUsername}, ${commentAuthorUsername}, ${commentText})
       `;
-
-      // Insert notification
-      await sql`
-        INSERT INTO notifications (user_id, type, comment_id, movie_url, liker_username)
-        VALUES (
-          (SELECT user_id FROM comments WHERE id = ${commentId}),
-          'like',
-          ${commentId},
-          ${movieUrl},
-          ${likerUsername}
-        )
-      `;
-
       return new Response(
         JSON.stringify({ likedByUser: true }),
         { status: 200 }
@@ -120,8 +115,6 @@ export async function POST(request) {
     );
   }
 }
-
-
 // Handler to unlike a comment
 export async function DELETE(request) {
   try {
@@ -160,15 +153,6 @@ export async function DELETE(request) {
         WHERE user_id = ${userId}
           AND comment_id = ${commentId}
       `;
-
-      // Remove notification
-      await sql`
-        DELETE FROM notifications
-        WHERE user_id = ${userId}
-          AND type = 'like'
-          AND comment_id = ${commentId}
-      `;
-
       return new Response(
         JSON.stringify({ likedByUser: false }),
         { status: 200 }
