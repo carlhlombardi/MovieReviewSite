@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Form } from 'react-bootstrap';
+import { Heart, HeartFill } from 'react-bootstrap-icons';
 
 const ReplyComponent = ({
   reply,
@@ -18,13 +19,17 @@ const ReplyComponent = ({
     <div className="border p-2 mb-2">
       <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
       {user && (
-        <Button
-          variant={isLiked ? "outline-success" : "success"} // Use isLiked to determine the button style
-          onClick={() => handleLikeReply(reply.id)}
-          className="float-end ms-2"
-        >
-          {isLiked ? "Unlike" : "Like"}
-        </Button>
+        <Button 
+        variant="link" 
+        onClick={() => handleLikeReply(reply.id)}
+        className='m-2'
+      >
+        {isLiked ? (
+          <HeartFill color="red" size={32} />
+        ) : (
+          <Heart color="grey" size={32} />
+        )}
+      </Button>
       )}
       {user && (
         <Form onSubmit={(e) => { 

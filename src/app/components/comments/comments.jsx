@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, ListGroup, Alert, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
-import { Heart, HeartFill } from 'react-bootstrap-icons'
+import { Heart, HeartFill } from 'react-bootstrap-icons';
 import ReplyComponent from './replycomponent';
 
 // Helper functions for API calls
