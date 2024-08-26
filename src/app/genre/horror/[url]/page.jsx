@@ -187,13 +187,14 @@ const HorrorPostPage = ({ params }) => {
         <Col xs={12} className="text-center mt-5">
           {isLoggedIn ? (
             <>
-             <Heart
+             <Button
                 variant={isLiked ? "danger" : "primary"}
                 onClick={handleLike}
                 className="me-2"
               >
+                <Heart />
                 {isLiked ? 'Unlike' : 'Like'}
-              </Heart>
+              </Button>
               <Comments movieUrl={params.url} />
             </>
           ) : (
