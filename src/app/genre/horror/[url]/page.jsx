@@ -96,6 +96,20 @@ const HorrorPostPage = ({ params }) => {
   const [userRating, setUserRating] = useState(0); // State for slider
   const [averageRating, setAverageRating] = useState(0);
 
+  const fetchAverageRating = useCallback(async () => {
+    try {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/average-rating?url=${encodeURIComponent(params.url)}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch average rating');
+      }
+      const result = await response.json();
+      setAverageRating(result.averageRating || 0);
+    } catch (error) {
+      console.error('Fetch average rating error:', error);
+      setAverageRating(0); // Default value on error
+    }
+  }, [params.url]);
+
   useEffect(() => {
     const fetchDataAndStatus = async () => {
       try {
@@ -134,20 +148,6 @@ const HorrorPostPage = ({ params }) => {
       setLikedCount(result.likeCount || 0); // Ensure correct likeCount
     }
   };
-
-  const fetchAverageRating = useCallback(async () => {
-    try {
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/average-rating?url=${encodeURIComponent(params.url)}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch average rating');
-      }
-      const result = await response.json();
-      setAverageRating(result.averageRating || 0);
-    } catch (error) {
-      console.error('Fetch average rating error:', error);
-      setAverageRating(0); // Default value on error
-    }
-  }, [params.url]);
 
   const handleRatingSubmit = async () => {
     try {
