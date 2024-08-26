@@ -471,7 +471,7 @@ const Comments = ({ movieUrl }) => {
               </>
             )}
             {user && (
-            <Heart variant={comment.likedByUser? "outline-danger" : "danger"} onClick={() => handleLikeComment(comment.id)} />
+            <Heart variant={comment.likedByUser? "outline-danger" : "danger"} onClick={handleLikeComment(comment.id)} />
             )}
             {user && (
               <Form onSubmit={(e) => { 
