@@ -93,6 +93,7 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [userRating, setUserRating] = useState(0); // State for slider
+  const [averageRating, setAverageRating] = useState(0);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
@@ -133,7 +134,8 @@ const HorrorPostPage = ({ params }) => {
       }
   
       const data = await response.json();
-      setUserRating(data.rating || 0); // Ensure default value if no rating is found
+      setUserRating(data.rating || 0);
+      setAverageRating(data.averageRating || 0); // Ensure default value if no rating is found
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
@@ -258,6 +260,7 @@ const HorrorPostPage = ({ params }) => {
                   Submit Rating
                 </Button>
                 <p>Your Rating: {userRating}%</p>
+                <p>Avg. Audience Rating: {averageRating}%</p>
               </div>
             </>
           )}
