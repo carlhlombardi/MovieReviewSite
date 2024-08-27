@@ -119,7 +119,7 @@ const HorrorPostPage = ({ params }) => {
     };
 
     fetchDataAndStatus();
-  }, [params.url]);
+  }, [params.url, fetchUserRating]);
 
 
   const handleLike = async () => {
@@ -132,40 +132,52 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
+  function getMovieSlugFromURL(url) {
+    const parts = url.split('/horror/');
+    if (parts.length > 1) {
+      return parts[1];
+    }
+    return '';
+  }
+
   const handleRatingSubmit = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const url = encodeURIComponent(window.location.href);
+      const token = localStorage.getItem('token'); // Get the token from localStorage
+      const fullURL = window.location.href; // Full URL
+      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
   
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_rating', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, rating: userRating }),
+        body: JSON.stringify({
+          url: movieSlug, // Use the extracted movieSlug
+          rating: userRating, // Slider value
+        }),
       });
   
       if (!response.ok) {
         throw new Error('Failed to submit rating');
       }
-  
+      
       // Fetch and display the updated rating
       await fetchUserRating();
     } catch (error) {
       console.error('Rating submission error:', error);
     }
   };
-  
 
-  async function fetchUserRating() {
+  const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return; // Handle case where token is not available
   
-      const url = encodeURIComponent(window.location.href); // Use the current page URL and encode it
+      const fullURL = window.location.href; // Full URL
+      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
   
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${url}`, { // Pass URL as a query parameter
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, { // Use the movieSlug as the URL parameter
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -178,12 +190,11 @@ const HorrorPostPage = ({ params }) => {
       }
   
       const data = await response.json();
-      // Assume `setUserRating` is a function to update the rating display
-      setUserRating(data.rating);
+      setUserRating(data.rating || 0); // Ensure default value if no rating is found
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
-  }
+  }, []); 
   
 
   if (isLoading) {
