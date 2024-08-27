@@ -239,9 +239,9 @@ const HorrorPostPage = ({ params }) => {
       className='mb-4'
     >
       {isLiked ? (
-        <HeartFill color="red" size={14}/>
+        <HeartFill color="red" size={18}/>
       ) : (
-        <Heart color="grey" size={14} />
+        <Heart color="grey" size={18} />
       )}
     </Button>
             </>

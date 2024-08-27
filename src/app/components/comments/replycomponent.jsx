@@ -25,9 +25,9 @@ const ReplyComponent = ({
         className='m-2'
       >
         {isLiked ? (
-          <HeartFill color="red" size={32} />
+          <HeartFill color="red" size={14} />
         ) : (
-          <Heart color="grey" size={32} />
+          <Heart color="grey" size={14} />
         )}
       </Button>
       )}
