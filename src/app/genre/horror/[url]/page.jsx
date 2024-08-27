@@ -94,34 +94,6 @@ const HorrorPostPage = ({ params }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [userRating, setUserRating] = useState(0); // State for slider
 
-  useEffect(() => {
-    const fetchDataAndStatus = async () => {
-      try {
-        const movieData = await fetchData(params.url);
-        if (movieData) {
-          setData(movieData);
-        }
-
-        const userLoggedIn = await checkUserLoggedIn();
-        setIsLoggedIn(userLoggedIn);
-
-        if (userLoggedIn) {
-          const { isLiked} = await fetchLikeStatus(params.url);
-          setIsLiked(isLiked);
-          fetchUserRating();
-        }
-      } catch (err) {
-        setError('Failed to load data');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDataAndStatus();
-  }, [params.url, fetchUserRating]);
-
-
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
     const result = await toggleLike(params.url, action);
@@ -196,7 +168,32 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
-  
+  useEffect(() => {
+    const fetchDataAndStatus = async () => {
+      try {
+        const movieData = await fetchData(params.url);
+        if (movieData) {
+          setData(movieData);
+        }
+
+        const userLoggedIn = await checkUserLoggedIn();
+        setIsLoggedIn(userLoggedIn);
+
+        if (userLoggedIn) {
+          const { isLiked} = await fetchLikeStatus(params.url);
+          setIsLiked(isLiked);
+          fetchUserRating();
+        }
+      } catch (err) {
+        setError('Failed to load data');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDataAndStatus();
+  }, [params.url, fetchUserRating]);
   
 
   if (isLoading) {
