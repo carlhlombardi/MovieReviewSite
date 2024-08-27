@@ -116,9 +116,10 @@ const HorrorPostPage = ({ params }) => {
   const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
-      
-      const movieSlug = getMovieSlugFromURL(url);
+      if (!token) return; // Handle case where token is not available
+
+      const fullURL = window.location.href; // Full URL
+      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
 
       const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, {
         method: 'GET',
@@ -133,40 +134,42 @@ const HorrorPostPage = ({ params }) => {
       }
 
       const data = await response.json();
-      setUserRating(data.rating || 0);
-      setAverageRating(data.averageRating || 0);
+      setUserRating(data.rating || 0); // Ensure default value if no rating is found
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
-  }, []);
+  }, []); // Dependencies array is empty if fetchUserRating does not rely on any props or state
+
 
   const handleRatingSubmit = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const movieSlug = getMovieSlugFromURL(url);
-
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
+      const token = localStorage.getItem('token'); // Get the token from localStorage
+      const fullURL = window.location.href; // Full URL
+      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
+  
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_rating', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: movieSlug,
-          rating: userRating,
+          url: movieSlug, // Use the extracted movieSlug
+          rating: userRating, // Slider value
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to submit rating');
       }
-
+      
+      // Fetch and display the updated rating
       await fetchUserRating();
     } catch (error) {
       console.error('Rating submission error:', error);
     }
   };
-
+  
   useEffect(() => {
     const fetchDataAndStatus = async () => {
       try {
