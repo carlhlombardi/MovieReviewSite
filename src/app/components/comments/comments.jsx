@@ -461,7 +461,7 @@ const Comments = ({ movieUrl }) => {
             )}
             <Link href={`/profile/${comment.username}`} passHref>
               <a>
-                <strong>{comment.username}</strong>
+                <strong> {comment.username}</strong>
               </a>
             </Link> - {formatDate(comment.createdat)}
             <p>{comment.text}</p>
