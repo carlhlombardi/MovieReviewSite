@@ -446,6 +446,19 @@ const Comments = ({ movieUrl }) => {
       <ListGroup>
         {comments.map(comment => (
           <ListGroup.Item key={comment.id}>
+             {user && (
+               <Button 
+               variant="link" 
+               onClick={() => handleLikeComment(comment.id)}
+               style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+             >
+               {comment.likedByUser ? (
+                 <HeartFill color="red" size={14} />
+               ) : (
+                 <Heart color="grey" size={14} />
+               )}
+             </Button>
+            )}
             <Link href={`/profile/${comment.username}`} passHref>
               <a>
                 <strong>{comment.username}</strong>
@@ -469,19 +482,6 @@ const Comments = ({ movieUrl }) => {
                   </>
                 )}
               </>
-            )}
-            {user && (
-               <Button 
-               variant="link" 
-               onClick={() => handleLikeComment(comment.id)}
-               style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
-             >
-               {comment.likedByUser ? (
-                 <HeartFill color="red" size={14} />
-               ) : (
-                 <Heart color="grey" size={14} />
-               )}
-             </Button>
             )}
             {user && (
               <Form onSubmit={(e) => { 

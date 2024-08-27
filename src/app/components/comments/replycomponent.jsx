@@ -17,8 +17,7 @@ const ReplyComponent = ({
 
   return (
     <div className="border p-2 mb-2">
-      <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
-      {user && (
+            {user && (
         <Button 
         variant="link" 
         onClick={() => handleLikeReply(reply.id)}
@@ -31,6 +30,7 @@ const ReplyComponent = ({
         )}
       </Button>
       )}
+      <strong>{reply.username}</strong>: {reply.text} - {formatDate(reply.createdat)}
       {user && (
         <Form onSubmit={(e) => { 
           e.preventDefault(); 
