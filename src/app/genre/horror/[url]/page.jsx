@@ -106,11 +106,9 @@ const HorrorPostPage = ({ params }) => {
   };
 
   function getMovieSlugFromURL(url) {
+    // This function extracts the part of the URL after '/horror/'
     const parts = url.split('/horror/');
-    if (parts.length > 1) {
-      return parts[1];
-    }
-    return '';
+    return parts.length > 1 ? parts[1] : '';
   }
 
   const fetchUserRating = useCallback(async () => {
@@ -118,8 +116,8 @@ const HorrorPostPage = ({ params }) => {
       const token = localStorage.getItem('token');
       if (!token) return; // Handle case where token is not available
   
-      const fullURL = window.location.href; // Full URL
-      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
+      const fullURL = window.location.href;
+      const movieSlug = encodeURIComponent(getMovieSlugFromURL(fullURL)); // Encode the slug
   
       const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, { // Use the movieSlug as the URL parameter
         method: 'GET',
