@@ -153,7 +153,7 @@ const HorrorPostPage = ({ params }) => {
     try {
       const token = localStorage.getItem('token'); // Get the token from localStorage
   
-      const response = await fetch('/api/rate', { // Use relative path
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/rate', { // Use relative path
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -174,7 +174,7 @@ const HorrorPostPage = ({ params }) => {
       console.error('Rating submission error:', error);
     }
   };
-  
+
   if (isLoading) {
     return <Spinner animation="border" />;
   }
