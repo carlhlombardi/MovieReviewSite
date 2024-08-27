@@ -1,12 +1,10 @@
 import { sql } from '@vercel/postgres';
-import jwt from 'jsonwebtoken'; // Install this if you haven't already
-
-const SECRET_KEY = process.env.JWT_SECRET; // Ensure you have this secret key
+import jwt from 'jsonwebtoken'; 
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { url, rating } = req.body;
-    const token = req.headers.authorization?.split(' ')[1]; // Extract the token from the Authorization header
+    const token = req.headers.authorization?.split(' ')[1]; 
 
     if (!url || rating === undefined || !token) {
       return res.status(400).json({ error: 'URL, rating, and token are required' });
