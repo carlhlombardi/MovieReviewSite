@@ -31,10 +31,13 @@ export async function POST(request) {
       );
     }
 
+    // Use ON CONFLICT to handle both insert and update
     const result = await sql`
      INSERT INTO movie_ratings (url, rating, username, created_at)
       VALUES (${url}, ${rating}, ${user.username}, NOW())
-      RETURNING id, username, rating, created_at;
+      ON CONFLICT (url, username) 
+      DO UPDATE SET rating = EXCLUDED.rating, created_at = EXCLUDED.created_at
+      RETURNING id, url, username, rating, created_at;
     `;
 
     return new Response(
@@ -44,7 +47,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Add review score error:', error);
     return new Response(
-      JSON.stringify({ message: 'Failed to add review score' }),
+      JSON.stringify({ message: 'Failed to add review score', error: error.message }),
       { status: 500 }
     );
   }
