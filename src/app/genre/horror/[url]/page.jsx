@@ -145,7 +145,7 @@ const HorrorPostPage = ({ params }) => {
       const fullURL = window.location.href; // Full URL
       const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
   
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_rating', {
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
