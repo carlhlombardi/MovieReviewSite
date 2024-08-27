@@ -37,10 +37,18 @@ export async function GET(request) {
       FROM movie_ratings
       WHERE url = ${url} AND username = ${user.username};
     `;
-    const rating = ratingResult.rows[0]?.rating || null;
+    const userRating = ratingResult.rows[0]?.rating || null;
+
+    // Fetch the average rating for the movie
+    const averageResult = await sql`
+      SELECT AVG(rating) AS average_rating
+      FROM movie_ratings
+      WHERE url = ${url};
+    `;
+    const averageRating = averageResult.rows[0]?.average_rating || 0;
 
     return new Response(
-      JSON.stringify({ rating }),
+      JSON.stringify({ userRating, averageRating }),
       { status: 200 }
     );
   } catch (error) {
