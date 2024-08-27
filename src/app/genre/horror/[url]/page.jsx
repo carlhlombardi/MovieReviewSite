@@ -135,7 +135,6 @@ const HorrorPostPage = ({ params }) => {
   const handleRatingSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
-      const url = encodeURIComponent(window.location.href);
   
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
@@ -162,8 +161,6 @@ const HorrorPostPage = ({ params }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return; // Handle case where token is not available
-  
-      const url = encodeURIComponent(window.location.href); // Use the current page URL and encode it
   
       const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${url}`, { // Pass URL as a query parameter
         method: 'GET',
