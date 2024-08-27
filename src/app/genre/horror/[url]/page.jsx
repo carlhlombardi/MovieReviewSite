@@ -239,28 +239,11 @@ const HorrorPostPage = ({ params }) => {
       className='mb-4'
     >
       {isLiked ? (
-        <HeartFill color="red" size={32} />
+        <HeartFill color="red" size={14}/>
       ) : (
-        <Heart color="grey" size={32} />
+        <Heart color="grey" size={14} />
       )}
     </Button>
-    <div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={userRating}
-                  onChange={(e) => setUserRating(Number(e.target.value))}
-                />
-                <Button 
-                  onClick={handleRatingSubmit}
-                  className='mb-4'
-                >
-                  Submit Rating
-                </Button>
-                <h3>Average Rating: {averageRating} %</h3> {/* Format as fixed-point notation */}
-                <h3>Your Rating: {userRating} $</h3>
-              </div>
             </>
           )}
           <h5>Director: {director}</h5>
@@ -280,6 +263,28 @@ const HorrorPostPage = ({ params }) => {
           <h3 className='mb-4'>Review of {film}</h3>
           <p>{review}</p>
           <h3>My Rating: {my_rating} Stars</h3>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+        <div>
+      <h2>Rate This Film</h2>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={userRating}
+                  onChange={(e) => setUserRating(Number(e.target.value))}
+                />
+                <Button 
+                  onClick={handleRatingSubmit}
+                  className='mb-4'
+                >
+                  Submit Rating
+                </Button>
+                <h3>Average Rating: {averageRating}%</h3> {/* Format as fixed-point notation */}
+                <h3>Your Rating: {userRating}$</h3>
+              </div>
         </Col>
       </Row>
       <Row>
