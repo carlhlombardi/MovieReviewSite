@@ -119,7 +119,7 @@ const HorrorPostPage = ({ params }) => {
     };
 
     fetchDataAndStatus();
-  }, [params.url, fetchAverageRating]);
+  }, [params.url]);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
