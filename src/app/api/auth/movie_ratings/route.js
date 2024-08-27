@@ -37,9 +37,15 @@ export async function POST(request) {
       RETURNING id, username, rating, created_at;
     `;
 
-    return res.status(200).json(result.rows[0]); // Ensure data is returned correctly
+    return new Response(
+      JSON.stringify(result.rows[0]),
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Error submitting rating:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Add review score error:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to add review score' }),
+      { status: 500 }
+    );
   }
 }

@@ -131,37 +131,39 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
-  const handleRatingSubmit = async () => {
-    try {
-      const token = localStorage.getItem('token'); // Get the token from localStorage
-  
-      // Ensure URL and rating are correctly set
-      const url = window.location.href; // Use the current page URL
-      const rating = userRating; // Replace with your slider value
-  
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie-rating', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url, // Use the current page URL
-          rating, // Slider value
-        }),
-      });
-  
-      // Log the response for debugging
-      const responseData = await response.json();
-      console.log('Response Data:', responseData);
-  
-      if (!response.ok) {
-        throw new Error(`Failed to submit rating: ${responseData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Rating submission error:', error);
+const handleRatingSubmit = async () => {
+  try {
+    const token = localStorage.getItem('token'); // Get the token from localStorage
+
+    // Ensure URL and rating are correctly set
+    const url = window.location.href; // Use the current page URL
+    const rating = userRating; // Replace with your slider value
+
+    const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url, // Use the current page URL
+        rating, // Slider value
+      }),
+    });
+
+    // Log the response for debugging
+    const responseData = await response.json();
+    console.log('Response Data:', responseData);
+
+    if (!response.ok) {
+      throw new Error(`Failed to submit rating: ${responseData.message || 'Unknown error'}`);
     }
-  };
+
+    // Optionally, fetch and update the average rating or any other UI updates
+  } catch (error) {
+    console.error('Rating submission error:', error);
+  }
+};
 
   if (isLoading) {
     return <Spinner animation="border" />;
