@@ -117,36 +117,38 @@ const HorrorPostPage = ({ params }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return; // Handle case where token is not available
-
+  
       const fullURL = window.location.href; // Full URL
       const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
-
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, {
+  
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, { // Use the movieSlug as the URL parameter
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to fetch user rating');
       }
-
+  
       const data = await response.json();
       setUserRating(data.rating || 0); // Ensure default value if no rating is found
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
   }, []); // Dependencies array is empty if fetchUserRating does not rely on any props or state
-
+  
+  
 
   const handleRatingSubmit = async () => {
     try {
       const token = localStorage.getItem('token'); // Get the token from localStorage
+
       const fullURL = window.location.href; // Full URL
       const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
-  
+    
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
         headers: {
@@ -154,7 +156,7 @@ const HorrorPostPage = ({ params }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: movieSlug, // Use the extracted movieSlug
+          url: movieSlug, // Current page URL
           rating: userRating, // Slider value
         }),
       });
@@ -169,7 +171,7 @@ const HorrorPostPage = ({ params }) => {
       console.error('Rating submission error:', error);
     }
   };
-
+  
   useEffect(() => {
     const fetchDataAndStatus = async () => {
       try {
