@@ -21,7 +21,6 @@ const ReplyComponent = ({
         <Button 
         variant="link" 
         onClick={() => handleLikeReply(reply.id)}
-        className='m-2'
       >
         {isLiked ? (
           <HeartFill color="red" size={14} />
