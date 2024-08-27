@@ -267,24 +267,27 @@ const HorrorPostPage = ({ params }) => {
       </Row>
       <Row>
         <Col>
-        <div>
-      <h2>Rate This Film</h2>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={userRating}
-                  onChange={(e) => setUserRating(Number(e.target.value))}
-                />
-                <Button 
-                  onClick={handleRatingSubmit}
-                  className='mb-4'
-                >
-                  Submit Rating
-                </Button>
-                <h3>Average Rating: {averageRating}%</h3> {/* Format as fixed-point notation */}
-                <h3>Your Rating: {userRating}$</h3>
-              </div>
+        <div className="d-flex justify-content-center align-items-center vh-100">
+      <div className="text-center p-4 border rounded shadow-sm" style={{ maxWidth: '500px' }}>
+        <h2>Rate This Film</h2>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={userRating}
+          onChange={(e) => setUserRating(Number(e.target.value))}
+          className="form-range mb-3" // Using Bootstrap's form-range class
+        />
+        <Button 
+          onClick={handleRatingSubmit}
+          className='mb-4'
+        >
+          Submit Rating
+        </Button>
+        <h3>Average Rating: {averageRating.toFixed(2)}%</h3> {/* Format as fixed-point notation */}
+        <h3>Your Rating: {userRating.toFixed(2)}%</h3>
+      </div>
+    </div>
         </Col>
       </Row>
       <Row>
