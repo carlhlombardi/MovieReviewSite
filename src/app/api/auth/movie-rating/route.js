@@ -2,6 +2,7 @@ import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
+  // Allow only POST requests
   if (req.method === 'POST') {
     try {
       // Extract the Authorization header
@@ -48,5 +49,9 @@ export default async function handler(req, res) {
       console.error('Failed to submit rating:', error);
       return res.status(500).json({ message: 'Failed to submit rating' });
     }
+  } else {
+    // Handle methods other than POST
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 }
