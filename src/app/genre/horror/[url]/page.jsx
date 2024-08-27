@@ -153,15 +153,19 @@ const HorrorPostPage = ({ params }) => {
     try {
       const token = localStorage.getItem('token'); // Get the token from localStorage
   
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/rate', { // Use relative path
+      // Ensure URL and rating are correctly set
+      const url = window.location.href; // Use the current page URL
+      const rating = userRating; // Replace with your slider value
+  
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie-rating', { // Use the relative path
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: window.location.href, // Use the current page URL
-          rating: userRating, // Replace with your slider value
+          url, // Use the current page URL
+          rating, // Slider value
         }),
       });
   
@@ -169,6 +173,7 @@ const HorrorPostPage = ({ params }) => {
         throw new Error('Failed to submit rating');
       }
   
+      // Optionally, fetch and update the average rating or any other UI updates
       await fetchAverageRating(); // Function to update the average rating on the frontend
     } catch (error) {
       console.error('Rating submission error:', error);
