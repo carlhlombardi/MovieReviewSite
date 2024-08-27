@@ -48,9 +48,5 @@ export default async function handler(req, res) {
       console.error('Failed to submit rating:', error);
       return res.status(500).json({ message: 'Failed to submit rating' });
     }
-  } else {
-    // Handle methods other than POST
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
