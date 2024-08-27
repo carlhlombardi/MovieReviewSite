@@ -139,7 +139,7 @@ const HorrorPostPage = ({ params }) => {
       const url = window.location.href; // Use the current page URL
       const rating = userRating; // Replace with your slider value
   
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie-rating', { // Use the relative path
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie-rating', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -151,8 +151,12 @@ const HorrorPostPage = ({ params }) => {
         }),
       });
   
+      // Log the response for debugging
+      const responseData = await response.json();
+      console.log('Response Data:', responseData);
+  
       if (!response.ok) {
-        throw new Error('Failed to submit rating');
+        throw new Error(`Failed to submit rating: ${responseData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Rating submission error:', error);
