@@ -168,15 +168,14 @@ const HorrorPostPage = ({ params }) => {
       const token = localStorage.getItem('token');
       if (!token) return; // Handle case where token is not available
   
-      const url = window.location.href; // Use the current page URL
+      const url = encodeURIComponent(window.location.href); // Use the current page URL and encode it
   
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', { // Update to your API path
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${url}`, { // Pass URL as a query parameter
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url }), // Include URL in the request body
       });
   
       if (!response.ok) {
@@ -191,10 +190,6 @@ const HorrorPostPage = ({ params }) => {
     }
   }
   
-  // Call this function when the page loads
-  useEffect(() => {
-    fetchUserRating();
-  }, []);
 
   if (isLoading) {
     return <Spinner animation="border" />;
