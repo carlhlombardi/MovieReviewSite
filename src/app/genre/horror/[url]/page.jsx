@@ -108,10 +108,11 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
-  function getMovieSlugFromURL(url) {
-    const parts = url.split('/horror/');
-    return parts.length > 1 ? parts[1] : '';
-  }
+  const getMovieSlugFromURL = (url) => {
+    const parts = url.split('/'); // Split the URL into parts
+    const slugIndex = parts.indexOf('horror') + 2; // Adjust the index based on the URL structure
+    return parts[slugIndex]; // Return the movie slug
+  };
 
   const fetchUserRating = useCallback(async () => {
     try {
