@@ -108,7 +108,7 @@ const HorrorPostPage = ({ params }) => {
         if (userLoggedIn) {
           const { isLiked} = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
-
+          fetchUserRating();
         }
       } catch (err) {
         setError('Failed to load data');
@@ -120,6 +120,7 @@ const HorrorPostPage = ({ params }) => {
 
     fetchDataAndStatus();
   }, [params.url]);
+
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
@@ -133,35 +134,29 @@ const HorrorPostPage = ({ params }) => {
 
   const handleRatingSubmit = async () => {
     try {
-      const token = localStorage.getItem('token'); // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      const url = encodeURIComponent(window.location.href);
   
-      // Ensure URL and rating are correctly set
-      const url = window.location.href; // Use the current page URL
-      const rating = userRating; // Replace with your slider value
-  
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', { // Use the relative path
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          url, // Use the current page URL
-          rating, // Slider value
-        }),
+        body: JSON.stringify({ url, rating: userRating }),
       });
   
       if (!response.ok) {
         throw new Error('Failed to submit rating');
       }
   
-      const data = await response.json();
-      // Update rating display
-      setUserRating(data.rating); // Function to update the rating display
+      // Fetch and display the updated rating
+      await fetchUserRating();
     } catch (error) {
       console.error('Rating submission error:', error);
     }
   };
+  
 
   async function fetchUserRating() {
     try {
