@@ -1,8 +1,9 @@
 import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken'; // Import this if you haven't
 
 export async function POST(request) {
   try {
-    const { url} = await request.json();
+    const { url, rating } = await request.json(); // Ensure you include rating
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -31,9 +32,9 @@ export async function POST(request) {
     }
 
     const result = await sql`
-     INSERT INTO movie_ratings (url, rating, username, createdat)
+     INSERT INTO movie_ratings (url, rating, username, created_at)
       VALUES (${url}, ${rating}, ${user.username}, NOW())
-      RETURNING id, username, rating, createdat;
+      RETURNING id, username, rating, created_at;
     `;
 
     return new Response(
