@@ -97,56 +97,56 @@ const HorrorPostPage = ({ params }) => {
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
-    const result = await toggleLike(params.url, action);
-
-    if (result) {
-      setIsLiked(action === 'like');
-      setLikedCount(result.likeCount || 0); // Ensure correct likeCount
+    try {
+      const result = await toggleLike(params.url, action);
+      if (result) {
+        setIsLiked(action === 'like');
+        setLikedCount(result.likeCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
     }
   };
 
   function getMovieSlugFromURL(url) {
     const parts = url.split('/horror/');
-    if (parts.length > 1) {
-      return parts[1];
-    }
-    return '';
+    return parts.length > 1 ? parts[1] : '';
   }
 
   const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return; // Handle case where token is not available
-  
-      const fullURL = window.location.href; // Full URL
-      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
-  
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, { // Use the movieSlug as the URL parameter
+      if (!token) return;
+
+      const fullURL = window.location.href;
+      const movieSlug = getMovieSlugFromURL(fullURL);
+
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to fetch user rating');
       }
-  
+
       const data = await response.json();
       setUserRating(data.rating || 0);
-      setAverageRating(data.averageRating || 0); // Ensure default value if no rating is found
+      setAverageRating(data.averageRating || 0);
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
-  }, []); 
+  }, []);
 
   const handleRatingSubmit = async () => {
     try {
-      const token = localStorage.getItem('token'); // Get the token from localStorage
-      const fullURL = window.location.href; // Full URL
-      const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
-  
+      const token = localStorage.getItem('token');
+      const fullURL = window.location.href;
+      const movieSlug = getMovieSlugFromURL(fullURL);
+
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
         headers: {
@@ -154,16 +154,15 @@ const HorrorPostPage = ({ params }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: movieSlug, // Use the extracted movieSlug
-          rating: userRating, // Slider value
+          url: movieSlug,
+          rating: userRating,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to submit rating');
       }
-      
-      // Fetch and display the updated rating
+
       await fetchUserRating();
     } catch (error) {
       console.error('Rating submission error:', error);
@@ -182,9 +181,9 @@ const HorrorPostPage = ({ params }) => {
         setIsLoggedIn(userLoggedIn);
 
         if (userLoggedIn) {
-          const { isLiked} = await fetchLikeStatus(params.url);
+          const { isLiked } = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
-          fetchUserRating();
+          await fetchUserRating();
         }
       } catch (err) {
         setError('Failed to load data');
@@ -196,6 +195,7 @@ const HorrorPostPage = ({ params }) => {
 
     fetchDataAndStatus();
   }, [params.url, fetchUserRating]);
+
   
 
   if (isLoading) {
