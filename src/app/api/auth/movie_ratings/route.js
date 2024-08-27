@@ -32,27 +32,15 @@ export async function GET(request) {
       );
     }
 
-    // Fetch the user's rating
     const ratingResult = await sql`
       SELECT rating
       FROM movie_ratings
       WHERE url = ${url} AND username = ${user.username};
     `;
-    const userRating = ratingResult.rows[0]?.rating || null;
-
-    // Fetch the average rating for the movie
-    const averageResult = await sql`
-      SELECT AVG(rating) AS average_rating
-      FROM movie_ratings
-      WHERE url = ${url};
-    `;
-    const averageRating = averageResult.rows[0]?.average_rating || 0;
+    const rating = ratingResult.rows[0]?.rating || null;
 
     return new Response(
-      JSON.stringify({
-        userRating,
-        averageRating,
-      }),
+      JSON.stringify({ rating }),
       { status: 200 }
     );
   } catch (error) {
@@ -94,7 +82,6 @@ export async function POST(request) {
       );
     }
 
-    // Insert or update the rating
     const result = await sql`
      INSERT INTO movie_ratings (url, rating, username, created_at)
       VALUES (${url}, ${rating}, ${user.username}, NOW())
@@ -103,19 +90,8 @@ export async function POST(request) {
       RETURNING id, username, rating, created_at;
     `;
 
-    // Fetch the updated average rating
-    const averageResult = await sql`
-      SELECT AVG(rating) AS average_rating
-      FROM movie_ratings
-      WHERE url = ${url};
-    `;
-    const averageRating = averageResult.rows[0]?.average_rating || 0;
-
     return new Response(
-      JSON.stringify({
-        ...result.rows[0],
-        averageRating,
-      }),
+      JSON.stringify(result.rows[0]),
       { status: 200 }
     );
   } catch (error) {

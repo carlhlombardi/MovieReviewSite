@@ -93,25 +93,24 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [userRating, setUserRating] = useState(0); // State for slider
-  const [averageRating, setAverageRating] = useState(0);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
-    try {
-      const result = await toggleLike(params.url, action);
-      if (result) {
-        setIsLiked(action === 'like');
-        setLikedCount(result.likeCount || 0);
-      }
-    } catch (error) {
-      console.error('Failed to toggle like:', error);
+    const result = await toggleLike(params.url, action);
+
+    if (result) {
+      setIsLiked(action === 'like');
+      setLikedCount(result.likeCount || 0); // Ensure correct likeCount
     }
   };
 
-  const getMovieSlugFromURL = (url) => {
+  function getMovieSlugFromURL(url) {
     const parts = url.split('/horror/');
-    return parts.length > 1 ? parts[1] : '';
-  };
+    if (parts.length > 1) {
+      return parts[1];
+    }
+    return '';
+  }
 
   const fetchUserRating = useCallback(async () => {
     try {
@@ -138,17 +137,14 @@ const HorrorPostPage = ({ params }) => {
     } catch (error) {
       console.error('Error fetching user rating:', error);
     }
-  }, []); // Dependencies array is empty if fetchUserRating does not rely on any props or state
-  
-  
+  }, []); 
 
   const handleRatingSubmit = async () => {
     try {
       const token = localStorage.getItem('token'); // Get the token from localStorage
-
       const fullURL = window.location.href; // Full URL
       const movieSlug = getMovieSlugFromURL(fullURL); // Extract the relevant part
-    
+  
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
         headers: {
@@ -156,7 +152,7 @@ const HorrorPostPage = ({ params }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: movieSlug, // Current page URL
+          url: movieSlug, // Use the extracted movieSlug
           rating: userRating, // Slider value
         }),
       });
@@ -171,7 +167,7 @@ const HorrorPostPage = ({ params }) => {
       console.error('Rating submission error:', error);
     }
   };
-  
+
   useEffect(() => {
     const fetchDataAndStatus = async () => {
       try {
@@ -184,9 +180,9 @@ const HorrorPostPage = ({ params }) => {
         setIsLoggedIn(userLoggedIn);
 
         if (userLoggedIn) {
-          const { isLiked } = await fetchLikeStatus(params.url);
+          const { isLiked} = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
-          await fetchUserRating();
+          fetchUserRating();
         }
       } catch (err) {
         setError('Failed to load data');
@@ -198,7 +194,6 @@ const HorrorPostPage = ({ params }) => {
 
     fetchDataAndStatus();
   }, [params.url, fetchUserRating]);
-
   
 
   if (isLoading) {
@@ -263,7 +258,6 @@ const HorrorPostPage = ({ params }) => {
                   Submit Rating
                 </Button>
                 <p>Your Rating: {userRating}%</p>
-                <p>Avg. Audience Rating: {averageRating.toFixed(2)}%</p>
               </div>
             </>
           )}
