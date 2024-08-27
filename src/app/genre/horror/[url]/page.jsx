@@ -109,18 +109,16 @@ const HorrorPostPage = ({ params }) => {
   };
 
   const getMovieSlugFromURL = (url) => {
-    const parts = url.split('/'); // Split the URL into parts
-    const slugIndex = parts.indexOf('horror') + 2; // Adjust the index based on the URL structure
-    return parts[slugIndex]; // Return the movie slug
+    const parts = url.split('/horror/');
+    return parts.length > 1 ? parts[1] : '';
   };
 
   const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-
-      const fullURL = window.location.href;
-      const movieSlug = getMovieSlugFromURL(fullURL);
+      
+      const movieSlug = getMovieSlugFromURL(url);
 
       const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(movieSlug)}`, {
         method: 'GET',
@@ -145,8 +143,7 @@ const HorrorPostPage = ({ params }) => {
   const handleRatingSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
-      const fullURL = window.location.href;
-      const movieSlug = getMovieSlugFromURL(fullURL);
+      const movieSlug = getMovieSlugFromURL(url);
 
       const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
         method: 'POST',
