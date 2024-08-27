@@ -258,8 +258,8 @@ const HorrorPostPage = ({ params }) => {
                 >
                   Submit Rating
                 </Button>
-                <h3>Average Rating: {averageRating.toFixed(2)}</h3> {/* Format as fixed-point notation */}
-                <h3>Your Rating: {userRating}</h3>
+                <h3>Average Rating: {averageRating} %</h3> {/* Format as fixed-point notation */}
+                <h3>Your Rating: {userRating} $</h3>
               </div>
             </>
           )}
