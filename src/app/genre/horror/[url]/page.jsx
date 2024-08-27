@@ -268,7 +268,7 @@ const HorrorPostPage = ({ params }) => {
       <Row>
         <Col>
         <div className="d-flex justify-content-center align-items-center">
-      <div className="text-center p-4 border rounded shadow-sm" style={{ maxWidth: '500px' }}>
+      <div className="text-center mt-2 p-4 border rounded shadow-sm" style={{ maxWidth: '500px' }}>
         <h2>Rate This Film</h2>
         <input
           type="range"
