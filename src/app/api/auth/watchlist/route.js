@@ -26,10 +26,64 @@ const getMovieDetailsByURL = async (url) => {
 
 // POST request to add a movie to watchlist
 export async function POST(request) {
-  return new Response(
-    JSON.stringify({ message: 'POST request received' }),
-    { status: 200 }
-  );
+  try {
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Authorization token is missing' }),
+        { status: 401 }
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const username = decoded.username;
+
+    if (!username) {
+      return new Response(
+        JSON.stringify({ message: 'Username not found in token' }),
+        { status: 401 }
+      );
+    }
+
+    const { url } = await request.json();
+    if (!url) {
+      return new Response(
+        JSON.stringify({ message: 'URL is required' }),
+        { status: 400 }
+      );
+    }
+
+    const movieDetails = await getMovieDetailsByURL(url);
+
+    if (!movieDetails) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
+
+    const { title, genre } = movieDetails;
+
+    // Add movie to watchlist
+    await sql`
+      INSERT INTO watchlist (username, url, title, genre)
+      VALUES (${username}, ${url}, ${title}, ${genre})
+      ON CONFLICT (username, url) DO NOTHING;
+    `;
+
+    return new Response(
+      JSON.stringify({ message: 'Movie added to watchlist' }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Failed to add movie to watchlist:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to add movie to watchlist' }),
+      { status: 500 }
+    );
+  }
 }
 
 // DELETE request to remove a movie from watchlist
