@@ -90,6 +90,8 @@ const fetchWatchlistStatus = async (url) => {
 const toggleWatchlist = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) throw new Error('Token is missing');
+
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
       method: action === 'add' ? 'POST' : 'DELETE',
       headers: {
@@ -99,12 +101,24 @@ const toggleWatchlist = async (url, action) => {
       body: action === 'add' ? JSON.stringify({ url }) : undefined
     });
 
+    // Check if the response is okay
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to toggle watchlist');
+      // Log the response for debugging
+      const errorText = await response.text();
+      console.error('Response error:', errorText);
+      throw new Error(`Failed to toggle watchlist: ${errorText}`);
     }
 
-    return await response.json();
+    // Try to parse JSON response
+    try {
+      const result = await response.json();
+      return result;
+    } catch (jsonError) {
+      // Log the error if JSON parsing fails
+      console.error('Failed to parse JSON response:', jsonError);
+      throw new Error('Failed to parse JSON response');
+    }
+
   } catch (error) {
     console.error('Toggle watchlist error:', error);
     return null; // Default error handling
