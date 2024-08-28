@@ -115,7 +115,11 @@ const toggleWatchlist = async (url, action) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
+    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`;
+    console.log('Fetch URL:', fetchUrl);
+    console.log('Request Method:', action === 'add' ? 'POST' : 'DELETE');
+    
+    const response = await fetch(fetchUrl, {
       method: action === 'add' ? 'POST' : 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -124,17 +128,31 @@ const toggleWatchlist = async (url, action) => {
       body: action === 'add' ? JSON.stringify({ url }) : undefined
     });
 
+    // Log response details
+    console.log('Response Status:', response.status);
+    console.log('Response Headers:', JSON.stringify([...response.headers]));
+    const responseBody = await response.text();
+    console.log('Response Body:', responseBody);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to toggle watchlist');
+      // Attempt to parse JSON error message
+      let errorMessage = 'Failed to toggle watchlist';
+      try {
+        const error = JSON.parse(responseBody);
+        errorMessage = error.message || errorMessage;
+      } catch (e) {
+        // Error message is not JSON, keep the default
+      }
+      throw new Error(errorMessage);
     }
 
-    return await response.json();
+    return JSON.parse(responseBody);
   } catch (error) {
-    console.error('Toggle watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
+    console.error('Toggle watchlist error:', safeStringify(error)); // Log full error details
     return null; // Default error handling
   }
 };
+
 
 
 
