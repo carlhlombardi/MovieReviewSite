@@ -116,6 +116,7 @@ const HorrorPostPage = ({ params }) => {
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState(0); // Initialize as number
   const [averageRating, setAverageRating] = useState(0); // Initialize as number
 
@@ -220,6 +221,10 @@ const HorrorPostPage = ({ params }) => {
         if (userLoggedIn) {
           const { isLiked } = await fetchLikeStatus(params.url);
           setIsLiked(isLiked);
+
+          const { isInWatchlist } = await fetchWatchlistStatus(params.url);
+          setIsInWatchlist(isInWatchlist);
+
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
         }
       } catch (err) {
@@ -282,17 +287,17 @@ const HorrorPostPage = ({ params }) => {
       )}
     </Button>
     <Button 
-      variant="link" 
-      onClick={handleLike} 
-      disabled={!isLoggedIn}
-      className='mb-4 mr-3'
-    >
-      {isLiked ? (
-        <HeartFill color="red" size={18}/>
-      ) : (
-        <Heart color="grey" size={18} />
-      )}
-    </Button>
+                variant="link" 
+                onClick={handleWatchlist} 
+                disabled={!isLoggedIn}
+                className='mb-4 mr-3'
+              >
+                {isInWatchlist ? (
+                  <HeartFill color="green" size={18}/>
+                ) : (
+                  <Heart color="grey" size={18} />
+                )}
+              </Button>
             </>
           )}
           <h5>Director: {director}</h5>
