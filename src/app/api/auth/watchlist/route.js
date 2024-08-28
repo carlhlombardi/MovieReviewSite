@@ -24,11 +24,9 @@ const getMovieDetailsByURL = async (url) => {
   return null; // URL not found in any table
 };
 
-// POST request to add a movie to watchlist
+// POST request to add a movie to the watchlist
 export async function POST(request) {
   try {
-    console.log('Incoming request:', request);
-
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -38,8 +36,6 @@ export async function POST(request) {
         { status: 401 }
       );
     }
-
-    console.log('Token:', token);
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const username = decoded.username;
@@ -59,8 +55,6 @@ export async function POST(request) {
       );
     }
 
-    console.log('URL:', url);
-
     const movieDetails = await getMovieDetailsByURL(url);
 
     if (!movieDetails) {
@@ -79,7 +73,10 @@ export async function POST(request) {
     `;
 
     return new Response(
-      JSON.stringify({ message: 'Movie added to watchlist' }),
+      JSON.stringify({ 
+        message: 'Movie added to watchlist', 
+        watchlistItem: { username, url, title, genre } 
+      }),
       { status: 200 }
     );
   } catch (error) {
@@ -91,7 +88,51 @@ export async function POST(request) {
   }
 }
 
-// DELETE request to remove a movie from watchlist
+// GET request to fetch watchlist
+export async function GET(request) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ message: 'Authorization token is missing' }),
+        { status: 401 }
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const username = decoded.username;
+
+    if (!username) {
+      return new Response(
+        JSON.stringify({ message: 'Username not found in token' }),
+        { status: 401 }
+      );
+    }
+
+    const watchlistResult = await sql`
+      SELECT username, url, title, genre
+      FROM watchlist
+      WHERE username = ${username};
+    `;
+
+    const watchlist = watchlistResult.rows;
+
+    return new Response(
+      JSON.stringify({ watchlist }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Failed to fetch watchlist:', error);
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch watchlist' }),
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE request to remove a movie from the watchlist
 export async function DELETE(request) {
   try {
     const authHeader = request.headers.get('Authorization');
@@ -122,63 +163,30 @@ export async function DELETE(request) {
       );
     }
 
-    await sql`
+    const result = await sql`
       DELETE FROM watchlist
-      WHERE username = ${username} AND url = ${url};
+      WHERE username = ${username} AND url = ${url}
+      RETURNING username, url, title, genre;
     `;
 
+    if (result.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found in watchlist' }),
+        { status: 404 }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ message: 'Movie removed from watchlist' }),
+      JSON.stringify({ 
+        message: 'Movie removed from watchlist', 
+        watchlistItem: result.rows[0] 
+      }),
       { status: 200 }
     );
   } catch (error) {
     console.error('Failed to remove movie from watchlist:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to remove movie from watchlist' }),
-      { status: 500 }
-    );
-  }
-}
-
-// GET request to fetch watchlist
-export async function GET(request) {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1];
-
-    if (!token) {
-      return new Response(
-        JSON.stringify({ message: 'Authorization token is missing' }),
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const username = decoded.username;
-
-    if (!username) {
-      return new Response(
-        JSON.stringify({ message: 'Username not found in token' }),
-        { status: 401 }
-      );
-    }
-
-    const watchlistResult = await sql`
-      SELECT url, title, genre
-      FROM watchlist
-      WHERE username = ${username};
-    `;
-
-    const watchlist = watchlistResult.rows;
-
-    return new Response(
-      JSON.stringify({ watchlist }),
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Failed to fetch watchlist:', error);
-    return new Response(
-      JSON.stringify({ message: 'Failed to fetch watchlist' }),
       { status: 500 }
     );
   }
