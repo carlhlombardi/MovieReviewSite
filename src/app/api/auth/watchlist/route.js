@@ -48,12 +48,12 @@ const getMovieInfo = async (url) => {
   return movieResult.rows[0];
 };
 
-// Utility function to count watchlist items
-const countWatchlistItems = async (username) => {
+// Utility function to count watchlist items for a specific film
+const countWatchlistItems = async (url) => {
   const watchlistCountResult = await sql`
     SELECT COUNT(*) AS count
     FROM watchlist
-    WHERE username = ${username};
+    WHERE url = ${url};
   `;
   return parseInt(watchlistCountResult.rows[0].count, 10);
 };
@@ -71,12 +71,7 @@ export async function GET(request) {
     }
 
     // Get the total count of watchlist entries for the movie
-    const watchlistCountResult = await sql`
-      SELECT COUNT(*) AS watchlistCount
-      FROM watchlist
-      WHERE url = ${movieUrl};
-    `;
-    const watchlistCount = parseInt(watchlistCountResult.rows[0].watchlistCount, 10);
+    const watchlistCount = await countWatchlistItems(movieUrl);
 
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
@@ -171,10 +166,10 @@ export async function POST(request) {
       );
     }
 
-    const watchlistCountItem = await countWatchlistItems(user.username);
+    const watchlistCountItem = await countWatchlistItems(url);
 
     return new Response(
-      JSON.stringify({ watchlistCountItem, postResult }),
+      JSON.stringify({ ...postResult.rows[0], watchlistCountItem }),
       { status: 201 }
     );
   } catch (error) {
@@ -228,7 +223,7 @@ export async function DELETE(request) {
       );
     }
 
-    const watchlistCount = await countWatchlistItems(user.username);
+    const watchlistCount = await countWatchlistItems(movieUrl);
 
     return new Response(
       JSON.stringify({ message: 'Item removed from watchlist', watchlistCount }),
