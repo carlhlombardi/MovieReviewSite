@@ -87,11 +87,7 @@ export async function POST(request) {
     const watchlistCount = parseInt(watchlistCountResult.rows[0].count, 10);
 
     return new Response(
-      JSON.stringify({ 
-        message: 'Movie added to watchlist', 
-        watchlistItem: { username, url, title, genre },
-        watchlistCount
-      }),
+        JSON.stringify({ watchlistCount }),
       { status: 200 }
     );
   } catch (error) {
