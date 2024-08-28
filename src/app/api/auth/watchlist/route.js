@@ -177,13 +177,14 @@ export async function POST(request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to add item to watchlist:', error);
+    console.error('Add to watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
     return new Response(
-      JSON.stringify({ message: 'Failed to add item to watchlist' }),
+      JSON.stringify({ message: 'Failed to add to watchlist' }),
       { status: 500 }
     );
   }
 }
+
 
 export async function DELETE(request) {
   try {
@@ -248,9 +249,9 @@ export async function DELETE(request) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Failed to remove item from watchlist:', error);
+    console.error('Remove from watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
     return new Response(
-      JSON.stringify({ message: 'Failed to remove item from watchlist' }),
+      JSON.stringify({ message: 'Failed to remove from watchlist' }),
       { status: 500 }
     );
   }

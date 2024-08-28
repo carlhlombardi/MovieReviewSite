@@ -104,17 +104,14 @@ const toggleWatchlist = async (url, action) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, 
-      {
-        method: action === 'add' ? 'POST' : 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: action === 'add' ? JSON.stringify({ url }) : undefined
-      }
-    );
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
+      method: action === 'add' ? 'POST' : 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: action === 'add' ? JSON.stringify({ url }) : undefined
+    });
 
     if (!response.ok) {
       const error = await response.json();
@@ -123,7 +120,7 @@ const toggleWatchlist = async (url, action) => {
 
     return await response.json();
   } catch (error) {
-    console.error('Toggle watchlist error:', error);
+    console.error('Toggle watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
     return null; // Default error handling
   }
 };
