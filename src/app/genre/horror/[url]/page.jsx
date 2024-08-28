@@ -65,15 +65,21 @@ const fetchLikeStatus = async (url) => {
 const fetchWatchlistStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Token is missing');
+    }
+
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
     });
 
     if (!response.ok) {
+      const errorText = await response.text(); // Capture error text for debugging
+      console.error('Response error:', errorText);
       throw new Error('Failed to fetch watchlist status');
     }
 
@@ -84,6 +90,7 @@ const fetchWatchlistStatus = async (url) => {
     return { isInWatchlist: false };
   }
 };
+
 
 const toggleWatchlist = async (url, action) => {
   try {
