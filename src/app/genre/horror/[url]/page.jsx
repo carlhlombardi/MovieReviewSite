@@ -176,16 +176,31 @@ const HorrorPostPage = ({ params }) => {
   const handleWatchlist = async () => {
     const action = isInWatchlist ? 'remove' : 'add';
     try {
+      console.log(`Handling watchlist action: ${action}`);
+      
+      // Call the toggleWatchlist function
       const result = await toggleWatchlist(params.url, action);
+      
+      // Check the result
       if (result) {
+        console.log('Toggle watchlist result:', result);
+        
+        // Update the state based on action
         setIsInWatchlist(action === 'add');
-        setWatchlistCount(result.watchlistCount || 0);
+        
+        // Update watchlist count
+        const count = result.watchlistCount || 0;
+        setWatchlistCount(count);
+        
+        console.log('Updated watchlist count:', count);
+      } else {
+        console.warn('No result returned from toggleWatchlist');
       }
     } catch (error) {
       console.error('Failed to toggle watchlist:', error);
     }
   };
-
+  
   function getMovieSlugFromURL(url) {
     const parts = url.split('/horror/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
