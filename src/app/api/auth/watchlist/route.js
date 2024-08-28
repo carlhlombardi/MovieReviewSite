@@ -1,62 +1,4 @@
 import { sql } from '@vercel/postgres';
-import jwt from 'jsonwebtoken';
-
-// Utility function to extract user info from token
-const getUserFromToken = async (token) => {
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const userId = decoded.userId;
-
-  const userResult = await sql`
-    SELECT username
-    FROM users
-    WHERE id = ${userId};
-  `;
-  return userResult.rows[0];
-};
-
-// Utility function to check if a movie exists
-const getMovieInfo = async (url) => {
-  let movieResult = await sql`
-    SELECT film, genre
-    FROM horrormovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM scifimovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM comedymovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM actionmovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM documentarymovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM classicmovies
-    WHERE url = ${url}
-    UNION ALL
-    SELECT film, genre
-    FROM dramamovies
-    WHERE url = ${url};
-  `;
-  return movieResult.rows[0];
-};
-
-// Utility function to count watchlist items for a specific film
-const countWatchlistItems = async (url) => {
-  const watchlistCountResult = await sql`
-    SELECT COUNT(*) AS count
-    FROM watchlist
-    WHERE url = ${url};
-  `;
-  return parseInt(watchlistCountResult.rows[0].count, 10);
-};
 
 export async function GET(request) {
   try {
@@ -70,7 +12,14 @@ export async function GET(request) {
       );
     }
 
-    // Get the total count of watchlist entries for the movie
+    const movie = await getMovieInfo(movieUrl);
+    if (!movie) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
+
     const watchlistCount = await countWatchlistItems(movieUrl);
 
     const authHeader = request.headers.get('Authorization');
@@ -78,7 +27,7 @@ export async function GET(request) {
 
     if (!token) {
       return new Response(
-        JSON.stringify({ watchlistCount, isInWatchlist: false }),
+        JSON.stringify({ movie, watchlistCount, isInWatchlist: false }),
         { status: 200 }
       );
     }
@@ -101,7 +50,7 @@ export async function GET(request) {
     const isInWatchlist = isInWatchlistResult.rows[0].isInWatchlist;
 
     return new Response(
-      JSON.stringify({ watchlistCount, isInWatchlist }),
+      JSON.stringify({ movie, watchlistCount, isInWatchlist }),
       { status: 200 }
     );
   } catch (error) {
