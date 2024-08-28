@@ -59,7 +59,7 @@ export async function GET(request) {
     const isInWatchlist = isInWatchlistResult.rows[0].isInWatchlist;
 
     return new Response(
-      JSON.stringify({ watchlistCount, isInWatchlist }),
+      JSON.stringify({ isInWatchlistResult , isInWatchlist }),
       { status: 200 }
     );
   } catch (error) {
@@ -170,10 +170,10 @@ export async function POST(request) {
       FROM watchlist
       WHERE username = ${user.username};
     `;
-    const watchlistCount = watchlistCountResult.rows[0].count;
+    const watchlistCountItem = watchlistCountResult.rows[0].count;
 
     return new Response(
-      JSON.stringify({ message: 'Item added to watchlist', watchlistCount }),
+      JSON.stringify({ watchlistCountItem, postResult }),
       { status: 201 }
     );
   } catch (error) {
