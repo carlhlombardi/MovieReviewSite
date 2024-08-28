@@ -1,9 +1,32 @@
-import { sql } from '@vercel/postgres'; // Ensure @vercel/postgres is correctly installed and configured
+import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// Helper function to check multiple tables
+const getMovieDetailsByURL = async (url) => {
+  const tables = [
+    'actionmovies', 'comedymovies', 'classicmovies', 
+    'horrormovies', 'dramamovies', 'documentarymovies', 
+    'scifimovies'
+  ];
+
+  for (const table of tables) {
+    const result = await sql`
+      SELECT title, genre
+      FROM ${sql(table)}
+      WHERE url = ${url};
+    `;
+
+    if (result.rowCount > 0) {
+      return result.rows[0];
+    }
+  }
+
+  return null; // URL not found in any table
+};
+
+// POST request to add a movie to watchlist
 export async function POST(request) {
   try {
-    // Retrieve the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -14,10 +37,7 @@ export async function POST(request) {
       );
     }
 
-    // Verify the token and decode it
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Extract username from decoded token
     const username = decoded.username;
 
     if (!username) {
@@ -27,13 +47,24 @@ export async function POST(request) {
       );
     }
 
-    const { url, title, genre } = await request.json();
-    if (!url || !title || !genre) {
+    const { url } = await request.json();
+    if (!url) {
       return new Response(
-        JSON.stringify({ message: 'URL, title, and genre are required' }),
+        JSON.stringify({ message: 'URL is required' }),
         { status: 400 }
       );
     }
+
+    const movieDetails = await getMovieDetailsByURL(url);
+
+    if (!movieDetails) {
+      return new Response(
+        JSON.stringify({ message: 'Movie not found' }),
+        { status: 404 }
+      );
+    }
+
+    const { title, genre } = movieDetails;
 
     // Add movie to watchlist
     await sql`
@@ -55,9 +86,9 @@ export async function POST(request) {
   }
 }
 
+// DELETE request to remove a movie from watchlist
 export async function DELETE(request) {
   try {
-    // Retrieve the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -68,10 +99,7 @@ export async function DELETE(request) {
       );
     }
 
-    // Verify the token and decode it
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Extract username from decoded token
     const username = decoded.username;
 
     if (!username) {
@@ -89,7 +117,6 @@ export async function DELETE(request) {
       );
     }
 
-    // Remove movie from watchlist
     await sql`
       DELETE FROM watchlist
       WHERE username = ${username} AND url = ${url};
@@ -108,9 +135,9 @@ export async function DELETE(request) {
   }
 }
 
+// GET request to fetch watchlist
 export async function GET(request) {
   try {
-    // Retrieve the Authorization header
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -121,10 +148,7 @@ export async function GET(request) {
       );
     }
 
-    // Verify the token and decode it
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Extract username from decoded token
     const username = decoded.username;
 
     if (!username) {
@@ -134,9 +158,8 @@ export async function GET(request) {
       );
     }
 
-    // Fetch the watchlist for the user
     const watchlistResult = await sql`
-      SELECT url, title, genre, iswatched
+      SELECT url, title, genre
       FROM watchlist
       WHERE username = ${username};
     `;
