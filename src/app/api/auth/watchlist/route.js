@@ -27,6 +27,8 @@ const getMovieDetailsByURL = async (url) => {
 // POST request to add a movie to watchlist
 export async function POST(request) {
   try {
+    console.log('Incoming request:', request);
+
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -36,6 +38,8 @@ export async function POST(request) {
         { status: 401 }
       );
     }
+
+    console.log('Token:', token);
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const username = decoded.username;
@@ -55,6 +59,8 @@ export async function POST(request) {
       );
     }
 
+    console.log('URL:', url);
+
     const movieDetails = await getMovieDetailsByURL(url);
 
     if (!movieDetails) {
@@ -66,7 +72,6 @@ export async function POST(request) {
 
     const { title, genre } = movieDetails;
 
-    // Add movie to watchlist
     await sql`
       INSERT INTO watchlist (username, url, title, genre)
       VALUES (${username}, ${url}, ${title}, ${genre})
