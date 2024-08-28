@@ -69,13 +69,16 @@ const fetchWatchlistStatus = async (url) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, { // Ensure the endpoint is correct
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-    });
+    const response = await fetch(
+      `https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, 
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text(); // Capture error text for debugging
@@ -84,12 +87,13 @@ const fetchWatchlistStatus = async (url) => {
     }
 
     const data = await response.json();
-    return { isInWatchlist: data.isInWatchlist };
+    return { isInWatchlist: data.isInWatchlist, watchlistCount: data.watchlistCount };
   } catch (error) {
     console.error('Error fetching watchlist status:', error);
-    return { isInWatchlist: false };
+    return { isInWatchlist: false, watchlistCount: 0 };
   }
 };
+
 
 
 
@@ -100,14 +104,17 @@ const toggleWatchlist = async (url, action) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
-      method: action === 'add' ? 'POST' : 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: action === 'add' ? JSON.stringify({ url }) : undefined
-    });
+    const response = await fetch(
+      `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, 
+      {
+        method: action === 'add' ? 'POST' : 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: action === 'add' ? JSON.stringify({ url }) : undefined
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -120,6 +127,7 @@ const toggleWatchlist = async (url, action) => {
     return null; // Default error handling
   }
 };
+
 
 
 
@@ -171,11 +179,16 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
-  const handleWatchlist = async () => {
-    const action = isInWatchlist ? 'remove' : 'add';
+  const handleWatchlist = async (url) => {
     try {
-      const result = await toggleWatchlist(params.url, action);
+      // Fetch the current status of the movie in the watchlist
+      const { isInWatchlist, watchlistCount } = await fetchWatchlistStatus(url);
+      const action = isInWatchlist ? 'remove' : 'add';
+  
+      // Toggle the watchlist status
+      const result = await toggleWatchlist(url, action);
       if (result) {
+        // Update the UI based on the action
         setIsInWatchlist(action === 'add');
         setWatchlistCount(result.watchlistCount || 0); // Ensure the key matches your API response
       } else {
