@@ -95,7 +95,18 @@ const fetchWatchlistStatus = async (url) => {
 };
 
 
-
+const safeStringify = (obj) => {
+  const seen = new Set();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return; // Remove circular references
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+};
 
 const toggleWatchlist = async (url, action) => {
   try {
