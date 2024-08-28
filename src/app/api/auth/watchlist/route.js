@@ -1,6 +1,63 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// Utility function to extract user info from token
+const getUserFromToken = async (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const userId = decoded.userId;
+
+  const userResult = await sql`
+    SELECT username
+    FROM users
+    WHERE id = ${userId};
+  `;
+  return userResult.rows[0];
+};
+
+// Utility function to check if a movie exists
+const getMovieInfo = async (url) => {
+  let movieResult = await sql`
+    SELECT film, genre
+    FROM horrormovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM scifimovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM comedymovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM actionmovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM documentarymovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM classicmovies
+    WHERE url = ${url}
+    UNION ALL
+    SELECT film, genre
+    FROM dramamovies
+    WHERE url = ${url};
+  `;
+  return movieResult.rows[0];
+};
+
+// Utility function to count watchlist items
+const countWatchlistItems = async (username) => {
+  const watchlistCountResult = await sql`
+    SELECT COUNT(*) AS count
+    FROM watchlist
+    WHERE username = ${username};
+  `;
+  return parseInt(watchlistCountResult.rows[0].count, 10);
+};
+
 export async function GET(request) {
   try {
     const url = new URL(request.url);
@@ -21,7 +78,6 @@ export async function GET(request) {
     `;
     const watchlistCount = parseInt(watchlistCountResult.rows[0].watchlistCount, 10);
 
-    // Check if the user has the movie in their watchlist
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
@@ -32,16 +88,7 @@ export async function GET(request) {
       );
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    const userResult = await sql`
-      SELECT username
-      FROM users
-      WHERE id = ${userId};
-    `;
-    const user = userResult.rows[0];
-
+    const user = await getUserFromToken(token);
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -59,7 +106,7 @@ export async function GET(request) {
     const isInWatchlist = isInWatchlistResult.rows[0].isInWatchlist;
 
     return new Response(
-      JSON.stringify({ isInWatchlistResult , isInWatchlist }),
+      JSON.stringify({ watchlistCount, isInWatchlist }),
       { status: 200 }
     );
   } catch (error) {
@@ -91,15 +138,7 @@ export async function POST(request) {
       );
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    const userResult = await sql`
-      SELECT username
-      FROM users
-      WHERE id = ${userId};
-    `;
-    const user = userResult.rows[0];
+    const user = await getUserFromToken(token);
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -107,38 +146,7 @@ export async function POST(request) {
       );
     }
 
-    // Check if the movie exists in any of the tables
-    let movieResult = await sql`
-      SELECT film, genre
-      FROM horrormovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM scifimovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM comedymovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM actionmovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM documentarymovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM classicmovies
-      WHERE url = ${url}
-      UNION ALL
-      SELECT film, genre
-      FROM dramamovies
-      WHERE url = ${url};
-    `;
-    let movie = movieResult.rows[0];
-
+    const movie = await getMovieInfo(url);
     if (!movie) {
       return new Response(
         JSON.stringify({ message: 'Movie not found' }),
@@ -149,7 +157,6 @@ export async function POST(request) {
     const title = movie.film;
     const genre = movie.genre;
 
-    // Insert or update the watchlist table with username, url, and title
     const postResult = await sql`
       INSERT INTO watchlist (username, url, title, genre)
       VALUES (${user.username}, ${url}, ${title}, ${genre})
@@ -164,27 +171,20 @@ export async function POST(request) {
       );
     }
 
-    // Count the total items in the watchlist for the user
-    const watchlistCountResult = await sql`
-      SELECT COUNT(*) AS count
-      FROM watchlist
-      WHERE username = ${user.username};
-    `;
-    const watchlistCountItem = watchlistCountResult.rows[0].count;
+    const watchlistCountItem = await countWatchlistItems(user.username);
 
     return new Response(
       JSON.stringify({ watchlistCountItem, postResult }),
       { status: 201 }
     );
   } catch (error) {
-    console.error('Add to watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
+    console.error('Add to watchlist error:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to add to watchlist' }),
       { status: 500 }
     );
   }
 }
-
 
 export async function DELETE(request) {
   try {
@@ -207,15 +207,7 @@ export async function DELETE(request) {
       );
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
-
-    const userResult = await sql`
-      SELECT username
-      FROM users
-      WHERE id = ${userId};
-    `;
-    const user = userResult.rows[0];
+    const user = await getUserFromToken(token);
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -236,20 +228,14 @@ export async function DELETE(request) {
       );
     }
 
-    // Count the total items in the watchlist for the user
-    const watchlistCountResult = await sql`
-      SELECT COUNT(*) AS count
-      FROM watchlist
-      WHERE username = ${user.username};
-    `;
-    const watchlistCount = watchlistCountResult.rows[0].count;
+    const watchlistCount = await countWatchlistItems(user.username);
 
     return new Response(
       JSON.stringify({ message: 'Item removed from watchlist', watchlistCount }),
       { status: 200 }
     );
   } catch (error) {
-    console.error('Remove from watchlist error:', safeStringify(error)); // Use safeStringify to avoid circular references
+    console.error('Remove from watchlist error:', error);
     return new Response(
       JSON.stringify({ message: 'Failed to remove from watchlist' }),
       { status: 500 }
