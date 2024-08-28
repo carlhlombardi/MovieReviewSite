@@ -25,79 +25,119 @@ const getMovieDetailsByURL = async (url) => {
 // POST request to add a movie to the watchlist
 export async function POST(request) {
   try {
-    // Retrieve the Authorization header
+    const { url } = await request.json();
+    console.log('POST Request - URL:', url);
+
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
-
     if (!token) {
       return new Response(
-        JSON.stringify({ message: 'Authorization token is missing' }),
+        JSON.stringify({ message: 'Unauthorized' }),
         { status: 401 }
       );
     }
 
-    // Verify the token and decode it
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
 
-    // Extract username from decoded token
-    const username = decoded.username;
-
-    if (!username) {
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+    if (!user) {
       return new Response(
-        JSON.stringify({ message: 'Username not found in token' }),
-        { status: 401 }
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
       );
     }
+    console.log('User Found:', user.username);
 
-    // Extract URL from the request body
-    const { url } = await request.json();
+    // Query the different movie tables to find the movie details
+    let movieResult = await sql`
+      SELECT title, genre
+      FROM horrormovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM scifimovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM comedymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM actionmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM documentarymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM classicmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT title, genre
+      FROM dramamovies
+      WHERE url = ${url};
+    `;
 
-    if (!url) {
-      return new Response(
-        JSON.stringify({ message: 'URL is required' }),
-        { status: 400 }
-      );
-    }
+    let movie = movieResult.rows[0];
 
-    // Get movie details from the relevant table
-    const movieDetails = await getMovieDetailsByURL(url);
-
-    if (!movieDetails) {
+    if (!movie) {
       return new Response(
         JSON.stringify({ message: 'Movie not found' }),
         { status: 404 }
       );
     }
 
-    const { title, genre } = movieDetails;
+    const title = movie.title;  // Assuming column name in tables is 'title'
+    const genre = movie.genre;  // Assuming column name in tables is 'genre'
 
-    // Insert the movie into the watchlist
-    await sql`
+    // Insert or update the watchlist table with username, url, and movie details
+    const postResult = await sql`
       INSERT INTO watchlist (username, url, title, genre)
-      VALUES (${username}, ${url}, ${title}, ${genre})
-      ON CONFLICT (username, url) DO NOTHING;
+      VALUES (${user.username}, ${url}, ${title}, ${genre})
+      ON CONFLICT (username, url) DO NOTHING
+      RETURNING username, url, title, genre;
     `;
+    console.log('POST Result:', postResult);
 
-    // Get updated watchlist count
+    if (postResult.rowCount === 0) {
+      return new Response(
+        JSON.stringify({ message: 'Item already in watchlist' }),
+        { status: 409 }
+      );
+    }
+
+    // Count the total items in the watchlist for the user
     const watchlistCountResult = await sql`
       SELECT COUNT(*) AS count
       FROM watchlist
-      WHERE username = ${username}
+      WHERE username = ${user.username};
     `;
-    const watchlistCount = parseInt(watchlistCountResult.rows[0].count, 10);
+    const watchlistCount = watchlistCountResult.rows[0].count;
 
     return new Response(
-        JSON.stringify({ watchlistCount }),
-      { status: 200 }
+      JSON.stringify({ 
+        message: 'Item added to watchlist', 
+        watchlistCount 
+      }),
+      { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to add movie to watchlist:', error);
+    console.error('Add to watchlist error:', error);  // Log full error
     return new Response(
-      JSON.stringify({ message: 'Failed to add movie to watchlist' }),
+      JSON.stringify({ message: 'Failed to add to watchlist' }),
       { status: 500 }
     );
   }
 }
+
 
 export async function GET(request) {
   try {
