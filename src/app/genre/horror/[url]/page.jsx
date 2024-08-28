@@ -69,7 +69,7 @@ const fetchWatchlistStatus = async (url) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/status?url=${encodeURIComponent(url)}`, { // Ensure the endpoint is correct
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, { // Ensure the endpoint is correct
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
