@@ -2,8 +2,9 @@ import { sql } from '@vercel/postgres';
 
 export async function GET(request) {
   try {
+    // Extract the movie URL from the request URL
     const url = new URL(request.url);
-    const movieUrl = url.searchParams.get('url');
+    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
 
     if (!movieUrl) {
       return new Response(
@@ -12,6 +13,7 @@ export async function GET(request) {
       );
     }
 
+    // Get movie info from the URL
     const movie = await getMovieInfo(movieUrl);
     if (!movie) {
       return new Response(
@@ -20,14 +22,18 @@ export async function GET(request) {
       );
     }
 
+    const { title, genre } = movie; // Extract title and genre
+
+    // Get the total count of watchlist entries for the movie
     const watchlistCount = await countWatchlistItems(movieUrl);
 
+    // Check if the movie is in the authenticated user's watchlist
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
       return new Response(
-        JSON.stringify({ movie, watchlistCount, isInWatchlist: false }),
+        JSON.stringify({ movie: { title, genre }, watchlistCount, isInWatchlist: false }),
         { status: 200 }
       );
     }
@@ -50,7 +56,7 @@ export async function GET(request) {
     const isInWatchlist = isInWatchlistResult.rows[0].isInWatchlist;
 
     return new Response(
-      JSON.stringify({ movie, watchlistCount, isInWatchlist }),
+      JSON.stringify({ movie: { title, genre }, watchlistCount, isInWatchlist }),
       { status: 200 }
     );
   } catch (error) {
@@ -62,17 +68,21 @@ export async function GET(request) {
   }
 }
 
+
 export async function POST(request) {
   try {
-    const { url } = await request.json();
+    // Extract the movie URL from the request URL
+    const url = new URL(request.url);
+    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
 
-    if (!url) {
+    if (!movieUrl) {
       return new Response(
         JSON.stringify({ message: 'Movie URL is required' }),
         { status: 400 }
       );
     }
 
+    // Extract the Authorization header and token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     if (!token) {
@@ -82,6 +92,7 @@ export async function POST(request) {
       );
     }
 
+    // Get the user from the token
     const user = await getUserFromToken(token);
     if (!user) {
       return new Response(
@@ -90,7 +101,8 @@ export async function POST(request) {
       );
     }
 
-    const movie = await getMovieInfo(url);
+    // Get movie info from the URL
+    const movie = await getMovieInfo(movieUrl);
     if (!movie) {
       return new Response(
         JSON.stringify({ message: 'Movie not found' }),
@@ -98,12 +110,12 @@ export async function POST(request) {
       );
     }
 
-    const title = movie.film;
-    const genre = movie.genre;
+    const { title, genre } = movie; // Extract title and genre
 
+    // Insert into watchlist
     const postResult = await sql`
       INSERT INTO watchlist (username, url, title, genre)
-      VALUES (${user.username}, ${url}, ${title}, ${genre})
+      VALUES (${user.username}, ${movieUrl}, ${title}, ${genre})
       ON CONFLICT (username, url) DO NOTHING
       RETURNING username, url, title, genre;
     `;
@@ -115,7 +127,8 @@ export async function POST(request) {
       );
     }
 
-    const watchlistCountItem = await countWatchlistItems(url);
+    // Get the updated count of the watchlist item
+    const watchlistCountItem = await countWatchlistItems(movieUrl);
 
     return new Response(
       JSON.stringify({ ...postResult.rows[0], watchlistCountItem }),
@@ -132,8 +145,9 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
+    // Extract the movie URL from the request URL
     const url = new URL(request.url);
-    const movieUrl = url.searchParams.get('url');
+    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
 
     if (!movieUrl) {
       return new Response(
@@ -142,6 +156,7 @@ export async function DELETE(request) {
       );
     }
 
+    // Extract the Authorization header and token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     if (!token) {
@@ -151,6 +166,7 @@ export async function DELETE(request) {
       );
     }
 
+    // Get the user from the token
     const user = await getUserFromToken(token);
     if (!user) {
       return new Response(
@@ -159,6 +175,7 @@ export async function DELETE(request) {
       );
     }
 
+    // Delete the movie from the watchlist
     const deleteResult = await sql`
       DELETE FROM watchlist
       WHERE username = ${user.username} AND url = ${movieUrl}
@@ -172,6 +189,7 @@ export async function DELETE(request) {
       );
     }
 
+    // Get the updated count of the watchlist item
     const watchlistCount = await countWatchlistItems(movieUrl);
 
     return new Response(
