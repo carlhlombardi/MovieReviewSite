@@ -62,6 +62,30 @@ const fetchLikeStatus = async (url) => {
   }
 };
 
+const toggleWatchlist = async (url, action) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
+      method: action === 'add' ? 'POST' : 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: action === 'add' ? JSON.stringify({ url }) : undefined
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle watchlist');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Toggle watchlist error:', error);
+    return null; // Default error handling
+  }
+};
+
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
@@ -105,6 +129,19 @@ const HorrorPostPage = ({ params }) => {
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
+    }
+  };
+
+  const handleWatchlist = async () => {
+    const action = isInWatchlist ? 'remove' : 'add';
+    try {
+      const result = await toggleWatchlist(params.url, action);
+      if (result) {
+        setIsInWatchlist(action === 'add');
+        setWatchlistCount(result.watchlistCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to toggle watchlist:', error);
     }
   };
 
@@ -237,6 +274,18 @@ const HorrorPostPage = ({ params }) => {
       onClick={handleLike} 
       disabled={!isLoggedIn}
       className='mb-4'
+    >
+      {isLiked ? (
+        <HeartFill color="red" size={18}/>
+      ) : (
+        <Heart color="grey" size={18} />
+      )}
+    </Button>
+    <Button 
+      variant="link" 
+      onClick={handleLike} 
+      disabled={!isLoggedIn}
+      className='mb-4 mr-3'
     >
       {isLiked ? (
         <HeartFill color="red" size={18}/>
