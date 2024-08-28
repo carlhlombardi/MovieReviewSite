@@ -141,6 +141,7 @@ const HorrorPostPage = ({ params }) => {
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [likedCount, setLikedCount] = useState(0);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState(0); // Initialize as number
   const [averageRating, setAverageRating] = useState(0); // Initialize as number
