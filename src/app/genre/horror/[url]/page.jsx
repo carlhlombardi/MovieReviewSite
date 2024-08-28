@@ -69,7 +69,7 @@ const fetchWatchlistStatus = async (url) => {
       throw new Error('Token is missing');
     }
 
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist/status?url=${encodeURIComponent(url)}`, { // Ensure the endpoint is correct
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -92,9 +92,14 @@ const fetchWatchlistStatus = async (url) => {
 };
 
 
+
 const toggleWatchlist = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Token is missing');
+    }
+
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
       method: action === 'add' ? 'POST' : 'DELETE',
       headers: {
@@ -104,18 +109,18 @@ const toggleWatchlist = async (url, action) => {
       body: action === 'add' ? JSON.stringify({ url }) : undefined
     });
 
-    // Check if the response is okay
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || 'Failed to toggle watchlist');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Toggle watchlist error:', error);
     return null; // Default error handling
   }
 };
+
 
 
 const toggleLike = async (url, action) => {
@@ -180,6 +185,7 @@ const HorrorPostPage = ({ params }) => {
       console.error('Failed to toggle watchlist:', error);
     }
   };
+  
   
   
   function getMovieSlugFromURL(url) {
