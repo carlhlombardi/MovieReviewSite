@@ -130,8 +130,10 @@ const toggleWatchlist = async (url, action) => {
 
     // Log response details
     console.log('Response Status:', response.status);
-    console.log('Response Headers:', JSON.stringify([...response.headers]));
-    const responseBody = await response.text();
+    console.log('Response Headers:', [...response.headers].map(([key, value]) => `${key}: ${value}`).join(', '));
+
+    // Capture response body
+    let responseBody = await response.text();
     console.log('Response Body:', responseBody);
 
     if (!response.ok) {
