@@ -65,8 +65,6 @@ const fetchLikeStatus = async (url) => {
 const fetchWatchlistStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) return { isInWatchlist: false };
-
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, {
       method: 'GET',
       headers: {
@@ -90,8 +88,6 @@ const fetchWatchlistStatus = async (url) => {
 const toggleWatchlist = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) throw new Error('Token is missing');
-
     const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`, {
       method: action === 'add' ? 'POST' : 'DELETE',
       headers: {
@@ -103,27 +99,17 @@ const toggleWatchlist = async (url, action) => {
 
     // Check if the response is okay
     if (!response.ok) {
-      // Log the response for debugging
-      const errorText = await response.text();
-      console.error('Response error:', errorText);
-      throw new Error(`Failed to toggle watchlist: ${errorText}`);
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle watchlist');
     }
-
-    // Try to parse JSON response
-    try {
-      const result = await response.json();
-      return result;
-    } catch (jsonError) {
-      // Log the error if JSON parsing fails
-      console.error('Failed to parse JSON response:', jsonError);
-      throw new Error('Failed to parse JSON response');
-    }
-
+    
+    return await response.json();
   } catch (error) {
     console.error('Toggle watchlist error:', error);
     return null; // Default error handling
   }
 };
+
 
 const toggleLike = async (url, action) => {
   try {
@@ -176,30 +162,18 @@ const HorrorPostPage = ({ params }) => {
   const handleWatchlist = async () => {
     const action = isInWatchlist ? 'remove' : 'add';
     try {
-      console.log(`Handling watchlist action: ${action}`);
-      
-      // Call the toggleWatchlist function
       const result = await toggleWatchlist(params.url, action);
-      
-      // Check the result
       if (result) {
-        console.log('Toggle watchlist result:', result);
-        
-        // Update the state based on action
         setIsInWatchlist(action === 'add');
-        
-        // Update watchlist count
-        const count = result.watchlistCount || 0;
-        setWatchlistCount(count);
-        
-        console.log('Updated watchlist count:', count);
+        setWatchlistCount(result.watchlistCount || 0); // Ensure the key matches your API response
       } else {
-        console.warn('No result returned from toggleWatchlist');
+        console.error('No result returned from toggleWatchlist');
       }
     } catch (error) {
       console.error('Failed to toggle watchlist:', error);
     }
   };
+  
   
   function getMovieSlugFromURL(url) {
     const parts = url.split('/horror/');
