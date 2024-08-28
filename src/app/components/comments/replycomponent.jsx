@@ -21,6 +21,7 @@ const ReplyComponent = ({
         <Button 
         variant="link" 
         onClick={() => handleLikeReply(reply.id)}
+        style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} 
       >
         {isLiked ? (
           <HeartFill color="red" size={14} />

@@ -450,7 +450,7 @@ const Comments = ({ movieUrl }) => {
                <Button 
                variant="link" 
                onClick={() => handleLikeComment(comment.id)}
-               style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} // Optional styling to fit icon better
+               style={{ padding: 0, display: 'inline-flex', alignItems: 'center' }} 
              >
                {comment.likedByUser ? (
                  <HeartFill color="red" size={14} />
