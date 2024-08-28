@@ -190,6 +190,7 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
+  const [watchlistCount, setWatchlistCount] = useState(0);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [userRating, setUserRating] = useState(0); // Initialize as number
   const [averageRating, setAverageRating] = useState(0); // Initialize as number
@@ -207,13 +208,9 @@ const HorrorPostPage = ({ params }) => {
     }
   };
 
-  const handleWatchlist = async (url) => {
+  const handleWatchlist = async () => {
+    const action = isInWatchlist ? 'remove' : 'add';
     try {
-      // Fetch the current status of the movie in the watchlist
-      const { isInWatchlist, watchlistCount } = await fetchWatchlistStatus(url);
-      const action = isInWatchlist ? 'remove' : 'add';
-  
-      // Toggle the watchlist status
       const result = await toggleWatchlist(url, action);
       if (result) {
         // Update the UI based on the action
