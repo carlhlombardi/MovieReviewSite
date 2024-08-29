@@ -14,8 +14,8 @@ export async function GET(request) {
     }
 
     // Get the total watch count for the movie across all tables
-    const watchedcountResult = await sql`
-      SELECT COUNT(*) AS watchedcount
+    const watchcountResult = await sql`
+      SELECT COUNT(*) AS watchcount
       FROM (
         SELECT url FROM horrormovies
         UNION ALL
@@ -34,7 +34,7 @@ export async function GET(request) {
       JOIN watchlist ON all_movies.url = watchlist.url
       WHERE watchlist.url = ${movieUrl} AND watchlist.iswatched = TRUE;
     `;
-    const watchcount = parseInt(watchedcountResult.rows[0].watchcount, 10);
+    const watchcount = parseInt(watchcountResult.rows[0].watchcount, 10);
 
     // Check if the user has watched the movie
     const authHeader = request.headers.get('Authorization');
@@ -230,13 +230,13 @@ export async function DELETE(request) {
 
     if (deleteResult.rowCount === 0) {
       return new Response(
-        JSON.stringify({ message: 'watch not found' }),
+        JSON.stringify({ message: 'Watch not found' }),
         { status: 404 }
       );
     }
 
     return new Response(
-      JSON.stringify({ message: 'watch removed' }),
+      JSON.stringify({ message: 'Watch removed' }),
       { status: 200 }
     );
   } catch (error) {
