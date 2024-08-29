@@ -169,7 +169,7 @@ export async function POST(request) {
                     WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchcount + 1
                     ELSE watchlist.watchedcount
                  END
-        RETURNING username, url, title, genre, watchecount;
+        RETURNING username, url, title, genre, watchcount;
     `;
 
     if (postResult.rowCount === 0) {
