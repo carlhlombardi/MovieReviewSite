@@ -148,8 +148,8 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
-  const [watchlistCount, setWatchlistCount] = useState(0);
+  const [IsInWatchlist, setIsInWatchlist] = useState(false);
+  const [watchCount, setWatchlistCount] = useState(0);
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
 
@@ -173,7 +173,7 @@ const HorrorPostPage = ({ params }) => {
       if (result) {
         // Update the UI based on the action
         setIsInWatchlist(action === 'add');
-        setWatchlistCount(result.watchlistCount || 0); // Ensure the key matches your API response
+        setWatchlistCount(result.watchCount || 0); // Ensure the key matches your API response
       } else {
         console.error('No result returned from toggleWatchlist');
       }
@@ -262,7 +262,7 @@ const HorrorPostPage = ({ params }) => {
           setLikedCount(likeStatus.likeCount || 0);
 
           const watchlistStatus = await fetchWatchlistStatus(params.url);
-          setIsInWatchlist(watchlistStatus.isInWatchlist);
+          setIsInWatchlist(watchlistStatus.IsInWatchlist);
           setWatchlistCount(watchlistStatus.watchCount || 0);
 
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
@@ -333,12 +333,12 @@ const HorrorPostPage = ({ params }) => {
                 disabled={!isLoggedIn}
                 className='mb-4 mr-3'
               >
-                {isInWatchlist ? (
+                {IsInWatchlist ? (
                   <TvFill color="green" size={18} />
                 ) : (
                   <Tv color="grey" size={18} />
                 )}
-                <span className="ml-2"> {watchlistCount} </span>
+                <span className="ml-2"> {watchCount} </span>
               </Button>
             </>
           )}
