@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
-import Comments from '@/app/components/comments/comments.jsx'; // Ensure this path is correct
+import Comments from '@/app/components/comments/comments.jsx';
+import Image from 'next/image';
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {
@@ -213,9 +214,17 @@ export default function ProfilePage() {
                 {likedMovies.length > 0 ? (
                   <ul>
                     {likedMovies.map((movie) => (
-                      <li key={movie.url}>
-                        <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
-                      </li>
+                     <li key={movie.url} style={{ listStyleType: 'none' }}>
+                     <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>
+                       <Image 
+                         src={movie.image_url} 
+                         alt={movie.title} 
+                         width={150} 
+                         height={225} 
+                         style={{ objectFit: 'cover' }} 
+                       />
+                     </a>
+                   </li>
                     ))}
                   </ul>
                 ) : (
@@ -227,13 +236,21 @@ export default function ProfilePage() {
               <Card.Header as="h5">Watchlist Movies</Card.Header>
                 <Card.Body>
                      {watchedMovies.length > 0 ? (
-                      <ul>
-                        {watchedMovies.map((movie) => (
-                          <li key={movie.url}>
-                            <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
-                                </li>
-                              ))}
-                            </ul>
+                     <ul>
+                     {watchedMovies.map((movie) => (
+                       <li key={movie.url} style={{ listStyleType: 'none' }}>
+                         <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>
+                           <Image 
+                             src={movie.image_url} 
+                             alt={movie.title} 
+                             width={150} 
+                             height={225} 
+                             style={{ objectFit: 'cover' }} 
+                           />
+                         </a>
+                       </li>
+                     ))}
+                   </ul>
                           ) : (
                             <p>No liked movies found.</p>
                           )}
