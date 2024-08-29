@@ -148,8 +148,8 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
-  const [IsInWatchlist, setIsInWatchlist] = useState(false);
-  const [watchCount, setWatchlistCount] = useState(0);
+  const [isWatched, setIsWatched] = useState(false);
+  const [watchCount, setWatchCount] = useState(0);
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
 
@@ -167,13 +167,13 @@ const HorrorPostPage = ({ params }) => {
   };
 
   const handleWatchlist = async () => {
-    const action = IsInWatchlist ? 'remove' : 'add';
+    const action = isWatched ? 'remove' : 'add';
     try {
       const result = await toggleWatchlist(params.url, action);
       if (result) {
         // Update the UI based on the action
-        setIsInWatchlist(action === 'add');
-        setWatchlistCount(result.watchCount || 0); // Ensure the key matches your API response
+        setIsWatched(action === 'add');
+        setWatchCount(result.watchCount || 0); // Ensure the key matches your API response
       } else {
         console.error('No result returned from toggleWatchlist');
       }
@@ -262,8 +262,8 @@ const HorrorPostPage = ({ params }) => {
           setLikedCount(likeStatus.likeCount || 0);
 
           const watchlistStatus = await fetchWatchlistStatus(params.url);
-          setIsInWatchlist(watchlistStatus.isWatched);
-          setWatchlistCount(watchlistStatus.watchCount || 0);
+          setIsWatched(watchlistStatus.isWatched);
+          setWatchCount(watchlistStatus.watchCount || 0);
 
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
         }
