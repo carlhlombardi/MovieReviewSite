@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
 import Comments from '@/app/components/comments/comments';
+import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons'
 
 // Function to fetch movie data
 const fetchData = async (url) => {
@@ -61,6 +62,61 @@ const fetchLikeStatus = async (url) => {
   }
 };
 
+const fetchWatchlistStatus = async (url) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch watch status');
+    }
+
+    const result = await response.json();
+    return {
+      isWatched: result.iswatched || false,
+      watchCount: result.watchcount || 0,
+    };
+  } catch (error) {
+    console.error('Fetch watch status error:', error);
+    return { isWatched: false, watchCount: 0 }; // Default values
+  }
+};
+
+const toggleWatchlist = async (url, action) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Token is missing');
+    }
+
+    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`;
+    
+    const response = await fetch(fetchUrl, {
+      method: action === 'add' ? 'POST' : 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: action === 'add' ? JSON.stringify({ url }) : undefined
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle watchlist');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Toggle watchlist error:', error);
+    return null; // Default error handling
+  }
+};
+
 const toggleLike = async (url, action) => {
   try {
     const token = localStorage.getItem('token');
@@ -92,8 +148,104 @@ const DocumentaryPage = ({ params }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [likedCount, setLikedCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [likedCount, setLikedCount] = useState(0);
+  const [isWatched, setIsWatched] = useState(false);
+  const [watchCount, setWatchCount] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
+
+  const handleLike = async () => {
+    const action = isLiked ? 'unlike' : 'like';
+    try {
+      const result = await toggleLike(params.url, action);
+      if (result) {
+        setIsLiked(action === 'like');
+        setLikedCount(result.likeCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  const handleWatchlist = async () => {
+    const action = isWatched ? 'remove' : 'add';
+    try {
+      const result = await toggleWatchlist(params.url, action);
+      if (result) {
+        // Update the UI based on the action
+        setIsWatched(action === 'add');
+        setWatchCount(result.watchCount || 0); // Ensure the key matches your API response
+      } else {
+        console.error('No result returned from toggleWatchlist');
+      }
+    } catch (error) {
+      console.error('Failed to toggle watchlist:', error);
+    }
+  };
+  
+  
+  
+  function getMovieSlugFromURL(url) {
+    const parts = url.split('/horror/');
+    return parts.length > 1 ? parts[1].split('?')[0] : '';
+  }
+
+  const fetchUserRating = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const fullURL = window.location.href;
+      const movieSlug = encodeURIComponent(getMovieSlugFromURL(fullURL));
+
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${movieSlug}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user rating');
+      }
+
+      const data = await response.json();
+      setUserRating(Number(data.userRating) || 0); // Ensure it's a number
+      setAverageRating(Number(data.averageRating) || 0); // Ensure it's a number
+    } catch (error) {
+      console.error('Error fetching user rating:', error);
+    }
+  }, []);
+
+  const handleRatingSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const fullURL = window.location.href;
+      const movieSlug = getMovieSlugFromURL(fullURL);
+
+      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/movie_ratings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: movieSlug,
+          rating: userRating,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      await fetchUserRating();
+    } catch (error) {
+      console.error('Rating submission error:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchDataAndStatus = async () => {
@@ -107,9 +259,15 @@ const DocumentaryPage = ({ params }) => {
         setIsLoggedIn(userLoggedIn);
 
         if (userLoggedIn) {
-          const { isLiked, likeCount } = await fetchLikeStatus(params.url);
-          setIsLiked(isLiked);
-          setLikedCount(likeCount);
+          const likeStatus = await fetchLikeStatus(params.url);
+          setIsLiked(likeStatus.isLiked);
+          setLikedCount(likeStatus.likeCount || 0);
+
+          const watchlistStatus = await fetchWatchlistStatus(params.url);
+          setIsWatched(watchlistStatus.isWatched);
+          setWatchCount(watchlistStatus.watchCount || 0);
+
+          await fetchUserRating(); // Ensure user rating is fetched when user is logged in
         }
       } catch (err) {
         setError('Failed to load data');
@@ -120,17 +278,8 @@ const DocumentaryPage = ({ params }) => {
     };
 
     fetchDataAndStatus();
-  }, [params.url]);
-
-  const handleLike = async () => {
-    const action = isLiked ? 'unlike' : 'like';
-    const result = await toggleLike(params.url, action);
-
-    if (result) {
-      setIsLiked(action === 'like');
-      setLikedCount(result.likeCount || 0); // Ensure correct likeCount
-    }
-  };
+  }, [params.url, fetchUserRating]);
+  
 
   if (isLoading) {
     return <Spinner animation="border" />;
@@ -143,6 +292,7 @@ const DocumentaryPage = ({ params }) => {
   if (!data) {
     return <div>No data found</div>;
   }
+
   const { film, year, studio, director, screenwriters, producer, my_rating, review, image_url } = data;
 
   return (
@@ -164,6 +314,34 @@ const DocumentaryPage = ({ params }) => {
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-1">
           <h1 className='mb-4'>{film}</h1>
+          {isLoggedIn && (
+            <>
+              <Button
+                variant="link"
+                onClick={handleLike}
+                disabled={!isLoggedIn}
+                className='mb-4'
+              >
+                {isLiked ? (
+                  <HeartFill color="red" size={18} />
+                ) : (
+                  <Heart color="grey" size={18} />
+                )}
+              </Button>
+              <Button
+                variant="link"
+                onClick={handleWatchlist}
+                disabled={!isLoggedIn}
+                className='mb-4 mr-3'
+              >
+                {isWatched ? (
+                  <TvFill color="green" size={18} />
+                ) : (
+                  <Tv color="grey" size={18} />
+                )}
+              </Button>
+            </>
+          )}
           <h5>Director: {director}</h5>
           <h5>Screenwriter(s): {screenwriters}</h5>
           <h5>Producer(s): {producer}</h5>
@@ -174,6 +352,31 @@ const DocumentaryPage = ({ params }) => {
           <h3 className='mb-4'>Review of {film}</h3>
           <p>{review}</p>
           <h3>My Rating: {my_rating} Stars</h3>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+        <div className="d-flex justify-content-center align-items-center">
+      <div className="text-center mt-4 p-4 border rounded shadow-sm" style={{ maxWidth: '500px' }}>
+        <h2>Rate This Film</h2>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={userRating}
+          onChange={(e) => setUserRating(Number(e.target.value))}
+          className="form-range mb-3" // Using Bootstrap's form-range class
+        />
+        <Button 
+          onClick={handleRatingSubmit}
+          className='mb-4'
+        >
+          Submit Rating
+        </Button>
+        <h5>Average Rating: {averageRating.toFixed(2)}%</h5> {/* Format as fixed-point notation */}
+        <h5>Your Rating: {userRating.toFixed(2)}%</h5>
+      </div>
+    </div>
         </Col>
       </Row>
       <Row>
