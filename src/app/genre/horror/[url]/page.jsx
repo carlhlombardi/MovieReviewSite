@@ -167,7 +167,7 @@ const HorrorPostPage = ({ params }) => {
   };
 
   const handleWatchlist = async () => {
-    const action = isInWatchlist ? 'remove' : 'add';
+    const action = IsInWatchlist ? 'remove' : 'add';
     try {
       const result = await toggleWatchlist(params.url, action);
       if (result) {
