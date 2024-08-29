@@ -215,9 +215,9 @@ export default function ProfilePage() {
                   <ul>
                     {likedMovies.map((movie) => (
                      <li key={movie.url} style={{ listStyleType: 'none' }}>
-                     <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>
+                     <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                        <Image 
-                         src={`https://movie-review-site-seven.vercel.app/public/images/${movie.genre}/${movie.image_url}`} 
+                         src={`${baseUrl}/${movie.genre}/${movie.url}`} 
                          alt={movie.title} 
                          width={150} 
                          height={225} 
@@ -239,9 +239,9 @@ export default function ProfilePage() {
                      <ul>
                      {watchedMovies.map((movie) => (
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
-                         <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>
+                         <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                            <Image 
-                             src={`https://movie-review-site-seven.vercel.app/public/images/${movie.genre}/${movie.image_url}`}
+                             src={`${baseUrl}/${movie.genre}/${movie.url}`}
                              alt={movie.title} 
                              width={150} 
                              height={225} 
