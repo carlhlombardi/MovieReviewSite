@@ -217,7 +217,7 @@ export default function ProfilePage() {
                      <li key={movie.url} style={{ listStyleType: 'none' }}>
                      <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                        <Image 
-                         src={`images/${movie.genre}/${movie.url}`} 
+                         src={`${baseUrl}/images/${movie.genre}/${movie.url}`} 
                          alt={movie.title} 
                          width={150} 
                          height={225} 
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                            <Image 
-                             src={`images/${movie.genre}/${movie.url}`}
+                             src={`${baseUrl}/images/${movie.genre}/${movie.url}`}
                              alt={movie.title} 
                              width={150} 
                              height={225} 
