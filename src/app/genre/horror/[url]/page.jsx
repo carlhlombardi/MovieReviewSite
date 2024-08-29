@@ -325,7 +325,7 @@ const HorrorPostPage = ({ params }) => {
                 ) : (
                   <Heart color="grey" size={18} />
                 )}
-                <span className="ml-2">{likedCount}</span>
+                <span className="ml-2"> {likedCount} </span>
               </Button>
               <Button
                 variant="link"
@@ -338,7 +338,7 @@ const HorrorPostPage = ({ params }) => {
                 ) : (
                   <Tv color="grey" size={18} />
                 )}
-                <span className="ml-2">{watchlistCount}</span>
+                <span className="ml-2"> {watchlistCount} </span>
               </Button>
             </>
           )}
