@@ -65,7 +65,7 @@ const fetchLikeStatus = async (url) => {
 const fetchWatchlistStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
