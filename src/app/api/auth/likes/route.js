@@ -160,10 +160,10 @@ export async function POST(request) {
 
     // Insert or update the likes table with username, url, and title
     const postResult = await sql`
-      INSERT INTO likes (username, url, title, genre, isliked)
-      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE)
+      INSERT INTO likes (username, url, title, genre, isliked, likedcount)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, ${likedcount})
       ON CONFLICT (username, url) DO UPDATE SET isliked = TRUE
-      RETURNING username, url, title, genre;
+      RETURNING username, url, title, genre, likedcount;
     `;
     console.log('POST Result:', postResult);
 
