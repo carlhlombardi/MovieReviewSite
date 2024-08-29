@@ -65,32 +65,25 @@ const fetchLikeStatus = async (url) => {
 const fetchWatchlistStatus = async (url) => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Token is missing');
-    }
-
-    const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`, 
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
 
     if (!response.ok) {
-      const errorText = await response.text(); // Capture error text for debugging
-      console.error('Response error:', errorText);
-      throw new Error('Failed to fetch watchlist status');
+      throw new Error('Failed to fetch watch status');
     }
 
-    const data = await response.json();
-    return { isInWatchlist: data.isInWatchlist, watchlistCount: data.watchlistCount };
+    const result = await response.json();
+    return {
+      iswatched: result.iswatched || false,
+      watchcount: result.watchcount || 0,
+    };
   } catch (error) {
-    console.error('Error fetching watchlist status:', error);
-    return { isInWatchlist: false, watchlistCount: 0 };
+    console.error('Fetch watch status error:', error);
+    return { iswatched: false, watchcount: 0 }; // Default values
   }
 };
 
@@ -128,29 +121,14 @@ const toggleWatchlist = async (url, action) => {
       body: action === 'add' ? JSON.stringify({ url }) : undefined
     });
 
-    // Log response details
-    console.log('Response Status:', response.status);
-    console.log('Response Headers:', [...response.headers].map(([key, value]) => `${key}: ${value}`).join(', '));
-
-    // Capture response body
-    let responseBody = await response.text();
-    console.log('Response Body:', responseBody);
-
     if (!response.ok) {
-      // Attempt to parse JSON error message
-      let errorMessage = 'Failed to toggle watchlist';
-      try {
-        const error = JSON.parse(responseBody);
-        errorMessage = error.message || errorMessage;
-      } catch (e) {
-        // Error message is not JSON, keep the default
-      }
-      throw new Error(errorMessage);
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to toggle watchlist');
     }
 
-    return JSON.parse(responseBody);
+    return await response.json();
   } catch (error) {
-    console.error('Toggle watchlist error:', safeStringify(error)); // Log full error details
+    console.error('Toggle watchlist error:', error);
     return null; // Default error handling
   }
 };

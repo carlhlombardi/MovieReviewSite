@@ -34,7 +34,7 @@ export async function GET(request) {
       JOIN watchlist ON all_movies.url = watchlist.url
       WHERE watchlist.url = ${movieUrl} AND watchlist.iswatched = TRUE;
     `;
-    const watchcount = parseInt(watchcountResult.rows[0].watchcount, 10);
+    const watchcount = parseInt(watchedcountResult.rows[0].watchcount, 10);
 
     // Check if the user has watched the movie
     const authHeader = request.headers.get('Authorization');
