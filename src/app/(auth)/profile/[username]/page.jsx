@@ -48,6 +48,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true); // State to manage loading state
   const [movies, setMovies] = useState([]); // State to hold all movies
   const [likedMovies, setLikedMovies] = useState([]); // State to hold liked movies
+  const [watchedMovies, setWatchedMovies] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]); // State to hold movies with comments
   const [username, setUsername] = useState(null); // State to hold the username
   const [error, setError] = useState(''); // State to hold any error messages
@@ -101,7 +102,24 @@ export default function ProfilePage() {
         // Parse and set liked movies data
         const likedMoviesData = await likedMoviesResponse.json();
         setLikedMovies(likedMoviesData.likedMovies);
-    
+        
+
+        // Fetch watched movies
+        const watchedMoviesResponse = await fetch(`${baseUrl}/api/auth/watchlist`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+            
+          if (!watchedMoviesResponse.ok) {
+            const errorData = await watchedMoviesResponse.json();
+            setError(errorData.message || 'An error occurred');
+            router.push('/login');
+            return;
+          }
+            
+        // Parse and set watched movies data
+        const watchedMoviesData = await watchedMoviesResponse.json();
+        setWatchedMovies(watchedMoviesData.watchedMovies);
+
         // Fetch all movies
         const allMovies = await fetchMovies();
         setMovies(allMovies);
@@ -188,6 +206,7 @@ export default function ProfilePage() {
           </Card>
 
           {isOwnProfile && (
+            <>
             <Card className="mb-4">
               <Card.Header as="h5">Liked Movies</Card.Header>
               <Card.Body>
@@ -204,6 +223,23 @@ export default function ProfilePage() {
                 )}
               </Card.Body>
             </Card>
+              <Card className="mb-4">
+              <Card.Header as="h5">Watchlist Movies</Card.Header>
+                <Card.Body>
+                     {watchedMovies.length > 0 ? (
+                      <ul>
+                        {watchedMovies.map((movie) => (
+                          <li key={movie.url}>
+                            <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>{movie.title}</a>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p>No liked movies found.</p>
+                          )}
+                        </Card.Body>
+                      </Card>
+          </>
           )}
 
           {isOwnProfile && (
