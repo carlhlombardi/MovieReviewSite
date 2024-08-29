@@ -222,6 +222,7 @@ export default function ProfilePage() {
                          width={150} 
                          height={225} 
                          style={{ objectFit: 'cover' }} 
+                         unoptimized
                        />
                      </a>
                    </li>
@@ -246,6 +247,7 @@ export default function ProfilePage() {
                              width={150} 
                              height={225} 
                              style={{ objectFit: 'cover' }} 
+                             unoptimized
                           />
                          </a>
                        </li>
