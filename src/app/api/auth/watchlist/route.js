@@ -164,12 +164,12 @@ export async function POST(request) {
       VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1)
        ON CONFLICT (username, url) DO UPDATE 
         SET iswatched = EXCLUDED.iswatched,
-          watchedcount = CASE 
-                    WHEN watchlist.iswatched = TRUE AND EXCLUDED.iswatched = FALSE THEN watchlist.watchedcount - 1
-                    WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchedcount + 1
+          watchcount = CASE 
+                    WHEN watchlist.iswatched = TRUE AND EXCLUDED.iswatched = FALSE THEN watchlist.watchcount - 1
+                    WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchcount + 1
                     ELSE watchlist.watchedcount
                  END
-        RETURNING username, url, title, genre, watchedcount;
+        RETURNING username, url, title, genre, watchcount;
     `;
 
     if (postResult.rowCount === 0) {

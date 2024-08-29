@@ -263,7 +263,7 @@ const HorrorPostPage = ({ params }) => {
 
           const watchlistStatus = await fetchWatchlistStatus(params.url);
           setIsInWatchlist(watchlistStatus.isInWatchlist);
-          setWatchlistCount(watchlistStatus.watchlistCount || 0);
+          setWatchlistCount(watchlistStatus.watchCount || 0);
 
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
         }
