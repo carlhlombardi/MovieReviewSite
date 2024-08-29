@@ -262,7 +262,7 @@ const HorrorPostPage = ({ params }) => {
           setLikedCount(likeStatus.likeCount || 0);
 
           const watchlistStatus = await fetchWatchlistStatus(params.url);
-          setIsInWatchlist(watchlistStatus.IsInWatchlist);
+          setIsInWatchlist(watchlistStatus.isWatched);
           setWatchlistCount(watchlistStatus.watchCount || 0);
 
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
@@ -332,7 +332,7 @@ const HorrorPostPage = ({ params }) => {
                 disabled={!isLoggedIn}
                 className='mb-4 mr-3'
               >
-                {IsInWatchlist ? (
+                {isWatched ? (
                   <TvFill color="green" size={18} />
                 ) : (
                   <Tv color="grey" size={18} />
