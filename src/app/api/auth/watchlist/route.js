@@ -165,7 +165,6 @@ export async function POST(request) {
       ON CONFLICT (username, url) DO UPDATE SET iswatched = TRUE
       RETURNING username, url, title, genre;
     `;
-    console.log('POST Result:', postResult);
 
     if (postResult.rowCount === 0) {
       return new Response(
