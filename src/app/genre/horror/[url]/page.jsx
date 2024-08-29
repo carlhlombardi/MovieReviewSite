@@ -148,10 +148,10 @@ const HorrorPostPage = ({ params }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likedCount, setLikedCount] = useState(0);
-  const [watchlistCount, setWatchlistCount] = useState(0);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
-  const [userRating, setUserRating] = useState(0); // Initialize as number
-  const [averageRating, setAverageRating] = useState(0); // Initialize as number
+  const [watchlistCount, setWatchlistCount] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
@@ -257,11 +257,13 @@ const HorrorPostPage = ({ params }) => {
         setIsLoggedIn(userLoggedIn);
 
         if (userLoggedIn) {
-          const { isLiked } = await fetchLikeStatus(params.url);
-          setIsLiked(isLiked);
+          const likeStatus = await fetchLikeStatus(params.url);
+          setIsLiked(likeStatus.isLiked);
+          setLikedCount(likeStatus.likeCount || 0);
 
-          const { isInWatchlist } = await fetchWatchlistStatus(params.url);
-          setIsInWatchlist(isInWatchlist);
+          const watchlistStatus = await fetchWatchlistStatus(params.url);
+          setIsInWatchlist(watchlistStatus.isInWatchlist);
+          setWatchlistCount(watchlistStatus.watchlistCount || 0);
 
           await fetchUserRating(); // Ensure user rating is fetched when user is logged in
         }
@@ -312,29 +314,31 @@ const HorrorPostPage = ({ params }) => {
           <h1 className='mb-4'>{film}</h1>
           {isLoggedIn && (
             <>
- <Button 
-      variant="link" 
-      onClick={handleLike} 
-      disabled={!isLoggedIn}
-      className='mb-4'
-    >
-      {isLiked ? (
-        <HeartFill color="red" size={18}/>
-      ) : (
-        <Heart color="grey" size={18} />
-      )}
-    </Button>
-    <Button 
-                variant="link" 
-                onClick={handleWatchlist} 
+              <Button
+                variant="link"
+                onClick={handleLike}
+                disabled={!isLoggedIn}
+                className='mb-4'
+              >
+                {isLiked ? (
+                  <HeartFill color="red" size={18} />
+                ) : (
+                  <Heart color="grey" size={18} />
+                )}
+                <span className="ml-2">{likedCount}</span>
+              </Button>
+              <Button
+                variant="link"
+                onClick={handleWatchlist}
                 disabled={!isLoggedIn}
                 className='mb-4 mr-3'
               >
                 {isInWatchlist ? (
-                  <TvFill color="green" size={18}/>
+                  <TvFill color="green" size={18} />
                 ) : (
                   <Tv color="grey" size={18} />
                 )}
+                <span className="ml-2">{watchlistCount}</span>
               </Button>
             </>
           )}
@@ -376,8 +380,8 @@ const HorrorPostPage = ({ params }) => {
         >
           Submit Rating
         </Button>
-        <h3>Average Rating: {averageRating.toFixed(2)}%</h3> {/* Format as fixed-point notation */}
-        <h3>Your Rating: {userRating.toFixed(2)}%</h3>
+        <h5>Average Rating: {averageRating.toFixed(2)}%</h5> {/* Format as fixed-point notation */}
+        <h5>Your Rating: {userRating.toFixed(2)}%</h5>
       </div>
     </div>
         </Col>
