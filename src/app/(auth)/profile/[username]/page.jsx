@@ -105,7 +105,7 @@ export default function ProfilePage() {
         
 
         // Fetch watched movies
-        const watchedMoviesResponse = await fetch(`${baseUrl}/api/auth/watchlist`, {
+        const watchedMoviesResponse = await fetch(`${baseUrl}/api/auth/watched-movies`, {
           headers: { Authorization: `Bearer ${token}` }
         });
             
