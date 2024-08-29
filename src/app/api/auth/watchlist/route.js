@@ -1,10 +1,10 @@
 import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken';
 
 export async function GET(request) {
   try {
-    // Extract the movie URL from the request URL
     const url = new URL(request.url);
-    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
+    const movieUrl = url.searchParams.get('url');
 
     if (!movieUrl) {
       return new Response(
@@ -13,32 +13,50 @@ export async function GET(request) {
       );
     }
 
-    // Get movie info from the URL
-    const movie = await getMovieInfo(movieUrl);
-    if (!movie) {
-      return new Response(
-        JSON.stringify({ message: 'Movie not found' }),
-        { status: 404 }
-      );
-    }
+    // Get the total watch count for the movie across all tables
+    const watchedcountResult = await sql`
+      SELECT COUNT(*) AS watchedcount
+      FROM (
+        SELECT url FROM horrormovies
+        UNION ALL
+        SELECT url FROM scifimovies
+        UNION ALL
+        SELECT url FROM comedymovies
+        UNION ALL
+        SELECT url FROM actionmovies
+        UNION ALL
+        SELECT url FROM documentarymovies
+        UNION ALL
+        SELECT url FROM classicmovies
+        UNION ALL
+        SELECT url FROM dramamovies
+      ) AS all_movies
+      JOIN watchlist ON all_movies.url = watchlist.url
+      WHERE watchlist.url = ${movieUrl} AND watchlist.iswatched = TRUE;
+    `;
+    const watchcount = parseInt(watchcountResult.rows[0].watchcount, 10);
 
-    const { title, genre } = movie; // Extract title and genre
-
-    // Get the total count of watchlist entries for the movie
-    const watchlistCount = await countWatchlistItems(movieUrl);
-
-    // Check if the movie is in the authenticated user's watchlist
+    // Check if the user has watched the movie
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
 
     if (!token) {
       return new Response(
-        JSON.stringify({ movie: { title, genre }, watchlistCount, isInWatchlist: false }),
+        JSON.stringify({ watchcount, iswatched: false }),
         { status: 200 }
       );
     }
 
-    const user = await getUserFromToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
+
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -46,43 +64,30 @@ export async function GET(request) {
       );
     }
 
-    const isInWatchlistResult = await sql`
-      SELECT EXISTS (
-        SELECT 1
-        FROM watchlist
-        WHERE username = ${user.username} AND url = ${movieUrl}
-      ) AS isInWatchlist;
+    const iswatchedResult = await sql`
+      SELECT iswatched
+      FROM watchlist
+      WHERE username = ${user.username} AND url = ${movieUrl};
     `;
-    const isInWatchlist = isInWatchlistResult.rows[0].isInWatchlist;
+    const iswatched = iswatchedResult.rowCount > 0 ? iswatchedResult.rows[0].iswatched : false;
 
     return new Response(
-      JSON.stringify({ movie: { title, genre }, watchlistCount, isInWatchlist }),
+      JSON.stringify({ watchcount, iswatched }),
       { status: 200 }
     );
   } catch (error) {
-    console.error('Failed to fetch watchlist status:', error);
     return new Response(
-      JSON.stringify({ message: 'Failed to fetch watchlist status' }),
+      JSON.stringify({ message: 'Failed to fetch watchlist' }),
       { status: 500 }
     );
   }
 }
 
-
 export async function POST(request) {
   try {
-    // Extract the movie URL from the request URL
-    const url = new URL(request.url);
-    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
+    const { url } = await request.json();
+    console.log('POST Request - URL:', url);
 
-    if (!movieUrl) {
-      return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Extract the Authorization header and token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     if (!token) {
@@ -92,17 +97,57 @@ export async function POST(request) {
       );
     }
 
-    // Get the user from the token
-    const user = await getUserFromToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
         { status: 404 }
       );
     }
+    console.log('User Found:', user.username);
 
-    // Get movie info from the URL
-    const movie = await getMovieInfo(movieUrl);
+    // Query the different movie tables
+    let movieResult = await sql`
+      SELECT film, genre
+      FROM horrormovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM scifimovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM comedymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM actionmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM documentarymovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM classicmovies
+      WHERE url = ${url}
+      UNION ALL
+      SELECT film, genre
+      FROM dramamovies
+      WHERE url = ${url};
+    `;
+
+    let movie = movieResult.rows[0];
+
     if (!movie) {
       return new Response(
         JSON.stringify({ message: 'Movie not found' }),
@@ -110,64 +155,64 @@ export async function POST(request) {
       );
     }
 
-    const { title, genre } = movie; // Extract title and genre
+    const title = movie.film;
+    const genre = movie.genre;
 
-    // Insert into watchlist
+    // Insert or update the watchlist table with username, url, and title
     const postResult = await sql`
-      INSERT INTO watchlist (username, url, title, genre)
-      VALUES (${user.username}, ${movieUrl}, ${title}, ${genre})
-      ON CONFLICT (username, url) DO NOTHING
+      INSERT INTO watchlist (username, url, title, genre, iswatched)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE)
+      ON CONFLICT (username, url) DO UPDATE SET iswatched = TRUE
       RETURNING username, url, title, genre;
     `;
+    console.log('POST Result:', postResult);
 
     if (postResult.rowCount === 0) {
       return new Response(
-        JSON.stringify({ message: 'Item already in watchlist' }),
+        JSON.stringify({ message: 'Item already watched' }),
         { status: 409 }
       );
     }
 
-    // Get the updated count of the watchlist item
-    const watchlistCountItem = await countWatchlistItems(movieUrl);
-
     return new Response(
-      JSON.stringify({ ...postResult.rows[0], watchlistCountItem }),
+      JSON.stringify({ message: 'Item watched' }),
       { status: 201 }
     );
   } catch (error) {
-    console.error('Add to watchlist error:', error);
+    console.error('Add watch error:', error);  // Log full error
     return new Response(
-      JSON.stringify({ message: 'Failed to add to watchlist' }),
+      JSON.stringify({ message: 'Failed to add watch' }),
       { status: 500 }
     );
   }
 }
 
+
 export async function DELETE(request) {
   try {
-    // Extract the movie URL from the request URL
     const url = new URL(request.url);
-    const movieUrl = url.pathname.split('/').pop(); // Assuming the URL ends with the movie URL part
+    const movieUrl = url.searchParams.get('url');
+    console.log('DELETE Request - Movie URL:', movieUrl);
 
-    if (!movieUrl) {
-      return new Response(
-        JSON.stringify({ message: 'Movie URL is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Extract the Authorization header and token
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
-    if (!token) {
+    if (!token || !movieUrl) {
       return new Response(
-        JSON.stringify({ message: 'Unauthorized' }),
+        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
         { status: 401 }
       );
     }
 
-    // Get the user from the token
-    const user = await getUserFromToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded JWT:', decoded);
+    const userId = decoded.userId;
+
+    const userResult = await sql`
+      SELECT username
+      FROM users
+      WHERE id = ${userId};
+    `;
+    const user = userResult.rows[0];
     if (!user) {
       return new Response(
         JSON.stringify({ message: 'User not found' }),
@@ -175,31 +220,29 @@ export async function DELETE(request) {
       );
     }
 
-    // Delete the movie from the watchlist
     const deleteResult = await sql`
-      DELETE FROM watchlist
+      UPDATE watchlist
+      SET iswatched = FALSE
       WHERE username = ${user.username} AND url = ${movieUrl}
       RETURNING username, url;
     `;
+    console.log('DELETE Result:', deleteResult);
 
     if (deleteResult.rowCount === 0) {
       return new Response(
-        JSON.stringify({ message: 'Item not found in watchlist' }),
+        JSON.stringify({ message: 'watch not found' }),
         { status: 404 }
       );
     }
 
-    // Get the updated count of the watchlist item
-    const watchlistCount = await countWatchlistItems(movieUrl);
-
     return new Response(
-      JSON.stringify({ message: 'Item removed from watchlist', watchlistCount }),
+      JSON.stringify({ message: 'watch removed' }),
       { status: 200 }
     );
   } catch (error) {
-    console.error('Remove from watchlist error:', error);
+    console.error('Delete watch error:', error);  // Log full error
     return new Response(
-      JSON.stringify({ message: 'Failed to remove from watchlist' }),
+      JSON.stringify({ message: 'Failed to remove watch' }),
       { status: 500 }
     );
   }
