@@ -241,12 +241,12 @@ export default function ProfilePage() {
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`https://movie-review-site-seven.vercel.app/genre/${movie.genre}/${movie.url}`}>
                            <Image 
-                             src={movie.image_url} 
+                             src={`https://movie-review-site-seven.vercel.app/public/images/${movie.genre}/${movie.image_url}`}
                              alt={movie.title} 
                              width={150} 
                              height={225} 
                              style={{ objectFit: 'cover' }} 
-                           />
+                          />
                          </a>
                        </li>
                      ))}
