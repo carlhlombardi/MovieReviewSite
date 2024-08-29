@@ -160,10 +160,16 @@ export async function POST(request) {
 
     // Insert or update the watchlist table with username, url, and title
     const postResult = await sql`
-      INSERT INTO watchlist (username, url, title, genre, iswatched)
-      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE)
-      ON CONFLICT (username, url) DO UPDATE SET iswatched = TRUE
-      RETURNING username, url, title, genre;
+      INSERT INTO watchlist (username, url, title, genre, iswatched, watchcount)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1)
+       ON CONFLICT (username, url) DO UPDATE 
+        SET iswatched = EXCLUDED.iswatched,
+          watchedcount = CASE 
+                    WHEN watchlist.iswatched = TRUE AND EXCLUDED.iswatched = FALSE THEN watchlist.watchedcount - 1
+                    WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchedcount + 1
+                    ELSE watchlist.watchedcount
+                 END
+        RETURNING username, url, title, genre, watchedcount;
     `;
 
     if (postResult.rowCount === 0) {
