@@ -167,7 +167,7 @@ export async function POST(request) {
           watchcount = CASE 
                     WHEN watchlist.iswatched = TRUE AND EXCLUDED.iswatched = FALSE THEN watchlist.watchcount - 1
                     WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchcount + 1
-                    ELSE watchlist.watchedcount
+                    ELSE watchlist.watchcount
                  END
         RETURNING username, url, title, genre, watchcount;
     `;
