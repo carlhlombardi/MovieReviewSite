@@ -186,7 +186,7 @@ const ClassicPage = ({ params }) => {
   
   
   function getMovieSlugFromURL(url) {
-    const parts = url.split('/horror/');
+    const parts = url.split('/classic/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
   }
 

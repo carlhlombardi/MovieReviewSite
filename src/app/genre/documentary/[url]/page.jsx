@@ -187,7 +187,7 @@ const DocumentaryPage = ({ params }) => {
   
   
   function getMovieSlugFromURL(url) {
-    const parts = url.split('/horror/');
+    const parts = url.split('/documentary/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
   }
 

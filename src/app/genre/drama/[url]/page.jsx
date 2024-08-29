@@ -152,6 +152,7 @@ const DramaPage = ({ params }) => {
   const [watchCount, setWatchCount] = useState(0);
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
+
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
     try {
@@ -184,7 +185,7 @@ const DramaPage = ({ params }) => {
   
   
   function getMovieSlugFromURL(url) {
-    const parts = url.split('/horror/');
+    const parts = url.split('/drama/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
   }
 

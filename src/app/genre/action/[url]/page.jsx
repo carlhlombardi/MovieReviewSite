@@ -186,7 +186,7 @@ const ActionPage = ({ params }) => {
   
   
   function getMovieSlugFromURL(url) {
-    const parts = url.split('/horror/');
+    const parts = url.split('/action/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
   }
 
