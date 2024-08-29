@@ -95,8 +95,6 @@ const toggleWatchlist = async (url, action) => {
     }
 
     const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`;
-    console.log('Fetch URL:', fetchUrl);
-    console.log('Request Method:', action === 'add' ? 'POST' : 'DELETE');
     
     const response = await fetch(fetchUrl, {
       method: action === 'add' ? 'POST' : 'DELETE',
