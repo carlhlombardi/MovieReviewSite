@@ -78,12 +78,12 @@ const fetchWatchlistStatus = async (url) => {
 
     const result = await response.json();
     return {
-      iswatched: result.iswatched || false,
-      watchcount: result.watchcount || 0,
+      isWatched: result.iswatched || false,
+      watchCount: result.watchcount || 0,
     };
   } catch (error) {
     console.error('Fetch watch status error:', error);
-    return { iswatched: false, watchcount: 0 }; // Default values
+    return { isWatched: false, watchCount: 0 }; // Default values
   }
 };
 
