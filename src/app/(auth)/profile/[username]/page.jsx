@@ -140,11 +140,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchFilteredMovies = async () => {
-      if (!username) {
-        console.log('No username, skipping fetchFilteredMovies');
-        return;
-      }
-
       try {
         const token = localStorage.getItem('token');
         if (!token) {

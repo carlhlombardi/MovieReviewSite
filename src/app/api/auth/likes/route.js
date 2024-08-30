@@ -14,26 +14,48 @@ export async function GET(request) {
     }
 
     // Get the total like count for the movie across all tables
+
     const likecountResult = await sql`
-      SELECT COUNT(*) AS likecount
-      FROM (
-        SELECT url FROM horrormovies
-        UNION ALL
-        SELECT url FROM scifimovies
-        UNION ALL
-        SELECT url FROM comedymovies
-        UNION ALL
-        SELECT url FROM actionmovies
-        UNION ALL
-        SELECT url FROM documentarymovies
-        UNION ALL
-        SELECT url FROM classicmovies
-        UNION ALL
-        SELECT url FROM dramamovies
-      ) AS all_movies
-      JOIN likes ON all_movies.url = likes.url
-      WHERE likes.url = ${movieUrl} AND likes.isliked = TRUE;
-    `;
+  SELECT m.url, m.img_url, COUNT(l.url) AS likecount
+  FROM (
+    SELECT url, img_url FROM horrormovies
+    UNION ALL
+    SELECT url, img_url FROM scifimovies
+    UNION ALL
+    SELECT url, img_url FROM comedymovies
+    UNION ALL
+    SELECT url, img_url FROM actionmovies
+    UNION ALL
+    SELECT url, img_url FROM documentarymovies
+    UNION ALL
+    SELECT url, img_url FROM classicmovies
+    UNION ALL
+    SELECT url, img_url FROM dramamovies
+  ) AS m
+  LEFT JOIN likes l ON m.url = l.url AND l.isliked = TRUE
+  WHERE m.url = ${movieUrl}
+  GROUP BY m.url, m.img_url;
+`;
+    // const likecountResult = await sql`
+    //   SELECT COUNT(*) AS likecount
+    //   FROM (
+    //     SELECT url FROM horrormovies
+    //     UNION ALL
+    //     SELECT url FROM scifimovies
+    //     UNION ALL
+    //     SELECT url FROM comedymovies
+    //     UNION ALL
+    //     SELECT url FROM actionmovies
+    //     UNION ALL
+    //     SELECT url FROM documentarymovies
+    //     UNION ALL
+    //     SELECT url FROM classicmovies
+    //     UNION ALL
+    //     SELECT url FROM dramamovies
+    //   ) AS all_movies
+    //   JOIN likes ON all_movies.url = likes.url
+    //   WHERE likes.url = ${movieUrl} AND likes.isliked = TRUE;
+    // `;
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
     // Check if the user has liked the movie
