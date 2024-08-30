@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Alert, Spinner, Card, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, Form, Row, Col } from 'react-bootstrap';
 import Comments from '@/app/components/comments/comments.jsx';
 import Image from 'next/image';
 
@@ -220,15 +220,21 @@ export default function ProfilePage() {
               <Card.Header as="h5">Liked Movies</Card.Header>
               <Card.Body>
                 {likedMovies.length > 0 ? (
-                  <ul>
+                  <Row>            
                     {likedMovies.map((movie) => (
-                     <li key={movie.url} style={{ listStyleType: 'none' }}>
+                      <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
                      <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                     {movie.title}
-                     </a>
-                   </li>
-                    ))}
-                  </ul>
+                     <Image
+              src={movie.image_url}
+              alt={movie.title}
+              width={150}
+              height={225}
+              style={{ objectFit: 'cover' }}
+            />
+          </a>
+        </Col>
+      ))}
+    </Row>
                 ) : (
                   <p>No liked movies found.</p>
                 )}
@@ -236,27 +242,27 @@ export default function ProfilePage() {
             </Card>
               <Card className="mb-4">
               <Card.Header as="h5">Watchlist Movies</Card.Header>
-                <Card.Body>
-                     {watchedMovies.length > 0 ? (
-                     <ul>
-                     {watchedMovies.map((movie) => (
-                       <li key={movie.url} style={{ listStyleType: 'none' }}>
-                         <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                         <Image
-                         src={movie.image_url}
-                         alt={movie.title}
-                         width={150} 
-                        height={225} 
-                        style={{ objectFit: 'cover' }} 
-                         />
-                         </a>
-                       </li>
-                     ))}
-                   </ul>
-                          ) : (
-                            <p>No liked movies found.</p>
-                          )}
-                        </Card.Body>
+              <Card.Body>
+              {watchedMovies.length > 0 ? (
+              <Row>
+                {watchedMovies.map((movie) => (
+               <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+                  <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
+            <Image
+              src={movie.image_url}
+              alt={movie.title}
+              width={150}
+              height={225}
+              style={{ objectFit: 'cover' }}
+            />
+          </a>
+        </Col>
+      ))}
+    </Row>
+  ) : (
+    <p>No liked movies found.</p>
+  )}
+</Card.Body>
                       </Card>
           </>
           )}
