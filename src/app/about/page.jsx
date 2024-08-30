@@ -21,7 +21,7 @@ const AboutPage = () => {
         <Col md={6}>
           <Card className="mb-4">
             <Card.Body>
-              <Card.Title>Our Mission</Card.Title>
+              <Card.Header>Our Mission</Card.Header>
               <Card.Text>
                 Our mission is to deliver detailed and insightful movie reviews that cater to both casual viewers and cinephiles alike. We strive to offer a balanced perspective on each film, focusing on what makes it unique and worth watching.
               </Card.Text>
@@ -31,7 +31,7 @@ const AboutPage = () => {
         <Col md={6}>
           <Card className="mb-4">
             <Card.Body>
-              <Card.Title>Grading Rubric</Card.Title>
+            <Card.Header>Grading Rubric</Card.Header>
               <Card.Text>
               <strong>90-100</strong> A true classic of cinema. A practically flawless film which is revered by fans, even if they dislike the genre. These films set the standard for excellence and are often referenced in discussions about the best movies of all time. They are timeless, influential, and leave a lasting impact on viewers.
               </Card.Text>
