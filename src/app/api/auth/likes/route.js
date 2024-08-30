@@ -15,8 +15,8 @@ export async function GET(request) {
 
     // Get the total like count for the movie across all tables
     const likecountResult = await sql`
-      SELECT COUNT(*) AS likecount
-      FROM (
+    SELECT COUNT(*) AS likecount
+    FROM (
       SELECT url, image_url FROM horrormovies
       UNION ALL
       SELECT url, image_url FROM scifimovies
@@ -30,9 +30,11 @@ export async function GET(request) {
       SELECT url, image_url FROM classicmovies
       UNION ALL
       SELECT url, image_url FROM dramamovies
-      JOIN likes ON all_movies.url = likes.url
-      WHERE likes.url = ${movieUrl} AND likes.image_url IS NOT NULL AND likes.isliked = TRUE;
-    `;
+    ) AS all_movies
+    JOIN likes ON all_movies.url = likes.url
+    WHERE likes.url = ${movieUrl} AND likes.image_url IS NOT NULL AND likes.isliked = TRUE;
+  `;
+  
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
     // Check if the user has liked the movie
