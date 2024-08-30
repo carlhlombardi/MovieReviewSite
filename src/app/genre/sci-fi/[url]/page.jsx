@@ -185,7 +185,7 @@ const SciFiPostPage = ({ params }) => {
   
   
   function getMovieSlugFromURL(url) {
-    const parts = url.split('/scifi/');
+    const parts = url.split('/sci-fi/');
     return parts.length > 1 ? parts[1].split('?')[0] : '';
   }
 
