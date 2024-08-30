@@ -35,16 +35,11 @@ const fetchMovies = async () => {
       }
     }));
 
-    // Combine all movie arrays into a single array
-    const allMovies = responses.flat();
-    return allMovies;
-
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
   }
 };
-
 
 // Function to fetch comments for a movie
 const fetchComments = async (movieUrl, token) => {
@@ -218,56 +213,61 @@ export default function ProfilePage() {
               </Card.Text>
             </Card.Body>
           </Card>
-            <>
-            <Card className="mb-4">
-              <Card.Header as="h5">Liked Movies</Card.Header>
-              <Card.Body>
-                {likedMovies.length > 0 ? (
-                  <Row>            
-                    {likedMovies.map((movie) => (
-                      <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                     <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                     <Image
-              src={movie.image_url}
-              alt={movie.title}
-              width={150}
-              height={225}
-              style={{ objectFit: 'cover' }}
-            />
-          </a>
-        </Col>
-      ))}
-    </Row>
-                ) : (
-                  <p>No liked movies found.</p>
-                )}
-              </Card.Body>
-            </Card>
-              <Card className="mb-4">
-              <Card.Header as="h5">Watchlist Movies</Card.Header>
-              <Card.Body>
-              {watchedMovies.length > 0 ? (
-              <Row>
-                {watchedMovies.map((movie) => (
-               <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                  <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-            <Image
-              src={movie.image_url}
-              alt={movie.title}
-              width={150}
-              height={225}
-              style={{ objectFit: 'cover' }}
-            />
-          </a>
-        </Col>
-      ))}
-    </Row>
-  ) : (
-    <p>No liked movies found.</p>
+
+          <>
+  <Card className="mb-4">
+    <Card.Header as="h5">Liked Movies</Card.Header>
+    <Card.Body>
+      {likedMovies.length > 0 ? (
+        <Row>
+          {likedMovies.map((movie) => (
+            <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
+                <Image
+                  src={movie.image_url}
+                  alt={movie.title}
+                  width={150}
+                  height={225}
+                  style={{ objectFit: 'cover' }}
+                />
+              </a>
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <p>No liked movies found.</p>
+      )}
+    </Card.Body>
+  </Card>
+
+  {isOwnProfile && (
+    <Card className="mb-4">
+      <Card.Header as="h5">Watchlist Movies</Card.Header>
+      <Card.Body>
+        {watchedMovies.length > 0 ? (
+          <Row>
+            {watchedMovies.map((movie) => (
+              <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+                <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
+                  <Image
+                    src={movie.image_url}
+                    alt={movie.title}
+                    width={150}
+                    height={225}
+                    style={{ objectFit: 'cover' }}
+                  />
+                </a>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <p>No watchlist movies found.</p>
+        )}
+      </Card.Body>
+    </Card>
   )}
-</Card.Body>
-                      </Card>
-          </>
+</>
+
 
           {isOwnProfile && (
             <Card className="mb-4">
