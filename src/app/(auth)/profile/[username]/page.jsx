@@ -267,7 +267,7 @@ export default function ProfilePage() {
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                            <Image 
-                             src={movies.img_url}
+                             src={movie.image_url}
                              alt={movie.title} 
                              width={150} 
                              height={225} 
