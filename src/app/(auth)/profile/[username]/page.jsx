@@ -239,6 +239,7 @@ export default function ProfilePage() {
                     {likedMovies.map((movie) => (
                      <li key={movie.url} style={{ listStyleType: 'none' }}>
                      <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
+                     {movie.title}
                      </a>
                    </li>
                     ))}
@@ -256,6 +257,7 @@ export default function ProfilePage() {
                      {watchedMovies.map((movie) => (
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
+                         {movie.title}
                          </a>
                        </li>
                      ))}
