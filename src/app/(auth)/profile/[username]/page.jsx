@@ -19,22 +19,9 @@ const fetchMovies = async () => {
       'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
     ];
 
-    // Fetch data from all endpoints
-    const responses = await Promise.all(endpoints.map(async (endpoint) => {
-      try {
-        const response = await fetch(endpoint);
-        if (!response.ok) {
-          console.error(`Failed to fetch from ${endpoint}: ${response.statusText}`);
-          return [];
-        }
-        const data = await response.json();
-        return data; // Assuming `data` is an array of movie objects
-      } catch (error) {
-        console.error(`Error fetching from ${endpoint}:`, error);
-        return [];
-      }
-    }));
-
+    const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
+    const moviesArrays = await Promise.all(responses.map(response => response.json()));
+    return moviesArrays.flat(); // Combine arrays into a single array
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
