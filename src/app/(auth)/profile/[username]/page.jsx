@@ -239,14 +239,6 @@ export default function ProfilePage() {
                     {likedMovies.map((movie) => (
                      <li key={movie.url} style={{ listStyleType: 'none' }}>
                      <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                       <Image 
-                         src={movie.image_url}
-                         alt={movie.title} 
-                         width={150} 
-                         height={225} 
-                         style={{ objectFit: 'cover' }} 
-                         unoptimized
-                       />
                      </a>
                    </li>
                     ))}
@@ -264,14 +256,6 @@ export default function ProfilePage() {
                      {watchedMovies.map((movie) => (
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                           <Image 
-                             src={movie.image_url}
-                             alt={movie.title} 
-                             width={150} 
-                             height={225} 
-                             style={{ objectFit: 'cover' }} 
-                             unoptimized
-                          />
                          </a>
                        </li>
                      ))}
