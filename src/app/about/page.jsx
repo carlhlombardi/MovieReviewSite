@@ -20,7 +20,7 @@ const AboutPage = () => {
         </Col>
       </Row>
       <Row>
-        <Col md={6}>
+        <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
               <Card.Header>Our Mission</Card.Header>
@@ -30,7 +30,7 @@ const AboutPage = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={6}>
+        <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
             <Card.Header>Grading Rubric</Card.Header>
