@@ -49,7 +49,10 @@ const fetchMovies = async () => {
       img_url: movie.img_url // Assuming img_url is a field in your movie object
     }));
 
+    console.log(img_url);
+
     return moviesWithImgUrl;
+    
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
