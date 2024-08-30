@@ -218,8 +218,6 @@ export default function ProfilePage() {
               </Card.Text>
             </Card.Body>
           </Card>
-
-          {isOwnProfile && (
             <>
             <Card className="mb-4">
               <Card.Header as="h5">Liked Movies</Card.Header>
@@ -270,7 +268,6 @@ export default function ProfilePage() {
 </Card.Body>
                       </Card>
           </>
-          )}
 
           {isOwnProfile && (
             <Card className="mb-4">
