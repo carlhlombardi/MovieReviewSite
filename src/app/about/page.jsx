@@ -6,8 +6,14 @@ const About = () => {
     <Container fluid className="py-5">
       <Row>
         <Col md={12} className="text-center mb-4">
-          <h1 className="display-4">About Us</h1>
-          <p className="lead">Welcome to our movie review site! We provide honest and comprehensive reviews to help you make informed decisions about what to watch next.</p>
+        <Card className="mb-4">
+            <Card.Body>
+              <Card.Title>Our Mission</Card.Title>
+              <Card.Text>
+                Our mission is to deliver detailed and insightful movie reviews that cater to both casual viewers and cinephiles alike. We strive to offer a balanced perspective on each film, focusing on what makes it unique and worth watching.
+              </Card.Text>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
