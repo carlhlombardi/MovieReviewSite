@@ -33,7 +33,7 @@ const AboutPage = () => {
           <Card className="mb-4">
             <Card.Body>
               <Card.Title>Grading Rubric</Card.Title>
-              <ListGroup variant="flush">
+              <ListGroup>
               <ListGroup.Item><strong>90-100</strong> A true classic of cinema. A practically flawless film which is revered by fans, even if they dislike the genre. These films set the standard for excellence and are often referenced in discussions about the best movies of all time. They are timeless, influential, and leave a lasting impact on viewers.</ListGroup.Item>
 <ListGroup.Item><strong>80-89</strong> A strong contender to be the type of film which stands out for its exceptional quality. These movies are highly regarded and often receive critical acclaim. They may have minor flaws, but their strengths far outweigh any weaknesses. They are memorable, well-crafted, and often feature outstanding performances or innovative storytelling.</ListGroup.Item>
 <ListGroup.Item><strong>70-79</strong> These films are solid and enjoyable, with good storytelling and production values. They may not be groundbreaking, but they are well-crafted and worth watching. These movies are entertaining and competently made, often appealing to a wide audience. They may not achieve greatness, but they are certainly commendable.</ListGroup.Item>
