@@ -257,7 +257,13 @@ export default function ProfilePage() {
                      {watchedMovies.map((movie) => (
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
-                         {movie.title}
+                         <Image
+                         src={movie.image_url}
+                         alt={movie.title}
+                         width={150} 
+                        height={225} 
+                        style={{ objectFit: 'cover' }} 
+                         />
                          </a>
                        </li>
                      ))}
