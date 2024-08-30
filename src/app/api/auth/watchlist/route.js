@@ -15,25 +15,26 @@ export async function GET(request) {
 
     // Get the total watch count for the movie across all tables
     const watchcountResult = await sql`
-      SELECT COUNT(*) AS watchcount
-      FROM (
-        SELECT url FROM horrormovies
-        UNION ALL
-        SELECT url FROM scifimovies
-        UNION ALL
-        SELECT url FROM comedymovies
-        UNION ALL
-        SELECT url FROM actionmovies
-        UNION ALL
-        SELECT url FROM documentarymovies
-        UNION ALL
-        SELECT url FROM classicmovies
-        UNION ALL
-        SELECT url FROM dramamovies
-      ) AS all_movies
-      JOIN watchlist ON all_movies.url = watchlist.url
-      WHERE watchlist.url = ${movieUrl} AND watchlist.iswatched = TRUE;
-    `;
+    SELECT COUNT(*) AS watchcount
+    FROM (
+      SELECT url, image_url FROM horrormovies
+      UNION ALL
+      SELECT url, image_url FROM scifimovies
+      UNION ALL
+      SELECT url, image_url FROM comedymovies
+      UNION ALL
+      SELECT url, image_url FROM actionmovies
+      UNION ALL
+      SELECT url, image_url FROM documentarymovies
+      UNION ALL
+      SELECT url, image_url FROM classicmovies
+      UNION ALL
+      SELECT url, image_url FROM dramamovies
+    ) AS all_movies
+    JOIN watchlist ON all_movies.url = watchlist.url
+    WHERE watchlist.iswatched = TRUE AND watchlist.image_url IS NOT NULL AND watchlist.url = ${movieUrl};
+  `;
+
     const watchcount = parseInt(watchcountResult.rows[0].watchcount, 10);
 
     // Check if the user has watched the movie
@@ -117,31 +118,31 @@ export async function POST(request) {
 
     // Query the different movie tables
     let movieResult = await sql`
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM horrormovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM scifimovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM comedymovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM actionmovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM documentarymovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM classicmovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM dramamovies
       WHERE url = ${url};
     `;
@@ -157,11 +158,12 @@ export async function POST(request) {
 
     const title = movie.film;
     const genre = movie.genre;
+    const image_url = movie.image_url;
 
     // Insert or update the watchlist table with username, url, and title
     const postResult = await sql`
-      INSERT INTO watchlist (username, url, title, genre, iswatched, watchcount)
-      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1)
+      INSERT INTO watchlist (username, url, title, genre, iswatched, watchcount, image_url)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1, ${image_url})
        ON CONFLICT (username, url) DO UPDATE 
         SET iswatched = EXCLUDED.iswatched,
           watchcount = CASE 
@@ -169,7 +171,7 @@ export async function POST(request) {
                     WHEN watchlist.iswatched = FALSE AND EXCLUDED.iswatched = TRUE THEN watchlist.watchcount + 1
                     ELSE watchlist.watchcount
                  END
-        RETURNING username, url, title, genre, watchcount;
+        RETURNING username, url, title, genre, watchcount, image_url;
     `;
 
     if (postResult.rowCount === 0) {

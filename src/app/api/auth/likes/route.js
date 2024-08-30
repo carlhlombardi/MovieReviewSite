@@ -17,22 +17,21 @@ export async function GET(request) {
     const likecountResult = await sql`
       SELECT COUNT(*) AS likecount
       FROM (
-        SELECT url FROM horrormovies
-        UNION ALL
-        SELECT url FROM scifimovies
-        UNION ALL
-        SELECT url FROM comedymovies
-        UNION ALL
-        SELECT url FROM actionmovies
-        UNION ALL
-        SELECT url FROM documentarymovies
-        UNION ALL
-        SELECT url FROM classicmovies
-        UNION ALL
-        SELECT url FROM dramamovies
-      ) AS all_movies
+      SELECT url, image_url FROM horrormovies
+      UNION ALL
+      SELECT url, image_url FROM scifimovies
+      UNION ALL
+      SELECT url, image_url FROM comedymovies
+      UNION ALL
+      SELECT url, image_url FROM actionmovies
+      UNION ALL
+      SELECT url, image_url FROM documentarymovies
+      UNION ALL
+      SELECT url, image_url FROM classicmovies
+      UNION ALL
+      SELECT url, image_url FROM dramamovies
       JOIN likes ON all_movies.url = likes.url
-      WHERE likes.url = ${movieUrl} AND likes.isliked = TRUE;
+      WHERE likes.url = ${movieUrl} AND likes.image_url IS NOT NULL AND likes.isliked = TRUE;
     `;
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
@@ -117,31 +116,31 @@ export async function POST(request) {
 
     // Query the different movie tables
     let movieResult = await sql`
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM horrormovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM scifimovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM comedymovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM actionmovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM documentarymovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM classicmovies
       WHERE url = ${url}
       UNION ALL
-      SELECT film, genre
+      SELECT film, genre, image_url
       FROM dramamovies
       WHERE url = ${url};
     `;
@@ -157,11 +156,12 @@ export async function POST(request) {
 
     const title = movie.film;
     const genre = movie.genre;
+    const image_url = movie.image_url;
 
     // Insert or update the likes table with username, url, and title
     const postResult = await sql`
-      INSERT INTO likes (username, url, title, genre, isliked, likedcount)
-      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1)
+      INSERT INTO likes (username, url, title, genre, isliked, likedcount, image_url)
+      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1, ${image_url})
       ON CONFLICT (username, url) DO UPDATE 
         SET isliked = EXCLUDED.isliked,
           likedcount = CASE 
@@ -169,7 +169,7 @@ export async function POST(request) {
                     WHEN likes.isliked = FALSE AND EXCLUDED.isliked = TRUE THEN likes.likedcount + 1
                     ELSE likes.likedcount
                  END
-        RETURNING username, url, title, genre, likedcount;
+        RETURNING username, url, title, genre, likedcount, image_url;
     `;
     console.log('POST Result:', postResult);
 
