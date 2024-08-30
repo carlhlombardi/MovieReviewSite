@@ -35,21 +35,6 @@ const fetchMovies = async () => {
       }
     }));
 
-    // Flatten the array of arrays into a single array
-    const movies = responses.flat();
-
-    // Optional: Filter out duplicate movies by URL
-    const uniqueMovies = Array.from(new Set(movies.map(movie => movie.url)))
-      .map(url => movies.find(movie => movie.url === url));
-
-    // Extract image_url (assuming it is a field in your movie object)
-    const moviesWithImgUrl = uniqueMovies.map(movie => ({
-      ...movie,
-      image_url: movie.image_url // Make sure this field exists in your movie object
-    }));
-
-    return moviesWithImgUrl;
-
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
