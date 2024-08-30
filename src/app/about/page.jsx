@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { Container, Row, Col, Card, ListGroup} from 'react-bootstrap';
+import { Container, Row, Col, Card} from 'react-bootstrap';
 
 
 const AboutPage = () => {
