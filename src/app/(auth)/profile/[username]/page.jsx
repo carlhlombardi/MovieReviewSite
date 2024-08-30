@@ -214,7 +214,7 @@ export default function ProfilePage() {
       {likedMovies.length > 0 ? (
         <Row>
           {likedMovies.map((movie) => (
-            <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+            <Col key={movie.url} xs={12} sm={6} md={4} lg={2} className="mb-4">
               <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                 <Image
                   src={movie.image_url}
@@ -240,7 +240,7 @@ export default function ProfilePage() {
         {watchedMovies.length > 0 ? (
           <Row>
             {watchedMovies.map((movie) => (
-              <Col key={movie.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <Col key={movie.url} xs={12} sm={6} md={4} lg={2} className="mb-4">
                 <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                   <Image
                     src={movie.image_url}
