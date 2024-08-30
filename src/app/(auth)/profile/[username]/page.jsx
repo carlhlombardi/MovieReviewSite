@@ -19,14 +19,43 @@ const fetchMovies = async () => {
       'https://movie-review-site-seven.vercel.app/api/data/scifimovies',
     ];
 
-    const responses = await Promise.all(endpoints.map(endpoint => fetch(endpoint)));
-    const moviesArrays = await Promise.all(responses.map(response => response.json()));
-    return moviesArrays.flat(); // Combine arrays into a single array
+    const responses = await Promise.all(endpoints.map(async (endpoint) => {
+      try {
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          console.error(`Failed to fetch from ${endpoint}: ${response.statusText}`);
+          return [];
+        }
+
+        const data = await response.json();
+        return data; // Assuming `data` is an array of movie objects
+      } catch (error) {
+        console.error(`Error fetching from ${endpoint}:`, error);
+        return [];
+      }
+    }));
+
+    // Flatten the array of arrays into a single array
+    const movies = responses.flat();
+
+    // Optional: Filter out duplicate movies by URL
+    const uniqueMovies = Array.from(new Set(movies.map(movie => movie.url)))
+      .map(url => movies.find(movie => movie.url === url));
+
+    // Extract img_url
+    const moviesWithImgUrl = uniqueMovies.map(movie => ({
+      ...movie,
+      img_url: movie.img_url // Assuming img_url is a field in your movie object
+    }));
+
+    return moviesWithImgUrl;
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
   }
 };
+
 
 // Function to fetch comments for a movie
 const fetchComments = async (movieUrl, token) => {
