@@ -22,11 +22,11 @@ const AboutPage = () => {
         <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
-              <Card.Header className="text-center" style={{fontSize: '3rem'}}>Our Mission</Card.Header>
+              <Card.Header className="text-center" style={{fontSize: '2.25rem'}}>Our Mission</Card.Header>
               <Card.Text className="text-center mt-4">
               At Reel Film Reviews, we aim to keep things simple and straightforward. Our mission is to provide movie reviews that are both detailed and insightful, but without all the fluff. We know that not everyone has the time or patience to wade through overly wordy reviews, so we cut to the chase. Whether you’re a casual viewer just looking for a good movie to watch on a Friday night or a hardcore cinephile who loves dissecting every frame, we’ve got you covered. We focus on what makes each film unique and worth your time, giving you a balanced perspective that highlights both the strengths and weaknesses.
               </Card.Text>
-              <Card.Text className="text-center">
+              <Card.Text className="text-center mb-4">
               Unlike other review sites that can get bogged down in jargon and endless paragraphs, we keep our reviews concise and to the point. We believe that a good review should be easy to read and understand, without sacrificing depth or insight. Our goal is to help you decide whether a movie is worth watching, without making you feel like you need a film degree to understand our reviews. So, if you’re tired of wading through overly complicated reviews, give Reel Film Reviews a try. We’re here to make your movie-watching experience better, one review at a time.
               </Card.Text>
             </Card.Body>
@@ -35,7 +35,7 @@ const AboutPage = () => {
         <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
-            <Card.Header className="text-center" style={{fontSize: '3rem'}}>Grading Rubric</Card.Header>
+            <Card.Header className="text-center" style={{fontSize: '2.25rem'}}>Grading Rubric</Card.Header>
               <Card.Text className="text-center mt-4">
               <strong>90-100</strong> A true classic of cinema. A practically flawless film which is revered by fans, even if they dislike the genre. These films set the standard for excellence and are often referenced in discussions about the best movies of all time. They are timeless, influential, and leave a lasting impact on viewers.
               </Card.Text>
@@ -63,7 +63,7 @@ const AboutPage = () => {
               <Card.Text className="text-center">
               <strong>10-19</strong> A score in this range means that while the plot of the film may be incoherent, at least it was shot in focus. Films here have one glaring flaw, but not multiple flaws. They are barely watchable and often frustrating to sit through. These movies might have a decent idea but fail in execution.
               </Card.Text>
-              <Card.Text className="text-center">
+              <Card.Text className="text-center mb-4">
               <strong>0-9</strong> Films in this tier are simply unwatchable due to glaring flaws that sully the entire experience. This is for the films that are truly trash and lack any redeeming qualities. A third grader could make a better film. These movies are often considered the worst of the worst and are best avoided.
               </Card.Text>
             </Card.Body>
