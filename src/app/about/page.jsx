@@ -22,7 +22,7 @@ const AboutPage = () => {
         <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
-              <Card.Header className="text-center">Our Mission</Card.Header>
+              <Card.Header className="text-center" style={'font-size: 3rem'}>Our Mission</Card.Header>
               <Card.Text className="text-center">
               At Reel Film Reviews, we aim to keep things simple and straightforward. Our mission is to provide movie reviews that are both detailed and insightful, but without all the fluff. We know that not everyone has the time or patience to wade through overly wordy reviews, so we cut to the chase. Whether you’re a casual viewer just looking for a good movie to watch on a Friday night or a hardcore cinephile who loves dissecting every frame, we’ve got you covered. We focus on what makes each film unique and worth your time, giving you a balanced perspective that highlights both the strengths and weaknesses.
               </Card.Text>
@@ -35,7 +35,7 @@ const AboutPage = () => {
         <Col md={12}>
           <Card className="mb-4">
             <Card.Body>
-            <Card.Header className="text-center">Grading Rubric</Card.Header>
+            <Card.Header className="text-center" style={'font-size: 3rem'}>Grading Rubric</Card.Header>
               <Card.Text className="text-center">
               <strong>90-100</strong> A true classic of cinema. A practically flawless film which is revered by fans, even if they dislike the genre. These films set the standard for excellence and are often referenced in discussions about the best movies of all time. They are timeless, influential, and leave a lasting impact on viewers.
               </Card.Text>
