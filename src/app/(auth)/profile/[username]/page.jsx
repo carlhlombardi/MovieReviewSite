@@ -49,8 +49,6 @@ const fetchMovies = async () => {
       img_url: movie.img_url // Assuming img_url is a field in your movie object
     }));
 
-    console.log(img_url);
-
     return moviesWithImgUrl;
     
   } catch (error) {
@@ -269,7 +267,7 @@ export default function ProfilePage() {
                        <li key={movie.url} style={{ listStyleType: 'none' }}>
                          <a href={`${baseUrl}/${movie.genre}/${movie.url}`}>
                            <Image 
-                             src={`${baseUrl}/${movie.img_url}`}
+                             src={movie.img_url}
                              alt={movie.title} 
                              width={150} 
                              height={225} 
