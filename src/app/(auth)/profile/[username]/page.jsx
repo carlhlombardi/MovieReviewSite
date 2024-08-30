@@ -159,14 +159,19 @@ export default function ProfilePage() {
           console.log('No token, skipping fetchFilteredMovies');
           return;
         }
-
+  
+        if (!movies || movies.length === 0) {
+          console.log('No movies available, skipping fetchFilteredMovies');
+          return;
+        }
+  
         // Fetch comments for each movie and filter movies with comments
         const moviesWithComments = await Promise.all(movies.map(async (movie) => {
           const commentsData = await fetchComments(movie.url, token);
           const userComments = commentsData.filter(comment => comment.username === username);
           return { ...movie, hasComments: userComments.length > 0, comments: userComments };
         }));
-
+  
         // Filter movies that have comments
         setFilteredMovies(moviesWithComments.filter(movie => movie.hasComments));
       } catch (err) {
@@ -174,9 +179,10 @@ export default function ProfilePage() {
         setError('An error occurred while fetching comments');
       }
     };
-
+  
     fetchFilteredMovies();
   }, [movies, username]); // Ensure this effect runs when `movies` or `username` changes
+  
 
   // Function to format the date
   const formatDate = (dateString) => {
