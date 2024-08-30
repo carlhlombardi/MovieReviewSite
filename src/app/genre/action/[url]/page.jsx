@@ -382,13 +382,6 @@ const ActionPage = ({ params }) => {
         <Col xs={12} className="text-center mt-5">
           {isLoggedIn ? (
             <>
-             <Button
-                variant={isLiked ? "danger" : "primary"}
-                onClick={handleLike}
-                className="me-2"
-              >
-                {isLiked ? 'Unlike' : 'Like'}
-              </Button>
               <Comments movieUrl={params.url} />
             </>
           ) : (
