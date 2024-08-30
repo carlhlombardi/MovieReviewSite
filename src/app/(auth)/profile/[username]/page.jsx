@@ -35,11 +35,16 @@ const fetchMovies = async () => {
       }
     }));
 
+    // Combine all movie arrays into a single array
+    const allMovies = responses.flat();
+    return allMovies;
+
   } catch (error) {
     console.error('Error fetching movies:', error);
     return [];
   }
 };
+
 
 // Function to fetch comments for a movie
 const fetchComments = async (movieUrl, token) => {
