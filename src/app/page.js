@@ -18,7 +18,7 @@ const Home = () => {
         const horrorResult = await horrorResponse.json();
         setHorrorData(horrorResult);
 
-        const sciFiResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/scifimovies');
+        const sciFiResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/scifimovie');
         const sciFiResult = await sciFiResponse.json();
         setSciFiData(sciFiResult);
       } catch (error) {
