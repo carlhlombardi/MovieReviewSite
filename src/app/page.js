@@ -1,23 +1,23 @@
-"use client"; // Ensure this is at the top
+"use client";
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // Import the Image component
-import { Container, Row, Col } from 'react-bootstrap'; // Import Bootstrap components
+import Image from 'next/image';
+import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 
 const Home = () => {
   const [horrorData, setHorrorData] = useState([]);
   const [sciFiData, setSciFiData] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data from horror movies endpoint
         const horrorResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
         const horrorResult = await horrorResponse.json();
         setHorrorData(horrorResult);
 
-        // Fetch data from sci-fi movies endpoint
         const sciFiResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/scifimovies');
         const sciFiResult = await sciFiResponse.json();
         setSciFiData(sciFiResult);
@@ -29,13 +29,60 @@ const Home = () => {
     fetchData();
   }, []);
 
-  // Filter and combine data
   const horrorItemsToShow = horrorData.filter(item => [136, 137, 138, 139].includes(item.id));
-  const sciFiItemsToShow = sciFiData.slice(0, 4); // Get the first 4 sci-fi movies
+  const sciFiItemsToShow = sciFiData.slice(0, 4);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    try {
+      const res = await fetch(
+        `https://api.themoviedb.org/3/search/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`
+      );
+      const data = await res.json();
+      setSearchResults(data.results || []);
+    } catch (error) {
+      console.error('TMDB search failed:', error);
+    }
+  };
 
   return (
     <Container>
-      {/* Display Horror Movies */}
+      {/* 🔍 Search Bar */}
+      <Form onSubmit={handleSearch} className="my-4">
+        <Form.Group controlId="searchQuery">
+          <Form.Control
+            type="text"
+            placeholder="Search TMDB for a movie..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </Form.Group>
+        <Button type="submit" variant="primary" className="mt-2">Search</Button>
+      </Form>
+
+      {/* 🎬 Search Results */}
+      {searchResults.length > 0 && (
+        <Row className="mb-4">
+          <h2 className="text-center">Search Results</h2>
+          {searchResults.map(movie => (
+            <Col key={movie.id} xs={12} sm={6} md={4} lg={3}>
+              <div className="image-wrapper">
+                <Image
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={movie.title}
+                  width={200}
+                  height={300}
+                />
+              </div>
+              <p className="text-center">{movie.title}</p>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      {/* 🧟 Horror Section */}
       {horrorItemsToShow.length > 0 && (
         <Row>
           <h1 className='mt-4 mb-3 text-center'>Top Reviews In Horror</h1>
@@ -44,8 +91,8 @@ const Home = () => {
               <Link href={`/genre/horror/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
-                    src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
-                    alt={item.film} // Alt text for accessibility
+                    src={decodeURIComponent(item.image_url)}
+                    alt={item.film}
                     width={200}
                     height={300}
                   />
@@ -56,7 +103,7 @@ const Home = () => {
         </Row>
       )}
 
-      {/* Display Sci-Fi Movies */}
+      {/* 🚀 Sci-Fi Section */}
       {sciFiItemsToShow.length > 0 && (
         <Row className='mt-4'>
           <h1 className='mb-3 text-center'>Top Reviews In Sci-Fi</h1>
@@ -65,8 +112,8 @@ const Home = () => {
               <Link href={`/genre/sci-fi/${encodeURIComponent(item.url)}`}>
                 <div className="image-wrapper">
                   <Image
-                    src={decodeURIComponent(item.image_url)} // Use the image URL directly from the database
-                    alt={item.film} // Alt text for accessibility
+                    src={decodeURIComponent(item.image_url)}
+                    alt={item.film}
                     width={200}
                     height={300}
                   />
@@ -80,12 +127,12 @@ const Home = () => {
       <style jsx>{`
         .image-wrapper {
           position: relative;
-          width: 100%; /* Ensure the wrapper takes full width */
-          padding: 2rem; /* Aspect ratio 400x600 => 150% (height/width * 100) */
-          overflow: hidden; /* Hide overflow to maintain the aspect ratio */
+          width: 100%;
+          padding: 2rem;
+          overflow: hidden;
           display: flex;
-          justify-content: center; /* Center image horizontally */
-          align-items: center; /* Center image vertically */
+          justify-content: center;
+          align-items: center;
         }
 
         .image-wrapper img {
@@ -94,15 +141,10 @@ const Home = () => {
           left: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover; /* Cover the area while maintaining aspect ratio */
+          object-fit: cover;
         }
 
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .custom-col {
-            justify-content: center;
-          }
-        }
-
+        @media (min-width: 768px) and (max-width: 1024px),
         @media (max-width: 767px) {
           .custom-col {
             justify-content: center;

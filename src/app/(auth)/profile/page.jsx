@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Alert, Spinner, Card, Form } from 'react-bootstrap';
-import Comments from '@/app/components/comments/comments.jsx'; // Ensure this path is correct
+import Comments from '@/app/components/footer/comments/comments.jsx'; // Ensure this path is correct
 
 // Function to fetch movies from multiple endpoints
 const fetchMovies = async () => {

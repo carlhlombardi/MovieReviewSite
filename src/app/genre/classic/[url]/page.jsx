@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import Image from 'next/image';
-import Comments from '@/app/components/comments/comments';
+import Comments from '@/app/components/footer/comments/comments';
 import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons'
 
 /// Function to fetch movie data

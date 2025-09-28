@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Alert, Spinner, Card, Form, Row, Col } from 'react-bootstrap';
-import Comments from '@/app/components/comments/comments.jsx';
+import Comments from '@/app/components/footer/comments/comments.jsx';
 import Image from 'next/image';
 
 // Function to fetch movies from multiple endpoints
