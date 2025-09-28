@@ -14,7 +14,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const horrorResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovis');
+        const horrorResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
         const horrorResult = await horrorResponse.json();
         setHorrorData(horrorResult);
 
