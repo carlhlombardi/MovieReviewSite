@@ -51,7 +51,7 @@ const Home = () => {
       setSuggestions(data.results || []);
       setShowSuggestions(true);
     } catch (err) {
-      console.error('Suggestion fetch error:', err);
+      console.error('Suggestion fetch errr:', err);
       setSuggestions([]);
     }
   };
