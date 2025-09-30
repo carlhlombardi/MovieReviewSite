@@ -35,15 +35,13 @@ const Home = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-
+  
     try {
-      const res = await fetch(
-        `https://api.themoviedb.org/3/search/movie?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`
-      );
+      const res = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
       setSearchResults(data.results || []);
     } catch (error) {
-      console.error('TMDB search failed:', error);
+      console.error('Search failed:', error);
     }
   };
 
