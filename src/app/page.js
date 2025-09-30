@@ -57,10 +57,42 @@ const Home = () => {
   };
 
   // User clicked a suggestion
-  const handleSuggestionClick = (movie) => {
+  const fetchMovieById = async (movieId) => {
+    try {
+      // Fetch movie details
+      const movieRes = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`);
+      const movie = await movieRes.json();
+  
+      // Fetch credits to get director and stars
+      const creditsRes = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`);
+      const credits = await creditsRes.json();
+  
+      const director = credits.crew?.find(p => p.job === 'Director')?.name || 'Unknown';
+      const stars = credits.cast?.slice(0, 3).map(c => c.name).join(', ') || 'N/A';
+  
+      return {
+        title: movie.title,
+        year: movie.release_date?.slice(0, 4) || 'Unknown',
+        director,
+        stars,
+      };
+    } catch (error) {
+      console.error('Failed to fetch movie by ID:', error);
+      return null;
+    }
+  };
+  
+  // When user clicks a suggestion, fetch that exact movie and set it as the only search result
+  const handleSuggestionClick = async (movie) => {
     setSearchQuery(movie.title);
     setShowSuggestions(false);
-    handleSearchDirect(movie.title);
+  
+    const detailedMovie = await fetchMovieById(movie.id);
+    if (detailedMovie) {
+      setSearchResults([detailedMovie]);
+    } else {
+      setSearchResults([]);
+    }
   };
 
   // Manual form submit
@@ -129,27 +161,6 @@ const Home = () => {
           ))}
         </Row>
       )}
-
-      {/* 🎃 Featured Horror and Sci-Fi Movies (optional) */}
-      <Row className="mt-5">
-        <h2>Featured Horror</h2>
-        {horrorItemsToShow.map(movie => (
-          <Col key={movie.id} xs={12} sm={6} md={4} lg={3}>
-            <Image src={movie.image} alt={movie.title} width={200} height={300} />
-            <p className="text-center">{movie.title}</p>
-          </Col>
-        ))}
-      </Row>
-
-      <Row className="mt-5">
-        <h2>Featured Sci-Fi</h2>
-        {sciFiItemsToShow.map(movie => (
-          <Col key={movie.id} xs={12} sm={6} md={4} lg={3}>
-            <Image src={movie.image} alt={movie.title} width={200} height={300} />
-            <p className="text-center">{movie.title}</p>
-          </Col>
-        ))}
-      </Row>
     </Container>
   );
 };
