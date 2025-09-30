@@ -60,25 +60,22 @@ const Home = () => {
         <Button type="submit" variant="primary" className="mt-2">Search</Button>
       </Form>
 
-      {/* 🎬 Search Results */}
-      {searchResults.length > 0 && (
-        <Row className="mb-4">
-          <h2 className="text-center">Search Results</h2>
-          {searchResults.map(movie => (
-            <Col key={movie.id} xs={12} sm={6} md={4} lg={3}>
-              <div className="image-wrapper">
-                <Image
-                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  alt={movie.title}
-                  width={200}
-                  height={300}
-                />
-              </div>
-              <p className="text-center">{movie.title}</p>
-            </Col>
-          ))}
-        </Row>
-      )}
+     {/* 🎬 Search Results */}
+{searchResults.length > 0 && (
+  <Row className="mb-4 justify-content-center">
+    <h2 className="text-center">Search Results</h2>
+    {searchResults.map((movie, index) => (
+      <Col key={index} xs={12} md={8} lg={6}>
+        <div className="p-3 border rounded mb-3 bg-light">
+          <p><strong>Title:</strong> {movie.title}</p>
+          <p><strong>Year:</strong> {movie.year}</p>
+          <p><strong>Director:</strong> {movie.director}</p>
+          <p><strong>Stars:</strong> {movie.stars}</p>
+        </div>
+      </Col>
+    ))}
+  </Row>
+)}
 
       {/* 🧟 Horror Section */}
       {horrorItemsToShow.length > 0 && (
