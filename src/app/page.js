@@ -37,7 +37,7 @@ const Home = () => {
     if (!searchQuery.trim()) return;
   
     try {
-      const res = await fetch(`https://movie-review-site-seven.vercel.app/api/search?query=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/search?query=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
       setSearchResults(data.results || []);
     } catch (error) {
