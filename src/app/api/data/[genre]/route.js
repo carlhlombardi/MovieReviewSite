@@ -37,7 +37,7 @@ export async function POST(req, { params }) {
   }
 
   try {
-    const {
+    let {
       title,
       year,
       director,
@@ -46,17 +46,25 @@ export async function POST(req, { params }) {
       studios,
       run_time,
       url,
-      image_url,   // <-- new field here
+      image_url,   // Optional client-provided image_url
     } = await req.json();
 
     if (!title || !year) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Check if movie already exists
     const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE film = $1`, [title]);
-
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
+    }
+
+    // Fetch TMDB poster URL if no image_url provided
+    if (!image_url) {
+      const fetchedImageUrl = await fetchTmdbPoster(title);
+      if (fetchedImageUrl) {
+        image_url = fetchedImageUrl;
+      }
     }
 
     await sql.query(
