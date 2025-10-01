@@ -1,3 +1,34 @@
+import { NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
+
+const allowedTables = ['comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
+
+export async function GET(req, { params }) {
+  const genreSegment = params.genre.toLowerCase();
+
+  if (!allowedTables.includes(genreSegment)) {
+    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
+  }
+
+  const urlParam = new URL(req.url).searchParams.get('url');
+
+  try {
+    if (urlParam) {
+      const result = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [urlParam]);
+      if (result.rows.length === 0) {
+        return NextResponse.json({ error: 'Movie not found' }, { status: 404 });
+      }
+      return NextResponse.json(result.rows[0]);
+    } else {
+      const result = await sql.query(`SELECT * FROM ${genreSegment}`);
+      return NextResponse.json(result.rows);
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(req, { params }) {
   const genreSegment = params.genre.toLowerCase();
 
