@@ -3,23 +3,41 @@ import { sql } from '@vercel/postgres';
 
 const allowedTables = ['comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
 
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+
 async function fetchTmdbPoster(title, year) {
   try {
+    // 1. Search movie to get movie_id
     const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
-    console.log('TMDB search URL:', searchUrl);
-    const res = await fetch(searchUrl);
-    if (!res.ok) {
-      console.error('TMDB search failed:', res.status);
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) {
+      console.error('TMDB search failed:', searchRes.status);
       return null;
     }
-    const data = await res.json();
-    console.log('TMDB search results:', data);
-    if (data.results && data.results.length > 0) {
-      const posterPath = data.results[0].poster_path;
-      if (posterPath) {
-        return `https://image.tmdb.org/t/p/w500${posterPath}`;
-      }
+    const searchData = await searchRes.json();
+    if (!searchData.results || searchData.results.length === 0) {
+      console.log('No TMDB movie found for', title);
+      return null;
     }
+
+    const movieId = searchData.results[0].id;
+
+    // 2. Fetch images for the movie ID
+    const imagesUrl = `https://api.themoviedb.org/3/movie/${movieId}/images?api_key=${TMDB_API_KEY}`;
+    const imagesRes = await fetch(imagesUrl);
+    if (!imagesRes.ok) {
+      console.error('TMDB images fetch failed:', imagesRes.status);
+      return null;
+    }
+    const imagesData = await imagesRes.json();
+
+    // 3. Choose a poster image if available, fallback to backdrop
+    if (imagesData.posters && imagesData.posters.length > 0) {
+      return `https://image.tmdb.org/t/p/w500${imagesData.posters[0].file_path}`;
+    } else if (imagesData.backdrops && imagesData.backdrops.length > 0) {
+      return `https://image.tmdb.org/t/p/w500${imagesData.backdrops[0].file_path}`;
+    }
+
     return null;
   } catch (error) {
     console.error('Error fetching TMDB poster:', error);
@@ -70,7 +88,7 @@ export async function POST(req, { params }) {
       studios,
       run_time,
       url,
-      image_url,   // Optional client-provided image_url
+      image_url, // Optional client-provided image_url
     } = await req.json();
 
     if (!title || !year) {
@@ -85,7 +103,7 @@ export async function POST(req, { params }) {
 
     // Fetch TMDB poster URL if no image_url provided
     if (!image_url) {
-      const fetchedImageUrl = await fetchTmdbPoster(title);
+      const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
         image_url = fetchedImageUrl;
       }
