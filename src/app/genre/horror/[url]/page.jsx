@@ -291,7 +291,7 @@ const HorrorPostPage = ({ params }) => {
     return <div>No data found</div>;
   }
 
-  const { film, year, studio, director, screenwriters, producer, total_kills, men, women, run_time, my_rating, review, image_url } = data;
+  const { film, year, studio, director, screenwriters, producer, run_time, my_rating, review, image_url } = data;
 
   return (
     <Container>
