@@ -345,13 +345,7 @@ const HorrorPostPage = ({ params }) => {
           <h5>Producer(s): {producer}</h5>
           <h5>Studio: {studio}</h5>
           <h5>Year: {year}</h5>
-        </Col>
-        <Col xs={12} md={6} className="text-center m-auto order-md-3">
-          <h2 className='mb-4'>The Stats</h2>
-          <h6>Run Time: {run_time} Minutes</h6>
-          <h6>Total Kills: {total_kills} Kills</h6>
-          <h6>Men: {men} Killed</h6>
-          <h6>Women: {women} Killed</h6>
+          <h5>Run Time: {run_time} Minutes</h5>
         </Col>
         <Col xs={12} md={6} className="text-center m-auto order-md-4">
           <h3 className='mb-4'>Review of {film}</h3>
