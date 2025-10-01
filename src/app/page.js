@@ -18,17 +18,20 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Fetching horror and sci-fi data...");
         const horrorResponse = await fetch(
           "https://movie-review-site-seven.vercel.app/api/data/horrormovies"
         );
         const horrorResult = await horrorResponse.json();
         setHorrorData(horrorResult);
+        console.log("Horror data fetched:", horrorResult);
 
         const sciFiResponse = await fetch(
           "https://movie-review-site-seven.vercel.app/api/data/scifimovies"
         );
         const sciFiResult = await sciFiResponse.json();
         setSciFiData(sciFiResult);
+        console.log("Sci-Fi data fetched:", sciFiResult);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -41,6 +44,7 @@ const Home = () => {
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
+    console.log("Input changed:", query);
 
     if (!query.trim()) {
       setSuggestions([]);
@@ -55,6 +59,7 @@ const Home = () => {
         )}`
       );
       const data = await res.json();
+      console.log("Suggestions fetched:", data.results);
       setSuggestions(data.results || []);
       setShowSuggestions(true);
     } catch (err) {
@@ -65,70 +70,78 @@ const Home = () => {
 
   // When user clicks a suggestion: add movie to DB and redirect
   const handleSuggestionClick = async (movie) => {
-  setSearchQuery(movie.title);
-  setShowSuggestions(false);
+    console.log("Suggestion clicked:", movie);
+    setSearchQuery(movie.title);
+    setShowSuggestions(false);
 
-  try {
-    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-    const data = await res.json();
-    const movieData = data.results?.[0];
-    if (!movieData) {
-      alert("Movie details not found.");
-      return;
-    }
+    try {
+      const res = await fetch(
+        `https://movie-review-site-seven.vercel.app/api/auth/search?movieId=${movie.id}`
+      );
+      if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
 
-    const {
-      title,
-      year,
-      director,
-      screenwriters,
-      producers,
-      studios,
-      run_time,
-      genre,
-      url,
-    } = movieData;
+      const data = await res.json();
+      console.log("Detailed movie data fetched:", data);
 
-    console.log("Inserting movie:", movieData);
-
-    const insertRes = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/data/${genre.toLowerCase()}movies`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          year,
-          director,
-          screenwriters,
-          producers,
-          studios,
-          run_time,
-          genre,
-          url,
-        }),
+      const movieData = data.results?.[0];
+      if (!movieData) {
+        alert("Movie details not found.");
+        return;
       }
-    );
 
-    const insertData = await insertRes.json();
+      const {
+        title,
+        year,
+        director,
+        screenwriters,
+        producers,
+        studios,
+        run_time,
+        genre,
+        url,
+      } = movieData;
 
-    console.log("Insert response:", insertData);
+      console.log("Inserting movie:", movieData);
 
-    if (!insertRes.ok) {
-      alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
-      return;
+      const insertRes = await fetch(
+        `https://movie-review-site-seven.vercel.app/api/data/${genre.toLowerCase()}movies`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            year,
+            director,
+            screenwriters,
+            producers,
+            studios,
+            run_time,
+            genre,
+            url,
+          }),
+        }
+      );
+
+      const insertData = await insertRes.json();
+
+      console.log("Insert response:", insertData);
+
+      if (!insertRes.ok) {
+        alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
+        return;
+      }
+
+      router.push(`/genre/${genre.toLowerCase()}/${url}`);
+    } catch (error) {
+      console.error("Error in handleSuggestionClick:", error);
+      alert("An unexpected error occurred. Check console.");
     }
-
-    router.push(`/genre/${genre.toLowerCase()}/${url}`);
-  } catch (error) {
-    console.error("Error in handleSuggestionClick:", error);
-    alert("An unexpected error occurred. Check console.");
-  }
-};
+  };
 
   // Manual form submit to run search
   const handleSearch = (e) => {
     e.preventDefault();
+    console.log("Manual search submitted:", searchQuery);
     handleSearchDirect(searchQuery);
   };
 
@@ -142,7 +155,10 @@ const Home = () => {
           query
         )}`
       );
+      if (!res.ok) throw new Error(`Search failed: ${res.statusText}`);
+
       const data = await res.json();
+      console.log("Search results:", data.results);
       setSearchResults(data.results || []);
     } catch (error) {
       console.error("Search failed:", error);
@@ -162,6 +178,7 @@ const Home = () => {
           onChange={handleInputChange}
           onFocus={() => searchQuery && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // delay to allow click
+          autoComplete="off"
         />
 
         {showSuggestions && suggestions.length > 0 && (
