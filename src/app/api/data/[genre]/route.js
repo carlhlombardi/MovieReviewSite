@@ -3,6 +3,28 @@ import { sql } from '@vercel/postgres';
 
 const allowedTables = ['comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
 
+async function fetchTmdbPoster(title) {
+  try {
+    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`;
+    const res = await fetch(searchUrl);
+    if (!res.ok) {
+      console.error('TMDB search failed:', res.status);
+      return null;
+    }
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const posterPath = data.results[0].poster_path;
+      if (posterPath) {
+        return `https://image.tmdb.org/t/p/w500${posterPath}`;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching TMDB poster:', error);
+    return null;
+  }
+}
+
 export async function GET(req, { params }) {
   const genreSegment = params.genre.toLowerCase();
 
