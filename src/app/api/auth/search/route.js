@@ -70,12 +70,15 @@ export async function GET(req) {
   
           const director = credits.crew?.find(p => p.job === 'Director')?.name || 'Unknown';
           const stars = credits.cast?.slice(0, 3).map((actor) => actor.name).join(', ') || 'N/A';
+
+          const genre = movie.genres?.map(g => g.name).join(', ') || 'Unknown';
   
           return {
             title: movie.title,
             year: movie.release_date?.slice(0, 4) || 'Unknown',
             director,
             stars,
+            genre,
           };
         })
       );
