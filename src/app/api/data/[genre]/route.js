@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-const allowedTables = ['comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
+const allowedTables = ['classicmovies','documentarymovies', 'dramamovies','comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
