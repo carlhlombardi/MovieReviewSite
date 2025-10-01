@@ -1,40 +1,43 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { Container, Row, Col, Form } from 'react-bootstrap';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Container, Row, Col, Form } from "react-bootstrap";
 
 const Home = () => {
+  const router = useRouter();
+
   const [horrorData, setHorrorData] = useState([]);
   const [sciFiData, setSciFiData] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch horror + sci-fi data
+  // Fetch horror + sci-fi data on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const horrorResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/horrormovies');
+        const horrorResponse = await fetch(
+          "https://movie-review-site-seven.vercel.app/api/data/horrormovies"
+        );
         const horrorResult = await horrorResponse.json();
         setHorrorData(horrorResult);
 
-        const sciFiResponse = await fetch('https://movie-review-site-seven.vercel.app/api/data/scifimovies');
+        const sciFiResponse = await fetch(
+          "https://movie-review-site-seven.vercel.app/api/data/scifimovies"
+        );
         const sciFiResult = await sciFiResponse.json();
         setSciFiData(sciFiResult);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
       }
     };
 
     fetchData();
   }, []);
 
-  const horrorItemsToShow = horrorData.filter(item => [136, 137, 138, 139].includes(item.id));
-  const sciFiItemsToShow = sciFiData.slice(0, 4);
-
-  // Fetch suggestions as user types
+  // Handle search input changes & fetch suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -46,45 +49,33 @@ const Home = () => {
     }
 
     try {
-      const res = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/suggest?query=${encodeURIComponent(query)}`);
+      const res = await fetch(
+        `https://movie-review-site-seven.vercel.app/api/auth/suggest?query=${encodeURIComponent(
+          query
+        )}`
+      );
       const data = await res.json();
       setSuggestions(data.results || []);
       setShowSuggestions(true);
     } catch (err) {
-      console.error('Suggestion fetch errr:', err);
+      console.error("Suggestion fetch error:", err);
       setSuggestions([]);
     }
   };
 
-  
-  // When user clicks a suggestion, fetch that exact movie and set it as the only search result
-const handleSuggestionClick = async (movie) => {
-  setSearchQuery(movie.title);
-  setShowSuggestions(false);
+  // When user clicks a suggestion: add movie to DB and redirect
+  const handleSuggestionClick = async (movie) => {
+    setSearchQuery(movie.title);
+    setShowSuggestions(false);
 
-  try {
-    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-    const data = await res.json();
-    const movieData = data.results?.[0];
-    if (!movieData) return;
+    try {
+      // Fetch full movie details by ID
+      const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+      const data = await res.json();
+      const movieData = data.results?.[0];
+      if (!movieData) return;
 
-    const {
-      title,
-      year,
-      director,
-      screenwriters,
-      producers,
-      studios,
-      run_time,
-      genre,
-      url
-    } = movieData;
-
-    // ✅ Send to database
-    await fetch('https://movie-review-site-seven.vercel.app/api/auth/insert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      const {
         title,
         year,
         director,
@@ -93,35 +84,64 @@ const handleSuggestionClick = async (movie) => {
         studios,
         run_time,
         genre,
-        url
-      })
-    });
+        url,
+      } = movieData;
 
-    // ✅ Redirect
-    router.push(`/genre/${genre}/${url}`);
-  } catch (error) {
-    console.error('Failed to handle movie click:', error);
-  }
-};
+      // Insert movie into DB (genre-specific table)
+      const insertRes = await fetch(
+        `https://movie-review-site-seven.vercel.app/api/data/${genre.toLowerCase()}movies`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            year,
+            director,
+            screenwriters,
+            producers,
+            studios,
+            run_time,
+            genre,
+            url,
+          }),
+        }
+      );
 
-  
+      const insertData = await insertRes.json();
 
-  // Manual form submit
+      if (!insertRes.ok) {
+        alert(`Insert failed: ${insertData.error || insertData.message}`);
+        return;
+      }
+
+      // Redirect to genre page
+      router.push(`/genre/${genre.toLowerCase()}/${url}`);
+    } catch (error) {
+      console.error("Failed to handle movie click:", error);
+      alert("An error occurred while processing your request.");
+    }
+  };
+
+  // Manual form submit to run search
   const handleSearch = (e) => {
     e.preventDefault();
     handleSearchDirect(searchQuery);
   };
 
-  // Actually run the search
+  // Search for movies by exact title
   const handleSearchDirect = async (query) => {
     if (!query.trim()) return;
 
     try {
-      const res = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/search?query=${encodeURIComponent(query)}`);
+      const res = await fetch(
+        `https://movie-review-site-seven.vercel.app/api/auth/search?query=${encodeURIComponent(
+          query
+        )}`
+      );
       const data = await res.json();
       setSearchResults(data.results || []);
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
     }
   };
 
@@ -129,7 +149,7 @@ const handleSuggestionClick = async (movie) => {
     <Container className="py-5">
       <h1 className="text-center mb-4">Movie Search</h1>
 
-      {/* 🔍 Search Input with Suggestions */}
+      {/* Search Input with Suggestions */}
       <Form onSubmit={handleSearch} className="mb-4 position-relative">
         <Form.Control
           type="text"
@@ -141,12 +161,15 @@ const handleSuggestionClick = async (movie) => {
         />
 
         {showSuggestions && suggestions.length > 0 && (
-          <ul className="list-group position-absolute w-100 z-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          <ul
+            className="list-group position-absolute w-100 z-3"
+            style={{ maxHeight: "200px", overflowY: "auto" }}
+          >
             {suggestions.map((movie) => (
               <li
                 key={movie.id}
                 className="list-group-item list-group-item-action"
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: "pointer" }}
                 onClick={() => handleSuggestionClick(movie)}
               >
                 <strong>{movie.title}</strong> ({movie.year}) – {movie.director}
@@ -156,24 +179,36 @@ const handleSuggestionClick = async (movie) => {
         )}
       </Form>
 
-      {/* 🎬 Search Results */}
-{searchResults.length > 0 && (
-  <Row className="mb-4 justify-content-center">
-    <h2 className="text-center">Search Results</h2>
-    {searchResults.map((movie, index) => (
-      <Col key={index} xs={12} md={8} lg={6}>
-        <div className="p-3 border rounded mb-3">
-          <p><strong>Title:</strong> {movie.title}</p>
-          <p><strong>Year:</strong> {movie.year}</p>
-          <p><strong>Director:</strong> {movie.director}</p>
-          <p><strong>Screenwriters:</strong> {movie.screenwriters}</p>
-          <p><strong>Producers:</strong> {movie.producers}</p>
-          <p><strong>Studio:</strong> {movie.studios}</p>
-        </div>
-      </Col>
-    ))}
-  </Row>
-)}
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <Row className="mb-4 justify-content-center">
+          <h2 className="text-center">Search Results</h2>
+          {searchResults.map((movie, index) => (
+            <Col key={index} xs={12} md={8} lg={6}>
+              <div className="p-3 border rounded mb-3">
+                <p>
+                  <strong>Title:</strong> {movie.title}
+                </p>
+                <p>
+                  <strong>Year:</strong> {movie.year}
+                </p>
+                <p>
+                  <strong>Director:</strong> {movie.director}
+                </p>
+                <p>
+                  <strong>Screenwriters:</strong> {movie.screenwriters}
+                </p>
+                <p>
+                  <strong>Producers:</strong> {movie.producers}
+                </p>
+                <p>
+                  <strong>Studio:</strong> {movie.studios}
+                </p>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      )}
     </Container>
   );
 };
