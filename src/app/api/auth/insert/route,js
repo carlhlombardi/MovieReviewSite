@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres'; // Or your DB client
+import { sql } from '@vercel/postgres';
 
 export async function POST(req) {
   try {
@@ -12,32 +12,42 @@ export async function POST(req) {
       studios,
       run_time,
       genre,
-      url
+      url,
     } = await req.json();
 
+    // ✅ Basic validation
     if (!title || !genre) {
       return NextResponse.json({ error: 'Missing title or genre' }, { status: 400 });
     }
 
-    const table = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
+    // ✅ Sanitize and format genre → table name (e.g., "comedy" → "comedymovies")
+    const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // Check for duplicate
+    // ✅ Check if the table exists (optional, but helpful)
+    try {
+      await sql`SELECT 1 FROM ${sql(genreTable)} LIMIT 1;`;
+    } catch (err) {
+      return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
+    }
+
+    // ✅ Check for duplicates by film title
     const existing = await sql`
-      SELECT * FROM ${sql(table)} WHERE film = ${title}
+      SELECT * FROM ${sql(genreTable)} WHERE film = ${title}
     `;
 
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
+    // ✅ Insert new movie into genre-specific table
     await sql`
-      INSERT INTO ${sql(table)} 
+      INSERT INTO ${sql(genreTable)} 
         (film, year, studio, director, screenwriters, producer, run_time, url)
       VALUES 
         (${title}, ${year}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${run_time}, ${url})
     `;
 
-    return NextResponse.json({ message: 'Movie inserted successfully' });
+    return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
 
   } catch (error) {
     console.error('Insert failed:', error);
