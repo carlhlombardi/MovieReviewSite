@@ -7,7 +7,6 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 async function fetchTmdbPoster(title, year) {
   try {
-    // 1. Search movie to get movie_id
     const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
     const searchRes = await fetch(searchUrl);
     if (!searchRes.ok) {
@@ -20,30 +19,18 @@ async function fetchTmdbPoster(title, year) {
       return null;
     }
 
-    const movieId = searchData.results[0].id;
-
-    // 2. Fetch images for the movie ID
-    const imagesUrl = `https://api.themoviedb.org/3/movie/${movieId}/images?api_key=${TMDB_API_KEY}`;
-    const imagesRes = await fetch(imagesUrl);
-    if (!imagesRes.ok) {
-      console.error('TMDB images fetch failed:', imagesRes.status);
-      return null;
-    }
-    const imagesData = await imagesRes.json();
-
-    // 3. Choose a poster image if available, fallback to backdrop
-    if (imagesData.posters && imagesData.posters.length > 0) {
-      return `https://image.tmdb.org/t/p/w500${imagesData.posters[0].file_path}`;
-    } else if (imagesData.backdrops && imagesData.backdrops.length > 0) {
-      return `https://image.tmdb.org/t/p/w500${imagesData.backdrops[0].file_path}`;
+    const posterPath = searchData.results[0].poster_path;
+    if (posterPath) {
+      return `https://image.tmdb.org/t/p/w500${posterPath}`;
     }
 
-    return null;
+    return null; // No fallback to backdrops
   } catch (error) {
     console.error('Error fetching TMDB poster:', error);
     return null;
   }
 }
+
 
 export async function GET(req, { params }) {
   const genreSegment = params.genre.toLowerCase();
@@ -88,20 +75,25 @@ export async function POST(req, { params }) {
       studios,
       run_time,
       url,
-      image_url, // Optional client-provided image_url
+      image_url,
     } = await req.json();
 
     if (!title || !year) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Check if movie already exists
+    // Use only the first studio
+    if (Array.isArray(studios)) {
+      studios = studios[0];
+    } else if (typeof studios === 'string') {
+      studios = studios.split(',')[0].trim();
+    }
+
     const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE film = $1`, [title]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // Fetch TMDB poster URL if no image_url provided
     if (!image_url) {
       const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
