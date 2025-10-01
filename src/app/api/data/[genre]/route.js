@@ -3,15 +3,17 @@ import { sql } from '@vercel/postgres';
 
 const allowedTables = ['comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
 
-async function fetchTmdbPoster(title) {
+async function fetchTmdbPoster(title, year) {
   try {
-    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`;
+    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ''}`;
+    console.log('TMDB search URL:', searchUrl);
     const res = await fetch(searchUrl);
     if (!res.ok) {
       console.error('TMDB search failed:', res.status);
       return null;
     }
     const data = await res.json();
+    console.log('TMDB search results:', data);
     if (data.results && data.results.length > 0) {
       const posterPath = data.results[0].poster_path;
       if (posterPath) {
