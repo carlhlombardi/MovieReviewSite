@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
@@ -13,6 +13,9 @@ const Home = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const inputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   // Fetch horror + sci-fi data on mount
   useEffect(() => {
@@ -67,6 +70,25 @@ const Home = () => {
       setSuggestions([]);
     }
   };
+
+  // Handle click outside input and suggestions to hide suggestions
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(event.target) &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // When user clicks a suggestion: add movie to DB and redirect
   const handleSuggestionClick = async (movie) => {
@@ -177,12 +199,13 @@ const Home = () => {
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={() => searchQuery && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // delay to allow click
           autoComplete="off"
+          ref={inputRef}
         />
 
         {showSuggestions && suggestions.length > 0 && (
           <ul
+            ref={suggestionsRef}
             className="list-group position-absolute w-100 z-3"
             style={{ maxHeight: "200px", overflowY: "auto" }}
           >
