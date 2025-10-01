@@ -58,20 +58,52 @@ const Home = () => {
 
   
   // When user clicks a suggestion, fetch that exact movie and set it as the only search result
-  const handleSuggestionClick = async (movie) => {
-    setSearchQuery(movie.title);
-    setShowSuggestions(false);
-  
-    try {
-      const res = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/search?movieId=${movie.id}`);
-      const data = await res.json();
-  
-      setSearchResults(data.results || []);
-    } catch (error) {
-      console.error('Failed to fetch movie details:', error);
-      setSearchResults([]);
-    }
-  };
+const handleSuggestionClick = async (movie) => {
+  setSearchQuery(movie.title);
+  setShowSuggestions(false);
+
+  try {
+    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+    const data = await res.json();
+    const movieData = data.results?.[0];
+    if (!movieData) return;
+
+    const {
+      title,
+      year,
+      director,
+      screenwriters,
+      producers,
+      studios,
+      run_time,
+      genre,
+      url
+    } = movieData;
+
+    // ✅ Send to database
+    await fetch('https://movie-review-site-seven.vercel.app/api/auth/insert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        year,
+        director,
+        screenwriters,
+        producers,
+        studios,
+        run_time,
+        genre,
+        url
+      })
+    });
+
+    // ✅ Redirect
+    router.push(`/genre/${genre}/${url}`);
+  } catch (error) {
+    console.error('Failed to handle movie click:', error);
+  }
+};
+
   
 
   // Manual form submit

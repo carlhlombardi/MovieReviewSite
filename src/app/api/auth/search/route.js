@@ -29,19 +29,23 @@ export async function GET(req) {
 
       const studios = movie.production_companies?.map(p => p.name).filter(Boolean);
 
-      return new Response(JSON.stringify({
-        results: [{
-          title: movie.title,
-          year: movie.release_date?.slice(0, 4) || 'Unknown',
-          director,
-          screenwriters: screenwriters.length ? screenwriters.join(', ') : 'Unknown',
-          producers: producers.length ? producers.join(', ') : 'Unknown',
-          studios: studios.length ? studios.join(', ') : 'Unknown',
-        }]
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+     const genre = movie.genres?.[0]?.name.toLowerCase() || 'unknown';
+const run_time = movie.runtime || null;
+const url = movie.title.toLowerCase().replace(/\s+/g, '-');
+
+return new Response(JSON.stringify({
+  results: [{
+    title: movie.title,
+    year: movie.release_date?.slice(0, 4) || 'Unknown',
+    director,
+    screenwriters: screenwriters.length ? screenwriters.join(', ') : 'Unknown',
+    producers: producers.length ? producers.join(', ') : 'Unknown',
+    studios: studios.length ? studios.join(', ') : 'Unknown',
+    run_time,
+    genre,
+    url,
+  }]
+}));
 
     } catch (error) {
       console.error('Movie fetch error:', error);
