@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
 // ✅ Slugify function to clean up URLs (also used on MoviePage)
-const slugify = (text) => {
-  return text
+const slugify = (title, year) => {
+  return `${title}-${year}`
     .toString()
     .toLowerCase()
-    .replace(/'/g, "")            // Remove apostrophes
-    .replace(/[^a-z0-9]+/g, "-")  // Replace non-alphanumeric with dashes
-    .replace(/^-+|-+$/g, "");     // Trim dashes from start/end
+    .replace(/'/g, '')           // remove apostrophes
+    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanumerics with -
+    .replace(/^-+|-+$/g, '');    // trim dashes
 };
 
 const Home = () => {
@@ -114,7 +114,7 @@ const Home = () => {
         url,
       } = movieData;
 
-      const slugifiedUrl = slugify(url);
+      const slugifiedUrl = slugify(title, year);
 
       const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
         method: "POST",
@@ -140,7 +140,7 @@ const Home = () => {
       }
 
       // ✅ Redirect to slugified route
-      router.push(`/genre/${genre.toLowerCase()}/${slugifiedUrl}`);
+      router.push(`/genre/${genre.toLowerCase()}/${slugify(title, year)}`);
     } catch (error) {
       console.error("Error in handleSuggestionClick:", error);
       alert("An unexpected error occurred. Check the console.");

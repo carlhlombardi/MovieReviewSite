@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
 // Slugify helper (same as your frontend)
-const slugify = (text) => {
-  return text
+const slugify = (title, year) => {
+  return `${title}-${year}`
     .toString()
     .toLowerCase()
-    .replace(/'/g, '')            // remove apostrophes
-    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanumeric with dashes
-    .replace(/^-+|-+$/g, '');    // trim dashes at start/end
+    .replace(/'/g, '')           // remove apostrophes
+    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanumerics with -
+    .replace(/^-+|-+$/g, '');    // trim dashes
 };
 
 export async function POST(req) {
@@ -50,7 +50,7 @@ export async function POST(req) {
     }
 
     // Generate slugified URL from the title (or if you want from the original url, slugify that instead)
-    const slugifiedUrl = slugify(title);
+    const slugifiedUrl = slugify(title, year);
 
     // Insert movie with slugified URL
     await sql`
