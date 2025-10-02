@@ -1,7 +1,28 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-const allowedTables = ['classicmovies','documentarymovies', 'dramamovies','comedymovies', 'horrormovies', 'actionmovies', 'scifimovies'];
+const allowedTables = [
+  'actionmovies',
+  'adventuremovies',
+  'animationmovies',
+  'comedymovies',
+  'crimemovies',
+  'documentarymovies',
+  'dramamovies',
+  'familymovies',
+  'fantasymovies',
+  'historymovies',
+  'horrormovies',
+  'musicmovies',
+  'mysterymovies',
+  'romancemovies',
+  'sciencefictionmovies',
+  'tvmoviemovies',
+  'thrillermovies',
+  'warmovies',
+  'westernmovies'
+];
+
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
