@@ -44,7 +44,7 @@ export async function GET(req) {
         JSON.stringify({
           results: [
             {
-              tmdb_id: movie.id,
+              tmdb_id: movie.id,  // <-- Added here
               title: movie.title,
               year: movie.release_date?.slice(0, 4) || "Unknown",
               director,
@@ -128,6 +128,7 @@ export async function GET(req) {
         const url = movie.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
         return {
+          tmdb_id: movie.id,  // <-- Added here
           title: movie.title,
           year: movie.release_date?.slice(0, 4) || "Unknown",
           director,
