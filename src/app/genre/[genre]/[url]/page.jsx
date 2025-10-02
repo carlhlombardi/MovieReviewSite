@@ -8,6 +8,7 @@ import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons';
 
 // === ✅ Helper Functions ===
 
+// Generalized fetchData
 const fetchData = async (genre, url) => {
   try {
     const response = await fetch(
@@ -120,7 +121,6 @@ const toggleLike = async (url, action) => {
 
 const MoviePage = ({ params }) => {
   const { genre, url } = params;
-
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -284,7 +284,7 @@ const MoviePage = ({ params }) => {
       <Row>
         <Col className="text-center mt-5">
           {isLoggedIn ? (
-            <Comments movieSlug={url} />
+            <Comments movieUrl={url} />
           ) : (
             <Alert variant="info">Please log in to like, watch, rate, or comment.</Alert>
           )}
