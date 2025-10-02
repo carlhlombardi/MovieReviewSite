@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
 // Slugify helper (same as your frontend)
-const slugify = (text) => {
-  return text
+const slugify = (title, year) => {
+  return `${title}-${year}`
     .toString()
     .toLowerCase()
     .replace(/'/g, '')            // remove apostrophes
@@ -22,35 +22,34 @@ export async function POST(req) {
       studios,
       run_time,
       genre,
-      url,  // <- you get the original URL here, but we will ignore it for insert
+      url,  // we'll ignore incoming url, and create our own slugified URL
     } = await req.json();
 
-    // Validation
-    if (!title || !genre) {
-      return NextResponse.json({ error: 'Missing title or genre' }, { status: 400 });
+    if (!title || !genre || !year) {
+      return NextResponse.json({ error: 'Missing title, genre or year' }, { status: 400 });
     }
 
-    // Table name (e.g., "horror" → "horrormovies")
+    // Construct table name
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // Check if table exists
+    // Check table existence
     try {
       await sql`SELECT 1 FROM ${sql(genreTable)} LIMIT 1;`;
     } catch (err) {
       return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
     }
 
-    // Check for duplicate film title
+    // Generate slugified URL using title and year
+    const slugifiedUrl = slugify(title, year);
+
+    // Check for duplicate by slugified URL
     const existing = await sql`
-      SELECT * FROM ${sql(genreTable)} WHERE film = ${title}
+      SELECT * FROM ${sql(genreTable)} WHERE url = ${slugifiedUrl}
     `;
 
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
-
-    // Generate slugified URL from the title (or if you want from the original url, slugify that instead)
-    const slugifiedUrl = slugify(title);
 
     // Insert movie with slugified URL
     await sql`
