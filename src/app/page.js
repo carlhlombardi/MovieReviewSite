@@ -9,10 +9,11 @@ const slugify = (title, year) => {
   return `${title}-${year}`
     .toString()
     .toLowerCase()
-    .replace(/'/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/'/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
+
 
 const Home = () => {
   const router = useRouter();
@@ -94,16 +95,10 @@ const handleSuggestionClick = async (movie) => {
     const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
     if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
 
-    const movieData = await res.json(); // ✅ data is already the movie object
-
+    const movieData = await res.json();
     console.log("Fetched movieData:", movieData);
 
-    // ✅ Sanity check
-    if (!movieData?.title || !movieData?.year || !movieData?.genre) {
-      alert("Movie data is incomplete.");
-      return;
-    }
-
+    // ✅ Destructure and trim everything to be safe
     const {
       title,
       year,
@@ -115,20 +110,25 @@ const handleSuggestionClick = async (movie) => {
       genre,
     } = movieData;
 
-    const slugifiedUrl = slugify(title, year); // ✅ use title + year for uniqueness
+    if (!title || !year || !genre) {
+      alert("Movie data is incomplete.");
+      return;
+    }
+
+    const slugifiedUrl = slugify(title, year);
 
     const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        year,
+        title: title.trim(),
+        year: Number(year),  // 🧠 Ensure it's a number
         director,
         screenwriters,
         producers,
         studios,
         run_time,
-        genre,
+        genre: genre.trim(),
         url: slugifiedUrl,
       }),
     });
@@ -146,6 +146,7 @@ const handleSuggestionClick = async (movie) => {
     alert("An unexpected error occurred. Check the console.");
   }
 };
+
 
 
   // ✅ Manual search submit

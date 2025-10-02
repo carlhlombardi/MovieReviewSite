@@ -6,10 +6,11 @@ const slugify = (title, year) => {
   return `${title}-${year}`
     .toString()
     .toLowerCase()
-    .replace(/'/g, '')            // remove apostrophes
-    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanumeric with dashes
-    .replace(/^-+|-+$/g, '');    // trim dashes at start/end
+    .replace(/'/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
+
 
 export async function POST(req) {
   try {
