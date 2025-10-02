@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
-// Slugify function to clean up URLs (also used on MoviePage)
+// ✅ Slugify function to clean up URLs (also used on MoviePage)
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
     .toString()
@@ -14,28 +14,6 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Genre mapping to match your API expected endpoints
-const genreMap = {
-  action: "actionmovies",
-  adventure: "adventuremovies",
-  animation: "animationmovies",
-  comedy: "comedymovies",
-  crime: "crimemovies",
-  documentary: "documentarymovies",
-  drama: "dramamovies",
-  family: "familymovies",
-  fantasy: "fantasymovies",
-  history: "historymovies",
-  horror: "horrormovies",
-  music: "musicmovies",
-  mystery: "mysterymovies",
-  romance: "romancemovies",
-  "science fiction": "sciencefictionmovies",
-  "tv movie": "tvmoviemovies",
-  thriller: "thrillermovies",
-  war: "warmovies",
-  western: "westernmovies",
-};
 
 const Home = () => {
   const router = useRouter();
@@ -50,7 +28,7 @@ const Home = () => {
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // Fetch horror + sci-fi data
+  // ✅ Fetch horror + sci-fi data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,7 +36,7 @@ const Home = () => {
         const horrorResult = await horrorRes.json();
         setHorrorData(horrorResult);
 
-        const sciFiRes = await fetch("/api/data/sciencefictionmovies");
+        const sciFiRes = await fetch("/api/data/scifimovies");
         const sciFiResult = await sciFiRes.json();
         setSciFiData(sciFiResult);
       } catch (error) {
@@ -69,7 +47,7 @@ const Home = () => {
     fetchData();
   }, []);
 
-  // Handle input + get suggestions
+  // ✅ Handle input + get suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -91,7 +69,7 @@ const Home = () => {
     }
   };
 
-  // Hide suggestions on outside click
+  // ✅ Hide suggestions on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -108,98 +86,57 @@ const Home = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle suggestion click: fetch details, insert, redirect
-  const handleSuggestionClick = async (movie) => {
-    setSearchQuery(movie.title);
-    setShowSuggestions(false);
+  // ✅ Handle suggestion click: fetch details, insert, redirect
+const handleSuggestionClick = async (movie) => {
+  setSearchQuery(movie.title);
+  setShowSuggestions(false);
 
-    try {
-      const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-      if (!res.ok) throw new Error("Failed to fetch movie details");
+  try {
+    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+    if (!res.ok) throw new Error("Failed to fetch movie details");
 
-      const apiResponse = await res.json();
-      const movieData = apiResponse.results?.[0];
+    const apiResponse = await res.json();
 
-      if (!movieData) {
-        alert("No detailed movie data found.");
-        return;
-      }
+    const movieData = apiResponse.results?.[0];
+    console.log("movieData:", movieData);
 
-      // Use fallbacks to avoid missing data
-      const title = movieData.title || movie.title || "";
-      const year = movieData.year || movie.year || "";
-      const tmdb_id = movieData.tmdb_id || movie.id || "";
-      const director = movieData.director || "";
-      const screenwriters = movieData.screenwriters || "";
-      const producers = movieData.producers || "";
-      const studios = movieData.studios || "";
-      const run_time = movieData.run_time || null;
-      let genre = movieData.genre || "";
-
-      if (!title || !year || !tmdb_id) {
-        alert("Missing required movie info: title, year, or TMDB ID.");
-        return;
-      }
-
-      // genre can be comma separated or array, normalize to lowercase string
-      if (Array.isArray(genre)) {
-        genre = genre[0] || "";
-      } else if (typeof genre === "string" && genre.includes(",")) {
-        genre = genre.split(",")[0].trim();
-      }
-      genre = genre.toLowerCase();
-
-      const mappedGenre = genreMap[genre];
-
-      if (!mappedGenre) {
-        alert(`Unsupported genre: "${genre}"`);
-        return;
-      }
-
-      // Generate slugified URL
-      const slugifiedUrl = slugify(title, tmdb_id);
-
-      // Prepare body for POST
-      const body = {
-        title,
-        year,
-        tmdb_id,
-        director,
-        screenwriters,
-        producers,
-        studios,
-        run_time,
-        genre,
-      };
-
-      const insertRes = await fetch(`/api/data/${mappedGenre}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const insertData = await insertRes.json();
-
-      if (!insertRes.ok) {
-        alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
-        return;
-      }
-
-      // Redirect to the movie detail page (remove 'movies' from the genre in URL)
-      router.push(`/genre/${mappedGenre.replace("movies", "")}/${slugifiedUrl}`);
-    } catch (error) {
-      console.error("Error in handleSuggestionClick:", error);
-      alert("An unexpected error occurred. Check the console.");
+    if (!movieData || !movieData.title || !movieData.year) {
+      console.error("Missing title or year:", movieData);
+      alert("Movie data is incomplete.");
+      return;
     }
-  };
 
-  // Manual search submit
+   const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
+
+const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    ...movieData,
+    url: slugifiedUrl,
+  }),
+});
+
+    const insertData = await insertRes.json();
+    if (!insertRes.ok) {
+      alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
+      return;
+    }
+
+    router.push(`/genre/${movieData.genre.toLowerCase()}/${slugifiedUrl}`);
+  } catch (error) {
+    console.error("Error in handleSuggestionClick:", error);
+    alert("An unexpected error occurred. Check the console.");
+  }
+};
+
+  // ✅ Manual search submit
   const handleSearch = (e) => {
     e.preventDefault();
     handleSearchDirect(searchQuery);
   };
 
-  // Search for movies directly by query
+  // ✅ Search for movies directly by query
   const handleSearchDirect = async (query) => {
     if (!query.trim()) return;
 
@@ -218,7 +155,7 @@ const Home = () => {
     <Container className="py-5">
       <h1 className="text-center mb-4">Movie Search</h1>
 
-      {/* Search Input */}
+      {/* 🔍 Search Input */}
       <Form onSubmit={handleSearch} className="mb-4 position-relative">
         <Form.Control
           type="text"
@@ -230,7 +167,7 @@ const Home = () => {
           ref={inputRef}
         />
 
-        {/* Suggestions Dropdown */}
+        {/* 💡 Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <ul
             ref={suggestionsRef}
@@ -251,7 +188,7 @@ const Home = () => {
         )}
       </Form>
 
-      {/* Optional Search Results if manual search is used */}
+      {/* 📋 Optional Search Results if manual search is used */}
       {searchResults.length > 0 && (
         <Row className="mb-4 justify-content-center">
           <h2 className="text-center">Search Results</h2>
