@@ -9,13 +9,13 @@ import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons';
 // === ✅ Helper Functions ===
 
 // Slugify function to clean up URLs
-const slugify = (text) => {
-  return text
+const slugify = (title, year) => {
+  return `${title}-${year}`
     .toString()
     .toLowerCase()
-    .replace(/'/g, '')            // Remove apostrophes
-    .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dashes
-    .replace(/^-+|-+$/g, '');    // Trim dashes from start/end
+    .replace(/'/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 };
 
 // Generalized fetchData
@@ -134,7 +134,7 @@ const MoviePage = ({ params }) => {
 
   // --- FIX: Decode URL before slugifying to avoid hex codes like '-3a-' ---
   const decodedUrl = decodeURIComponent(url);
-  const slugifiedUrl = slugify(decodedUrl);
+  const slugifiedUrl = slugify(title, year);
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
