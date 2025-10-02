@@ -21,20 +21,21 @@ export async function POST(req) {
       studios,
       run_time,
       genre,
-      my_rating,
-      review
     } = await req.json();
 
     if (!title || !genre || !year) {
       return NextResponse.json({ error: 'Missing title, genre or year' }, { status: 400 });
     }
 
+    // Sanitize and construct genre table name
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
+    // Validate genreTable - only allow alphanumeric and underscores
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
       return NextResponse.json({ error: 'Invalid genre table name' }, { status: 400 });
     }
 
+    // Check if table exists by trying to select from it
     try {
       const checkTableExistsQuery = `SELECT 1 FROM ${genreTable} LIMIT 1;`;
       await sql.query(checkTableExistsQuery);
@@ -43,10 +44,8 @@ export async function POST(req) {
     }
 
     const slugifiedUrl = slugify(title, year);
-    const yearInt = parseInt(year, 10);
-    const runTimeInt = run_time ? parseInt(run_time, 10) : null;
-    const ratingNum = my_rating ? parseFloat(my_rating) : null;
 
+    // Check for duplicates
     const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
     const existing = await sql.query(existingMoviesQuery, [slugifiedUrl]);
 
@@ -54,24 +53,22 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
+    // Insert new movie record
     const insertQuery = `
-      INSERT INTO horrormovies
-        (film, year, studios, director, screenwriters, producers, run_time, url, my_rating, review, genre)
-      VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO ${genreTable} 
+        (title, year, studios, director, screenwriters, producers, run_time, url)
+      VALUES 
+        ($1, $2, $3, $4, $5, $6, $7, $8)
     `;
     await sql.query(insertQuery, [
       title,
-      yearInt,
+      year,
       studios,
       director,
       screenwriters,
       producers,
-      runTimeInt,
+      run_time,
       slugifiedUrl,
-      ratingNum,
-      review,
-      genre
     ]);
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
