@@ -22,53 +22,41 @@ export async function POST(req) {
       studios,
       run_time,
       genre,
-      // url ignored; we generate our own slugified URL
     } = await req.json();
 
     if (!title || !genre || !year) {
-      return NextResponse.json({ error: 'Missing title, genre, or year' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing title, genre or year' }, { status: 400 });
     }
 
-    // Construct table name from genre (lowercase, no spaces)
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
-
-    // Check if table exists by running a test query
-    try {
-      await sql`SELECT 1 FROM ${sql(genreTable)} LIMIT 1;`;
-    } catch (err) {
-      return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
-    }
-
-    // Generate slugified URL
     const slugifiedUrl = slugify(title, year);
+    const yearInt = parseInt(year, 10);
+    const runTimeInt = run_time ? parseInt(run_time, 10) : null;
 
-    // Check if movie with this slug already exists
+    // Check if movie exists
     const existing = await sql`
       SELECT * FROM ${sql(genreTable)} WHERE url = ${slugifiedUrl};
     `;
-
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // Insert the new movie record
     try {
+      console.log('Trying to insert:', { title, yearInt, director, screenwriters, producers, studios, runTimeInt, slugifiedUrl });
       await sql`
         INSERT INTO ${sql(genreTable)} 
           (film, year, studios, director, screenwriters, producers, run_time, url)
         VALUES
-          (${title}, ${year}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${run_time}, ${slugifiedUrl});
+          (${title}, ${yearInt}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${runTimeInt}, ${slugifiedUrl});
       `;
-
       return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
-
     } catch (insertError) {
-      console.error('Insert query failed:', insertError);
-      return NextResponse.json({ error: 'Failed to insert movie', details: insertError.message }, { status: 500 });
+      console.error('Insert failed:', insertError);
+      return NextResponse.json({ error: 'Insert failed', details: insertError.message }, { status: 500 });
     }
 
   } catch (error) {
-    console.error('Request handling failed:', error);
-    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+    console.error('Request failed:', error);
+    return NextResponse.json({ error: 'Request failed' }, { status: 500 });
   }
 }
