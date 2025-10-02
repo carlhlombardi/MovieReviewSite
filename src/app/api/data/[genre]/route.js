@@ -1,38 +1,30 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-// Normalized genre name to actual table name
-const genreMap = {
-  'action': 'actionmovies',
-  'adventure': 'adventuremovies',
-  'animation': 'animationmovies',
-  'comedy': 'comedymovies',
-  'crime': 'crimemovies',
-  'documentary': 'documentarymovies',
-  'drama': 'dramamovies',
-  'family': 'familymovies',
-  'fantasy': 'fantasymovies',
-  'history': 'historymovies',
-  'horror': 'horrormovies',
-  'music': 'musicmovies',
-  'mystery': 'mysterymovies',
-  'romance': 'romancemovies',
-  'science fiction': 'sciencefictionmovies',
-  'science-fiction': 'sciencefictionmovies',
-  'tv movie': 'tvmoviemovies',
-  'tv-movie': 'tvmoviemovies',
-  'thriller': 'thrillermovies',
-  'war': 'warmovies',
-  'western': 'westernmovies'
-};
+const allowedTables = [
+  'actionmovies',
+  'adventuremovies',
+  'animationmovies',
+  'comedymovies',
+  'crimemovies',
+  'documentarymovies',
+  'dramamovies',
+  'familymovies',
+  'fantasymovies',
+  'historymovies',
+  'horrormovies',
+  'musicmovies',
+  'mysterymovies',
+  'romancemovies',
+  'sciencefictionmovies',
+  'tvmoviemovies',
+  'thrillermovies',
+  'warmovies',
+  'westernmovies'
+];
 
-const allowedTables = Object.values(genreMap);
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
-
-function normalizeGenre(slug) {
-  return slug.replace(/-/g, ' ').toLowerCase();
-}
 
 async function fetchTmdbPoster(title, year) {
   try {
@@ -53,18 +45,18 @@ async function fetchTmdbPoster(title, year) {
       return `https://image.tmdb.org/t/p/w500${posterPath}`;
     }
 
-    return null;
+    return null; // No fallback to backdrops
   } catch (error) {
     console.error('Error fetching TMDB poster:', error);
     return null;
   }
 }
 
-export async function GET(req, { params }) {
-  const normalizedGenre = normalizeGenre(params.genre);
-  const genreSegment = genreMap[normalizedGenre];
 
-  if (!genreSegment || !allowedTables.includes(genreSegment)) {
+export async function GET(req, { params }) {
+  const genreSegment = params.genre.toLowerCase();
+
+  if (!allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
@@ -88,10 +80,9 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  const normalizedGenre = normalizeGenre(params.genre);
-  const genreSegment = genreMap[normalizedGenre];
+  const genreSegment = params.genre.toLowerCase();
 
-  if (!genreSegment || !allowedTables.includes(genreSegment)) {
+  if (!allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
@@ -112,7 +103,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Normalize studios to first value
+    // Use only the first studio
     if (Array.isArray(studios)) {
       studios = studios[0];
     } else if (typeof studios === 'string') {
