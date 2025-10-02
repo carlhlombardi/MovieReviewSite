@@ -86,23 +86,41 @@ const Home = () => {
   }, []);
 
   // ✅ Handle suggestion click: fetch details, insert, redirect
-  const handleSuggestionClick = async (movie) => {
-    setSearchQuery(movie.title);
-    setShowSuggestions(false);
+const handleSuggestionClick = async (movie) => {
+  setSearchQuery(movie.title);
+  setShowSuggestions(false);
 
-    try {
-      const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-      if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
+  try {
+    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+    if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
 
-      const data = await res.json();
-      const movieData = data.results?.[0];
+    const data = await res.json();
+    const movieData = data.results?.[0];
 
-      if (!movieData) {
-        alert("Movie details not found.");
-        return;
-      }
+    console.log("Fetched movieData:", movieData); // ✅ Add this for debugging
 
-      const {
+    if (!movieData || !movieData.title || !movieData.year) {
+      alert("Movie details are missing or invalid.");
+      return;
+    }
+
+    const {
+      title,
+      year,
+      director,
+      screenwriters,
+      producers,
+      studios,
+      run_time,
+      genre,
+    } = movieData;
+
+    const slugifiedUrl = slugify(title, year); // ✅ Uses new function
+
+    const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         title,
         year,
         director,
@@ -111,41 +129,23 @@ const Home = () => {
         studios,
         run_time,
         genre,
-        url,
-      } = movieData;
+        url: slugifiedUrl,
+      }),
+    });
 
-      const slugifiedUrl = slugify(title, year);
+    const insertData = await insertRes.json();
 
-      const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          year,
-          director,
-          screenwriters,
-          producers,
-          studios,
-          run_time,
-          genre,
-          url: slugifiedUrl, // ✅ Store slugified URL
-        }),
-      });
-
-      const insertData = await insertRes.json();
-
-      if (!insertRes.ok) {
-        alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
-        return;
-      }
-
-      // ✅ Redirect to slugified route
-      router.push(`/genre/${genre.toLowerCase()}/${slugifiedUrl}`);
-    } catch (error) {
-      console.error("Error in handleSuggestionClick:", error);
-      alert("An unexpected error occurred. Check the console.");
+    if (!insertRes.ok) {
+      alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
+      return;
     }
-  };
+
+    router.push(`/genre/${genre.toLowerCase()}/${slugifiedUrl}`);
+  } catch (error) {
+    console.error("Error in handleSuggestionClick:", error);
+    alert("An unexpected error occurred. Check the console.");
+  }
+};
 
   // ✅ Manual search submit
   const handleSearch = (e) => {
