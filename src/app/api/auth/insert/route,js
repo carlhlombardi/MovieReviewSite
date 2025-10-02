@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import slugify from 'slugify';
 
 export async function POST(req) {
   try {
@@ -20,37 +21,46 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing title or genre' }, { status: 400 });
     }
 
-    // ✅ Sanitize and format genre → table name (e.g., "comedy" → "comedymovies")
+    // ✅ Sanitize genre to form table name
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // ✅ Check if the table exists (optional, but helpful)
+    // ✅ Check if table exists (optional)
     try {
       await sql`SELECT 1 FROM ${sql(genreTable)} LIMIT 1;`;
     } catch (err) {
       return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
     }
 
-    // ✅ Check for duplicates by film title
+    // ✅ Slugify URL if not provided
+    const safeUrl = url || slugify(title, { lower: true, strict: true });
+
+    // ✅ Check for duplicates by URL
     const existing = await sql`
-      SELECT * FROM ${sql(genreTable)} WHERE film = ${title}
+      SELECT * FROM ${sql(genreTable)} WHERE url = ${safeUrl}
     `;
 
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // ✅ Insert new movie into genre-specific table
+    // ✅ Handle optional values
+    const studioVal = studios || '';
+    const screenwritersVal = screenwriters || '';
+    const producerVal = producers || '';
+    const runtimeVal = run_time || 0;
+
+    // ✅ Insert movie
     await sql`
       INSERT INTO ${sql(genreTable)} 
         (film, year, studio, director, screenwriters, producer, run_time, url)
       VALUES 
-        (${title}, ${year}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${run_time}, ${url})
+        (${title}, ${year}, ${studioVal}, ${director}, ${screenwritersVal}, ${producerVal}, ${runtimeVal}, ${safeUrl})
     `;
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
 
   } catch (error) {
     console.error('Insert failed:', error);
-    return NextResponse.json({ error: 'Failed to insert movie' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 }); // Better for debugging
   }
 }
