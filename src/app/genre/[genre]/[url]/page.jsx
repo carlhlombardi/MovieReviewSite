@@ -8,11 +8,10 @@ import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons';
 
 // === ✅ Helper Functions ===
 
-// Generalized fetchData
-const fetchData = async (genre, url) => {
+const fetchData = async (genre, slug) => {
   try {
     const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/data/${genre}movies?url=${encodeURIComponent(url)}`
+      `https://movie-review-site-seven.vercel.app/api/data/${genre}movies?slug=${encodeURIComponent(slug)}`
     );
     if (!response.ok) throw new Error('Failed to fetch movie data');
     return await response.json();
@@ -36,11 +35,11 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-const fetchLikeStatus = async (url) => {
+const fetchLikeStatus = async (slug) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`,
+      `https://movie-review-site-seven.vercel.app/api/auth/likes?slug=${encodeURIComponent(slug)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -57,11 +56,11 @@ const fetchLikeStatus = async (url) => {
   }
 };
 
-const fetchWatchlistStatus = async (url) => {
+const fetchWatchlistStatus = async (slug) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`,
+      `https://movie-review-site-seven.vercel.app/api/auth/watchlist?slug=${encodeURIComponent(slug)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -78,18 +77,18 @@ const fetchWatchlistStatus = async (url) => {
   }
 };
 
-const toggleWatchlist = async (url, action) => {
+const toggleWatchlist = async (slug, action) => {
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('Token missing');
-    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?url=${encodeURIComponent(url)}` : ''}`;
+    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${action === 'remove' ? `?slug=${encodeURIComponent(slug)}` : ''}`;
     const response = await fetch(fetchUrl, {
       method: action === 'add' ? 'POST' : 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: action === 'add' ? JSON.stringify({ url }) : undefined,
+      body: action === 'add' ? JSON.stringify({ slug }) : undefined,
     });
     if (!response.ok) throw new Error('Failed to toggle watchlist');
     return await response.json();
@@ -99,17 +98,17 @@ const toggleWatchlist = async (url, action) => {
   }
 };
 
-const toggleLike = async (url, action) => {
+const toggleLike = async (slug, action) => {
   try {
     const token = localStorage.getItem('token');
-    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/likes${action === 'unlike' ? `?url=${encodeURIComponent(url)}` : ''}`;
+    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/likes${action === 'unlike' ? `?slug=${encodeURIComponent(slug)}` : ''}`;
     const response = await fetch(fetchUrl, {
       method: action === 'like' ? 'POST' : 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: action === 'like' ? JSON.stringify({ url }) : undefined,
+      body: action === 'like' ? JSON.stringify({ slug }) : undefined,
     });
     if (!response.ok) throw new Error('Like toggle failed');
     return await response.json();
@@ -120,7 +119,8 @@ const toggleLike = async (url, action) => {
 };
 
 const MoviePage = ({ params }) => {
-  const { genre, url } = params;
+  const { genre, slug } = params;
+
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,7 +136,7 @@ const MoviePage = ({ params }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(url)}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?slug=${encodeURIComponent(slug)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -149,11 +149,11 @@ const MoviePage = ({ params }) => {
     } catch (error) {
       console.error('Rating fetch error:', error);
     }
-  }, [url]);
+  }, [slug]);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
-    const result = await toggleLike(url, action);
+    const result = await toggleLike(slug, action);
     if (result) {
       setIsLiked(action === 'like');
       setLikedCount(result.likeCount || 0);
@@ -162,7 +162,7 @@ const MoviePage = ({ params }) => {
 
   const handleWatchlist = async () => {
     const action = isWatched ? 'remove' : 'add';
-    const result = await toggleWatchlist(url, action);
+    const result = await toggleWatchlist(slug, action);
     if (result) {
       setIsWatched(action === 'add');
       setWatchCount(result.watchCount || 0);
@@ -178,7 +178,7 @@ const MoviePage = ({ params }) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, rating: userRating }),
+        body: JSON.stringify({ slug, rating: userRating }),
       });
       if (!response.ok) throw new Error('Rating submit failed');
       await fetchUserRating();
@@ -190,18 +190,18 @@ const MoviePage = ({ params }) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const movieData = await fetchData(genre, url);
+        const movieData = await fetchData(genre, slug);
         if (movieData) setData(movieData);
 
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
 
         if (loggedIn) {
-          const likeStatus = await fetchLikeStatus(url);
+          const likeStatus = await fetchLikeStatus(slug);
           setIsLiked(likeStatus.isLiked);
           setLikedCount(likeStatus.likeCount);
 
-          const watchStatus = await fetchWatchlistStatus(url);
+          const watchStatus = await fetchWatchlistStatus(slug);
           setIsWatched(watchStatus.isWatched);
           setWatchCount(watchStatus.watchCount);
 
@@ -216,7 +216,7 @@ const MoviePage = ({ params }) => {
     };
 
     init();
-  }, [genre, url, fetchUserRating]);
+  }, [genre, slug, fetchUserRating]);
 
   if (isLoading) return <Spinner animation="border" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -284,7 +284,7 @@ const MoviePage = ({ params }) => {
       <Row>
         <Col className="text-center mt-5">
           {isLoggedIn ? (
-            <Comments movieUrl={url} />
+            <Comments movieSlug={slug} />
           ) : (
             <Alert variant="info">Please log in to like, watch, rate, or comment.</Alert>
           )}
