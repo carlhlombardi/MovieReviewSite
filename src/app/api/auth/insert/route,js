@@ -45,7 +45,7 @@ export async function POST(req) {
       console.log('Trying to insert:', { title, yearInt, director, screenwriters, producers, studios, runTimeInt, slugifiedUrl });
       await sql`
         INSERT INTO ${sql(genreTable)} 
-          (film, year, studios, director, screenwriters, producers, run_time, url)
+          (film, year, studio, director, screenwriters, producer, run_time, url)
         VALUES
           (${title}, ${yearInt}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${runTimeInt}, ${slugifiedUrl});
       `;
