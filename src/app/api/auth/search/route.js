@@ -44,6 +44,7 @@ export async function GET(req) {
         JSON.stringify({
           results: [
             {
+              tmdb_id: movie.id,
               title: movie.title,
               year: movie.release_date?.slice(0, 4) || "Unknown",
               director,
