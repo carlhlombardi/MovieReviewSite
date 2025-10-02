@@ -23,12 +23,6 @@ const allowedTables = [
   'westernmovies'
 ];
 
-// ✅ NEW: Normalize genre input like "science fiction" → "sciencefictionmovies"
-function normalizeGenreToTable(genre) {
-  const normalized = genre.toLowerCase().replace(/[\s-]/g, '');
-  const tableName = `${normalized}movies`;
-  return allowedTables.includes(tableName) ? tableName : null;
-}
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
@@ -51,17 +45,18 @@ async function fetchTmdbPoster(title, year) {
       return `https://image.tmdb.org/t/p/w500${posterPath}`;
     }
 
-    return null;
+    return null; // No fallback to backdrops
   } catch (error) {
     console.error('Error fetching TMDB poster:', error);
     return null;
   }
 }
 
-export async function GET(req, { params }) {
-  const genreSegment = normalizeGenreToTable(params.genre);
 
-  if (!genreSegment) {
+export async function GET(req, { params }) {
+  const genreSegment = params.genre.toLowerCase();
+
+  if (!allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
@@ -85,9 +80,9 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  const genreSegment = normalizeGenreToTable(params.genre);
+  const genreSegment = params.genre.toLowerCase();
 
-  if (!genreSegment) {
+  if (!allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
