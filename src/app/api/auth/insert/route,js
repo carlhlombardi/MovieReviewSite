@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+// Slugify helper (same as your frontend)
 const slugify = (title, year) => {
   return `${title}-${year}`
     .toString()
@@ -21,60 +22,53 @@ export async function POST(req) {
       studios,
       run_time,
       genre,
+      // url ignored; we generate our own slugified URL
     } = await req.json();
 
     if (!title || !genre || !year) {
-      return NextResponse.json({ error: 'Missing title, genre or year' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing title, genre, or year' }, { status: 400 });
     }
 
-    // Sanitize and construct genre table name
+    // Construct table name from genre (lowercase, no spaces)
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // Validate genreTable - only allow alphanumeric and underscores
-    if (!/^[a-z0-9_]+$/.test(genreTable)) {
-      return NextResponse.json({ error: 'Invalid genre table name' }, { status: 400 });
-    }
-
-    // Check if table exists by trying to select from it
+    // Check if table exists by running a test query
     try {
-      const checkTableExistsQuery = `SELECT 1 FROM ${genreTable} LIMIT 1;`;
-      await sql.query(checkTableExistsQuery);
+      await sql`SELECT 1 FROM ${sql(genreTable)} LIMIT 1;`;
     } catch (err) {
       return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
     }
 
+    // Generate slugified URL
     const slugifiedUrl = slugify(title, year);
 
-    // Check for duplicates
-    const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
-    const existing = await sql.query(existingMoviesQuery, [slugifiedUrl]);
+    // Check if movie with this slug already exists
+    const existing = await sql`
+      SELECT * FROM ${sql(genreTable)} WHERE url = ${slugifiedUrl};
+    `;
 
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // Insert new movie record
-    const insertQuery = `
-      INSERT INTO ${genreTable} 
-        (title, year, studios, director, screenwriters, producers, run_time, url)
-      VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8)
-    `;
-    await sql.query(insertQuery, [
-      title,
-      year,
-      studios,
-      director,
-      screenwriters,
-      producers,
-      run_time,
-      slugifiedUrl,
-    ]);
+    // Insert the new movie record
+    try {
+      await sql`
+        INSERT INTO ${sql(genreTable)} 
+          (film, year, studios, director, screenwriters, producers, run_time, url)
+        VALUES
+          (${title}, ${year}, ${studios}, ${director}, ${screenwriters}, ${producers}, ${run_time}, ${slugifiedUrl});
+      `;
 
-    return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
+      return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
+
+    } catch (insertError) {
+      console.error('Insert query failed:', insertError);
+      return NextResponse.json({ error: 'Failed to insert movie', details: insertError.message }, { status: 500 });
+    }
 
   } catch (error) {
-    console.error('Insert failed:', error);
-    return NextResponse.json({ error: 'Failed to insert movie' }, { status: 500 });
+    console.error('Request handling failed:', error);
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }
