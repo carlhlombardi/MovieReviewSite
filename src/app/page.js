@@ -4,6 +4,16 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
+// ✅ Slugify function to clean up URLs (also used on MoviePage)
+const slugify = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/'/g, "")            // Remove apostrophes
+    .replace(/[^a-z0-9]+/g, "-")  // Replace non-alphanumeric with dashes
+    .replace(/^-+|-+$/g, "");     // Trim dashes from start/end
+};
+
 const Home = () => {
   const router = useRouter();
 
@@ -17,37 +27,29 @@ const Home = () => {
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // Fetch horror + sci-fi data on mount
+  // ✅ Fetch horror + sci-fi data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching horror and sci-fi data...");
-        const horrorResponse = await fetch(
-          "https://movie-review-site-seven.vercel.app/api/data/horrormovies"
-        );
-        const horrorResult = await horrorResponse.json();
+        const horrorRes = await fetch("/api/data/horrormovies");
+        const horrorResult = await horrorRes.json();
         setHorrorData(horrorResult);
-        console.log("Horror data fetched:", horrorResult);
 
-        const sciFiResponse = await fetch(
-          "https://movie-review-site-seven.vercel.app/api/data/scifimovies"
-        );
-        const sciFiResult = await sciFiResponse.json();
+        const sciFiRes = await fetch("/api/data/scifimovies");
+        const sciFiResult = await sciFiRes.json();
         setSciFiData(sciFiResult);
-        console.log("Sci-Fi data fetched:", sciFiResult);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching genre data:", error);
       }
     };
 
     fetchData();
   }, []);
 
-  // Handle search input changes & fetch suggestions
+  // ✅ Handle input + get suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    console.log("Input changed:", query);
 
     if (!query.trim()) {
       setSuggestions([]);
@@ -56,13 +58,8 @@ const Home = () => {
     }
 
     try {
-      const res = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/auth/suggest?query=${encodeURIComponent(
-          query
-        )}`
-      );
+      const res = await fetch(`/api/auth/suggest?query=${encodeURIComponent(query)}`);
       const data = await res.json();
-      console.log("Suggestions fetched:", data.results);
       setSuggestions(data.results || []);
       setShowSuggestions(true);
     } catch (err) {
@@ -71,7 +68,7 @@ const Home = () => {
     }
   };
 
-  // Handle click outside input and suggestions to hide suggestions
+  // ✅ Hide suggestions on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -85,27 +82,21 @@ const Home = () => {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // When user clicks a suggestion: add movie to DB and redirect
+  // ✅ Handle suggestion click: fetch details, insert, redirect
   const handleSuggestionClick = async (movie) => {
-    console.log("Suggestion clicked:", movie);
     setSearchQuery(movie.title);
     setShowSuggestions(false);
 
     try {
-      const res = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/auth/search?movieId=${movie.id}`
-      );
+      const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
       if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
 
       const data = await res.json();
-      console.log("Detailed movie data fetched:", data);
-
       const movieData = data.results?.[0];
+
       if (!movieData) {
         alert("Movie details not found.");
         return;
@@ -123,64 +114,54 @@ const Home = () => {
         url,
       } = movieData;
 
-      console.log("Inserting movie:", movieData);
+      const slugifiedUrl = slugify(url);
 
-      const insertRes = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/data/${genre.toLowerCase()}movies`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title,
-            year,
-            director,
-            screenwriters,
-            producers,
-            studios,
-            run_time,
-            genre,
-            url,
-          }),
-        }
-      );
+      const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          year,
+          director,
+          screenwriters,
+          producers,
+          studios,
+          run_time,
+          genre,
+          url: slugifiedUrl, // ✅ Store slugified URL
+        }),
+      });
 
       const insertData = await insertRes.json();
-
-      console.log("Insert response:", insertData);
 
       if (!insertRes.ok) {
         alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
         return;
       }
 
-      router.push(`/genre/${genre.toLowerCase()}/${url}`);
+      // ✅ Redirect to slugified route
+      router.push(`/genre/${genre.toLowerCase()}/${slugifiedUrl}`);
     } catch (error) {
       console.error("Error in handleSuggestionClick:", error);
-      alert("An unexpected error occurred. Check console.");
+      alert("An unexpected error occurred. Check the console.");
     }
   };
 
-  // Manual form submit to run search
+  // ✅ Manual search submit
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log("Manual search submitted:", searchQuery);
     handleSearchDirect(searchQuery);
   };
 
-  // Search for movies by exact title
+  // ✅ Search for movies directly by query
   const handleSearchDirect = async (query) => {
     if (!query.trim()) return;
 
     try {
-      const res = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/auth/search?query=${encodeURIComponent(
-          query
-        )}`
-      );
+      const res = await fetch(`/api/auth/search?query=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error(`Search failed: ${res.statusText}`);
 
       const data = await res.json();
-      console.log("Search results:", data.results);
       setSearchResults(data.results || []);
     } catch (error) {
       console.error("Search failed:", error);
@@ -191,7 +172,7 @@ const Home = () => {
     <Container className="py-5">
       <h1 className="text-center mb-4">Movie Search</h1>
 
-      {/* Search Input with Suggestions */}
+      {/* 🔍 Search Input */}
       <Form onSubmit={handleSearch} className="mb-4 position-relative">
         <Form.Control
           type="text"
@@ -203,6 +184,7 @@ const Home = () => {
           ref={inputRef}
         />
 
+        {/* 💡 Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <ul
             ref={suggestionsRef}
@@ -223,31 +205,19 @@ const Home = () => {
         )}
       </Form>
 
-      {/* Search Results */}
+      {/* 📋 Optional Search Results if manual search is used */}
       {searchResults.length > 0 && (
         <Row className="mb-4 justify-content-center">
           <h2 className="text-center">Search Results</h2>
           {searchResults.map((movie, index) => (
             <Col key={index} xs={12} md={8} lg={6}>
               <div className="p-3 border rounded mb-3">
-                <p>
-                  <strong>Title:</strong> {movie.title}
-                </p>
-                <p>
-                  <strong>Year:</strong> {movie.year}
-                </p>
-                <p>
-                  <strong>Director:</strong> {movie.director}
-                </p>
-                <p>
-                  <strong>Screenwriters:</strong> {movie.screenwriters}
-                </p>
-                <p>
-                  <strong>Producers:</strong> {movie.producers}
-                </p>
-                <p>
-                  <strong>Studio:</strong> {movie.studios}
-                </p>
+                <p><strong>Title:</strong> {movie.title}</p>
+                <p><strong>Year:</strong> {movie.year}</p>
+                <p><strong>Director:</strong> {movie.director}</p>
+                <p><strong>Screenwriters:</strong> {movie.screenwriters}</p>
+                <p><strong>Producers:</strong> {movie.producers}</p>
+                <p><strong>Studio:</strong> {movie.studios}</p>
               </div>
             </Col>
           ))}
