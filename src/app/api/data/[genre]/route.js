@@ -82,6 +82,7 @@ export async function GET(req, { params }) {
 export async function POST(req, { params }) {
   const genreSegment = params.genre.toLowerCase();
 
+  // ✅ Validate allowed genre tables
   if (!allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
@@ -97,24 +98,42 @@ export async function POST(req, { params }) {
       run_time,
       url,
       image_url,
+      tmdb_id, // ✅ Required for slug
     } = await req.json();
 
-    if (!title || !year) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // ✅ Validate required fields
+    if (!title || !year || !tmdb_id) {
+      return NextResponse.json({ error: 'Missing required fields: title, year, or tmdb_id' }, { status: 400 });
     }
 
-    // Use only the first studio
+    // ✅ Normalize studios (use only first one)
     if (Array.isArray(studios)) {
       studios = studios[0];
     } else if (typeof studios === 'string') {
       studios = studios.split(',')[0].trim();
     }
 
-    const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE film = $1`, [title]);
+    // ✅ Generate slug if not provided
+    const slugify = (title, tmdb_id) => {
+      return `${title}-${tmdb_id}`
+        .toString()
+        .toLowerCase()
+        .replace(/'/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    };
+
+    if (!url) {
+      url = slugify(title, tmdb_id);
+    }
+
+    // ✅ Check for existing movie by `url`
+    const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [url]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
+    // ✅ Fetch poster image from TMDB if not provided
     if (!image_url) {
       const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
@@ -122,10 +141,13 @@ export async function POST(req, { params }) {
       }
     }
 
+    // ✅ Insert new movie
     await sql.query(
-      `INSERT INTO ${genreSegment} (film, year, studio, director, screenwriters, producer, run_time, url, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url]
+      `INSERT INTO ${genreSegment} 
+        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id)
+       VALUES 
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id]
     );
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });

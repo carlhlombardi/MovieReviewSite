@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-const slugify = (title, year) => {
-  return `${title}-${year}`
+// Slugify using TMDB ID for uniqueness
+const slugify = (title, tmdb_id) => {
+  return `${title}-${tmdb_id}`
     .toString()
     .toLowerCase()
     .replace(/'/g, "")
@@ -15,6 +16,7 @@ export async function POST(req) {
     const {
       title,
       year,
+      tmdb_id,          // ✅ new required field
       director,
       screenwriters,
       producers,
@@ -23,19 +25,20 @@ export async function POST(req) {
       genre,
     } = await req.json();
 
-    if (!title || !genre || !year) {
-      return NextResponse.json({ error: 'Missing title, genre or year' }, { status: 400 });
+    // Validate required fields
+    if (!title || !genre || !year || !tmdb_id) {
+      return NextResponse.json({ error: 'Missing title, genre, year or tmdb_id' }, { status: 400 });
     }
 
     // Sanitize and construct genre table name
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // Validate genreTable - only allow alphanumeric and underscores
+    // Validate genreTable name
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
       return NextResponse.json({ error: 'Invalid genre table name' }, { status: 400 });
     }
 
-    // Check if table exists by trying to select from it
+    // Check if genre table exists
     try {
       const checkTableExistsQuery = `SELECT 1 FROM ${genreTable} LIMIT 1;`;
       await sql.query(checkTableExistsQuery);
@@ -43,7 +46,8 @@ export async function POST(req) {
       return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
     }
 
-    const slugifiedUrl = slugify(title, year);
+    // Generate slug from title and tmdb_id
+    const slugifiedUrl = slugify(title, tmdb_id);
 
     // Check for duplicates
     const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
@@ -53,7 +57,7 @@ export async function POST(req) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // Insert new movie record
+    // Insert new movie
     const insertQuery = `
       INSERT INTO ${genreTable} 
         (title, year, studios, director, screenwriters, producers, run_time, url)

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
 // ✅ Slugify function to clean up URLs (also used on MoviePage)
-const slugify = (title, year) => {
-  return `${title}-${year}`
+const slugify = (title, tmdb_id) => {
+  return `${title}-${tmdb_id}`
     .toString()
     .toLowerCase()
     .replace(/'/g, "")
@@ -106,16 +106,16 @@ const handleSuggestionClick = async (movie) => {
       return;
     }
 
-    const slugifiedUrl = slugify(movieData.title, movieData.year);
+   const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
 
-    const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...movieData,
-        url: slugifiedUrl,
-      }),
-    });
+const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    ...movieData,
+    url: slugifiedUrl,
+  }),
+});
 
     const insertData = await insertRes.json();
     if (!insertRes.ok) {
