@@ -94,13 +94,13 @@ const handleSuggestionClick = async (movie) => {
     const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
     if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
 
-    const data = await res.json();
-    const movieData = data.results?.[0];
+    const movieData = await res.json(); // ✅ data is already the movie object
 
-    console.log("Fetched movieData:", movieData); // ✅ Add this for debugging
+    console.log("Fetched movieData:", movieData);
 
-    if (!movieData || !movieData.title || !movieData.year) {
-      alert("Movie details are missing or invalid.");
+    // ✅ Sanity check
+    if (!movieData?.title || !movieData?.year || !movieData?.genre) {
+      alert("Movie data is incomplete.");
       return;
     }
 
@@ -115,7 +115,7 @@ const handleSuggestionClick = async (movie) => {
       genre,
     } = movieData;
 
-    const slugifiedUrl = slugify(title, year); // ✅ Uses new function
+    const slugifiedUrl = slugify(title, year); // ✅ use title + year for uniqueness
 
     const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
       method: "POST",
@@ -146,6 +146,7 @@ const handleSuggestionClick = async (movie) => {
     alert("An unexpected error occurred. Check the console.");
   }
 };
+
 
   // ✅ Manual search submit
   const handleSearch = (e) => {
