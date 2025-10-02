@@ -99,22 +99,24 @@ export async function POST(req, { params }) {
       image_url,
     } = await req.json();
 
-    if (!title || !year) {
+    if (!title || !year || !url) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Use only the first studio
+    // Normalize studio input
     if (Array.isArray(studios)) {
       studios = studios[0];
     } else if (typeof studios === 'string') {
       studios = studios.split(',')[0].trim();
     }
 
-    const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE film = $1`, [title]);
+    // ✅ Check for existing movie using unique slugified URL
+    const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [url]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
+    // ✅ Auto-fetch image from TMDB if missing
     if (!image_url) {
       const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
@@ -122,6 +124,7 @@ export async function POST(req, { params }) {
       }
     }
 
+    // ✅ Insert new movie
     await sql.query(
       `INSERT INTO ${genreSegment} (film, year, studio, director, screenwriters, producer, run_time, url, image_url)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
