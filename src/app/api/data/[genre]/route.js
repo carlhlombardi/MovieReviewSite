@@ -23,6 +23,28 @@ const allowedTables = [
   'westernmovies'
 ];
 
+// Map TMDB genres to your DB table names
+const genreMap = {
+  'action': 'actionmovies',
+  'adventure': 'adventuremovies',
+  'animation': 'animationmovies',
+  'comedy': 'comedymovies',
+  'crime': 'crimemovies',
+  'documentary': 'documentarymovies',
+  'drama': 'dramamovies',
+  'family': 'familymovies',
+  'fantasy': 'fantasymovies',
+  'history': 'historymovies',
+  'horror': 'horrormovies',
+  'music': 'musicmovies',
+  'mystery': 'mysterymovies',
+  'romance': 'romancemovies',
+  'science fiction': 'sciencefictionmovies',
+  'tv movie': 'tvmoviemovies',
+  'thriller': 'thrillermovies',
+  'war': 'warmovies',
+  'western': 'westernmovies',
+};
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
@@ -52,11 +74,11 @@ async function fetchTmdbPoster(title, year) {
   }
 }
 
-
 export async function GET(req, { params }) {
-  const genreSegment = params.genre.toLowerCase();
+  const rawGenre = params.genre.toLowerCase();
+  const genreSegment = genreMap[rawGenre];
 
-  if (!allowedTables.includes(genreSegment)) {
+  if (!genreSegment || !allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
@@ -80,10 +102,10 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  const genreSegment = params.genre.toLowerCase();
+  const rawGenre = params.genre.toLowerCase();
+  const genreSegment = genreMap[rawGenre];
 
-  // ✅ Validate allowed genre tables
-  if (!allowedTables.includes(genreSegment)) {
+  if (!genreSegment || !allowedTables.includes(genreSegment)) {
     return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
   }
 
@@ -98,22 +120,20 @@ export async function POST(req, { params }) {
       run_time,
       url,
       image_url,
-      tmdb_id, // ✅ Required for slug
+      tmdb_id, // Required for slug
     } = await req.json();
 
-    // ✅ Validate required fields
     if (!title || !year || !tmdb_id) {
       return NextResponse.json({ error: 'Missing required fields: title, year, or tmdb_id' }, { status: 400 });
     }
 
-    // ✅ Normalize studios (use only first one)
+    // Normalize studios (use only first one)
     if (Array.isArray(studios)) {
       studios = studios[0];
     } else if (typeof studios === 'string') {
       studios = studios.split(',')[0].trim();
     }
 
-    // ✅ Generate slug if not provided
     const slugify = (title, tmdb_id) => {
       return `${title}-${tmdb_id}`
         .toString()
@@ -127,13 +147,13 @@ export async function POST(req, { params }) {
       url = slugify(title, tmdb_id);
     }
 
-    // ✅ Check for existing movie by `url`
+    // Check for existing movie by `url`
     const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [url]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // ✅ Fetch poster image from TMDB if not provided
+    // Fetch poster image from TMDB if not provided
     if (!image_url) {
       const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
@@ -141,7 +161,7 @@ export async function POST(req, { params }) {
       }
     }
 
-    // ✅ Insert new movie
+    // Insert new movie
     await sql.query(
       `INSERT INTO ${genreSegment} 
         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id)
