@@ -8,6 +8,16 @@ import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons';
 
 // === ✅ Helper Functions ===
 
+// Slugify function to clean up URLs
+const slugify = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/'/g, '')            // Remove apostrophes
+    .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dashes
+    .replace(/^-+|-+$/g, '');    // Trim dashes from start/end
+};
+
 // Generalized fetchData
 const fetchData = async (genre, url) => {
   try {
@@ -121,6 +131,8 @@ const toggleLike = async (url, action) => {
 
 const MoviePage = ({ params }) => {
   const { genre, url } = params;
+  const slugifiedUrl = slugify(url);
+
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,7 +148,7 @@ const MoviePage = ({ params }) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(url)}`, {
+      const response = await fetch(`https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(slugifiedUrl)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -149,11 +161,11 @@ const MoviePage = ({ params }) => {
     } catch (error) {
       console.error('Rating fetch error:', error);
     }
-  }, [url]);
+  }, [slugifiedUrl]);
 
   const handleLike = async () => {
     const action = isLiked ? 'unlike' : 'like';
-    const result = await toggleLike(url, action);
+    const result = await toggleLike(slugifiedUrl, action);
     if (result) {
       setIsLiked(action === 'like');
       setLikedCount(result.likeCount || 0);
@@ -162,7 +174,7 @@ const MoviePage = ({ params }) => {
 
   const handleWatchlist = async () => {
     const action = isWatched ? 'remove' : 'add';
-    const result = await toggleWatchlist(url, action);
+    const result = await toggleWatchlist(slugifiedUrl, action);
     if (result) {
       setIsWatched(action === 'add');
       setWatchCount(result.watchCount || 0);
@@ -178,7 +190,7 @@ const MoviePage = ({ params }) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, rating: userRating }),
+        body: JSON.stringify({ url: slugifiedUrl, rating: userRating }),
       });
       if (!response.ok) throw new Error('Rating submit failed');
       await fetchUserRating();
@@ -190,18 +202,18 @@ const MoviePage = ({ params }) => {
   useEffect(() => {
     const init = async () => {
       try {
-        const movieData = await fetchData(genre, url);
+        const movieData = await fetchData(genre, slugifiedUrl);
         if (movieData) setData(movieData);
 
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
 
         if (loggedIn) {
-          const likeStatus = await fetchLikeStatus(url);
+          const likeStatus = await fetchLikeStatus(slugifiedUrl);
           setIsLiked(likeStatus.isLiked);
           setLikedCount(likeStatus.likeCount);
 
-          const watchStatus = await fetchWatchlistStatus(url);
+          const watchStatus = await fetchWatchlistStatus(slugifiedUrl);
           setIsWatched(watchStatus.isWatched);
           setWatchCount(watchStatus.watchCount);
 
@@ -216,7 +228,7 @@ const MoviePage = ({ params }) => {
     };
 
     init();
-  }, [genre, url, fetchUserRating]);
+  }, [genre, slugifiedUrl, fetchUserRating]);
 
   if (isLoading) return <Spinner animation="border" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -284,7 +296,7 @@ const MoviePage = ({ params }) => {
       <Row>
         <Col className="text-center mt-5">
           {isLoggedIn ? (
-            <Comments movieUrl={url} />
+            <Comments movieUrl={slugifiedUrl} />
           ) : (
             <Alert variant="info">Please log in to like, watch, rate, or comment.</Alert>
           )}
