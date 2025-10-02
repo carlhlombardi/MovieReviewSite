@@ -131,7 +131,10 @@ const toggleLike = async (url, action) => {
 
 const MoviePage = ({ params }) => {
   const { genre, url } = params;
-  const slugifiedUrl = slugify(url);
+
+  // --- FIX: Decode URL before slugifying to avoid hex codes like '-3a-' ---
+  const decodedUrl = decodeURIComponent(url);
+  const slugifiedUrl = slugify(decodedUrl);
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
