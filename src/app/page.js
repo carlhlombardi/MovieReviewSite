@@ -93,45 +93,26 @@ const handleSuggestionClick = async (movie) => {
 
   try {
     const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+    if (!res.ok) throw new Error("Failed to fetch movie details");
+
     const apiResponse = await res.json();
-    console.log("API response:", apiResponse);
 
-    let movieData;
-    if (Array.isArray(apiResponse.results)) {
-      movieData = apiResponse.results[0];
-    } else {
-      movieData = apiResponse;
-    }
-
+    const movieData = apiResponse.results?.[0];
     console.log("movieData:", movieData);
-    console.log("movieData.title:", movieData?.title);
-    console.log("movieData.year:", movieData?.year);
-    console.log("movieData.genre:", movieData?.genre);
 
-    const title = movieData?.title || "";
-    const year = movieData?.year || "";
-    const genre = movieData?.genre || "";
-
-    if (!title || !year) {
+    if (!movieData || !movieData.title || !movieData.year) {
       console.error("Missing title or year:", movieData);
       alert("Movie data is incomplete.");
       return;
     }
 
-    const slugifiedUrl = slugify(title, year);
+    const slugifiedUrl = slugify(movieData.title, movieData.year);
 
-    const insertRes = await fetch(`/api/data/${genre.toLowerCase()}movies`, {
+    const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        year,
-        director: movieData.director || "",
-        screenwriters: movieData.screenwriters || "",
-        producers: movieData.producers || "",
-        studios: movieData.studios || "",
-        run_time: movieData.run_time || null,
-        genre,
+        ...movieData,
         url: slugifiedUrl,
       }),
     });
@@ -142,13 +123,12 @@ const handleSuggestionClick = async (movie) => {
       return;
     }
 
-    router.push(`/genre/${genre.toLowerCase()}/${slugifiedUrl}`);
+    router.push(`/genre/${movieData.genre.toLowerCase()}/${slugifiedUrl}`);
   } catch (error) {
     console.error("Error in handleSuggestionClick:", error);
     alert("An unexpected error occurred. Check the console.");
   }
 };
-
 
   // ✅ Manual search submit
   const handleSearch = (e) => {
