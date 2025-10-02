@@ -93,24 +93,27 @@ const handleSuggestionClick = async (movie) => {
 
   try {
     const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-    if (!res.ok) throw new Error(`Failed to fetch movie details: ${res.statusText}`);
+    const apiResponse = await res.json();
+    console.log("API response:", apiResponse);
 
-    const movieData = await res.json();
-    console.log("Fetched movieData:", movieData);
+    let movieData;
+    if (Array.isArray(apiResponse.results)) {
+      movieData = apiResponse.results[0];
+    } else {
+      movieData = apiResponse;
+    }
 
-    // ✅ Destructure and trim everything to be safe
-    const {
-      title,
-      year,
-      director,
-      screenwriters,
-      producers,
-      studios,
-      run_time,
-      genre,
-    } = movieData;
+    console.log("movieData:", movieData);
+    console.log("movieData.title:", movieData?.title);
+    console.log("movieData.year:", movieData?.year);
+    console.log("movieData.genre:", movieData?.genre);
 
-    if (!title || !year || !genre) {
+    const title = movieData?.title || "";
+    const year = movieData?.year || "";
+    const genre = movieData?.genre || "";
+
+    if (!title || !year) {
+      console.error("Missing title or year:", movieData);
       alert("Movie data is incomplete.");
       return;
     }
@@ -121,20 +124,19 @@ const handleSuggestionClick = async (movie) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: title.trim(),
-        year: Number(year),  // 🧠 Ensure it's a number
-        director,
-        screenwriters,
-        producers,
-        studios,
-        run_time,
-        genre: genre.trim(),
+        title,
+        year,
+        director: movieData.director || "",
+        screenwriters: movieData.screenwriters || "",
+        producers: movieData.producers || "",
+        studios: movieData.studios || "",
+        run_time: movieData.run_time || null,
+        genre,
         url: slugifiedUrl,
       }),
     });
 
     const insertData = await insertRes.json();
-
     if (!insertRes.ok) {
       alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
       return;
@@ -146,7 +148,6 @@ const handleSuggestionClick = async (movie) => {
     alert("An unexpected error occurred. Check the console.");
   }
 };
-
 
 
   // ✅ Manual search submit
