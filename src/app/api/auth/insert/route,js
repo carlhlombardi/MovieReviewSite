@@ -13,29 +13,54 @@ const slugify = (title, tmdb_id) => {
 
 export async function POST(req) {
   try {
+    const body = await req.json();
+    console.log("Incoming POST data:", body);
+
     const {
       title,
       year,
-      tmdb_id,          // ✅ new required field
-      director,
-      screenwriters,
-      producers,
-      studios,
-      run_time,
+      tmdb_id,
+      director = "",
+      screenwriters = "",
+      producers = "",
+      studios = "",
+      run_time = null,
       genre,
-    } = await req.json();
+    } = body;
 
-    // Validate required fields
+    // Validate required fields presence
     if (!title || !genre || !year || !tmdb_id) {
-      return NextResponse.json({ error: 'Missing title, genre, year or tmdb_id' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required fields: title, genre, year or tmdb_id' },
+        { status: 400 }
+      );
+    }
+
+    // Convert year and tmdb_id to numbers explicitly
+    const sanitizedYear = Number(year);
+    const sanitizedTmdbId = Number(tmdb_id);
+    const sanitizedRunTime = run_time !== null ? Number(run_time) : null;
+
+    if (
+      isNaN(sanitizedYear) ||
+      isNaN(sanitizedTmdbId) ||
+      (run_time !== null && isNaN(sanitizedRunTime))
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid number for year, tmdb_id, or run_time' },
+        { status: 400 }
+      );
     }
 
     // Sanitize and construct genre table name
     const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
 
-    // Validate genreTable name
+    // Validate genreTable name (allow only a-z, 0-9, _)
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
-      return NextResponse.json({ error: 'Invalid genre table name' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid genre table name' },
+        { status: 400 }
+      );
     }
 
     // Check if genre table exists
@@ -43,18 +68,25 @@ export async function POST(req) {
       const checkTableExistsQuery = `SELECT 1 FROM ${genreTable} LIMIT 1;`;
       await sql.query(checkTableExistsQuery);
     } catch (err) {
-      return NextResponse.json({ error: `Genre table '${genreTable}' does not exist.` }, { status: 400 });
+      console.error("Genre table check error:", err);
+      return NextResponse.json(
+        { error: `Genre table '${genreTable}' does not exist.` },
+        { status: 400 }
+      );
     }
 
     // Generate slug from title and tmdb_id
-    const slugifiedUrl = slugify(title, tmdb_id);
+    const slugifiedUrl = slugify(title, sanitizedTmdbId);
 
     // Check for duplicates
     const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
     const existing = await sql.query(existingMoviesQuery, [slugifiedUrl]);
 
     if (existing.rows.length > 0) {
-      return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
+      return NextResponse.json(
+        { message: 'Movie already exists' },
+        { status: 200 }
+      );
     }
 
     // Insert new movie
@@ -66,19 +98,25 @@ export async function POST(req) {
     `;
     await sql.query(insertQuery, [
       title,
-      year,
+      sanitizedYear,
       studios,
       director,
       screenwriters,
       producers,
-      run_time,
+      sanitizedRunTime,
       slugifiedUrl,
     ]);
 
-    return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
+    return NextResponse.json(
+      { message: 'Movie inserted successfully' },
+      { status: 201 }
+    );
 
   } catch (error) {
     console.error('Insert failed:', error);
-    return NextResponse.json({ error: 'Failed to insert movie' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to insert movie' },
+      { status: 500 }
+    );
   }
 }

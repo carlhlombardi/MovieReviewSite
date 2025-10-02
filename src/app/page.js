@@ -119,37 +119,67 @@ const Home = () => {
 
       const apiResponse = await res.json();
       const movieData = apiResponse.results?.[0];
-      console.log("movieData:", movieData);
 
-      if (!movieData || !movieData.title || !movieData.year) {
-        console.error("Missing title or year:", movieData);
-        alert("Movie data is incomplete.");
+      if (!movieData) {
+        alert("No detailed movie data found.");
         return;
       }
 
-      // Map genre to your API genre slug
-      const rawGenre = movieData.genre.toLowerCase();
-      const mappedGenre = genreMap[rawGenre];
+      // Use fallbacks to avoid missing data
+      const title = movieData.title || movie.title || "";
+      const year = movieData.year || movie.year || "";
+      const tmdb_id = movieData.tmdb_id || movie.id || "";
+      const director = movieData.director || "";
+      const screenwriters = movieData.screenwriters || "";
+      const producers = movieData.producers || "";
+      const studios = movieData.studios || "";
+      const run_time = movieData.run_time || null;
+      let genre = movieData.genre || "";
+
+      if (!title || !year || !tmdb_id) {
+        alert("Missing required movie info: title, year, or TMDB ID.");
+        return;
+      }
+
+      // genre can be comma separated or array, normalize to lowercase string
+      if (Array.isArray(genre)) {
+        genre = genre[0] || "";
+      } else if (typeof genre === "string" && genre.includes(",")) {
+        genre = genre.split(",")[0].trim();
+      }
+      genre = genre.toLowerCase();
+
+      const mappedGenre = genreMap[genre];
 
       if (!mappedGenre) {
-        alert(`Unsupported genre: "${movieData.genre}"`);
+        alert(`Unsupported genre: "${genre}"`);
         return;
       }
 
       // Generate slugified URL
-      const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id || movie.id);
+      const slugifiedUrl = slugify(title, tmdb_id);
+
+      // Prepare body for POST
+      const body = {
+        title,
+        year,
+        tmdb_id,
+        director,
+        screenwriters,
+        producers,
+        studios,
+        run_time,
+        genre,
+      };
 
       const insertRes = await fetch(`/api/data/${mappedGenre}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...movieData,
-          url: slugifiedUrl,
-          tmdb_id: movie.id,
-        }),
+        body: JSON.stringify(body),
       });
 
       const insertData = await insertRes.json();
+
       if (!insertRes.ok) {
         alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
         return;
