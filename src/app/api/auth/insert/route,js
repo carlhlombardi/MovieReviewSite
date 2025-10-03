@@ -83,7 +83,7 @@ export async function POST(req) {
 
     // Generate slugified URL: genre/title-tmdbid
     const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
-    const slugifiedGenre = `${genreSlug}`;
+    const genreToStore = genre.trim();
 
     // Check for duplicates
     const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
@@ -112,7 +112,7 @@ export async function POST(req) {
       producers,
       sanitizedRunTime,
       slugifiedUrl,
-      slugifiedGenre
+      genreToStore
     ]);
 
     return NextResponse.json(
