@@ -91,29 +91,33 @@ export async function POST(req, { params }) {
     let {
       title,
       year,
-      director,
-      screenwriters,
-      producers,
-      studios,
-      run_time,
+      director = "",
+      screenwriters = "",
+      producers = "",
+      studios = "",
+      run_time = null,
       url,
       image_url,
-      tmdb_id, // ✅ Required for slug
+      tmdb_id,
+      genre,
     } = await req.json();
 
     // ✅ Validate required fields
-    if (!title || !year || !tmdb_id) {
-      return NextResponse.json({ error: 'Missing required fields: title, year, or tmdb_id' }, { status: 400 });
+    if (!title || !year || !tmdb_id || !genre) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, year, tmdb_id, or genre' },
+        { status: 400 }
+      );
     }
 
-    // ✅ Normalize studios (use only first one)
+    // Normalize studios (use only first one)
     if (Array.isArray(studios)) {
       studios = studios[0];
     } else if (typeof studios === 'string') {
       studios = studios.split(',')[0].trim();
     }
 
-    // ✅ Generate slug if not provided
+    // Slugify function for URL slug
     const slugify = (title, tmdb_id) => {
       return `${title}-${tmdb_id}`
         .toString()
@@ -123,17 +127,21 @@ export async function POST(req, { params }) {
         .replace(/^-+|-+$/g, "");
     };
 
+    // Slugify genre for consistent storage
+    const genreSlug = genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+
+    // Generate slug if not provided
     if (!url) {
       url = slugify(title, tmdb_id);
     }
 
-    // ✅ Check for existing movie by `url`
+    // Check for existing movie by `url`
     const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [url]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
 
-    // ✅ Fetch poster image from TMDB if not provided
+    // Fetch poster image from TMDB if not provided
     if (!image_url) {
       const fetchedImageUrl = await fetchTmdbPoster(title, year);
       if (fetchedImageUrl) {
@@ -141,13 +149,13 @@ export async function POST(req, { params }) {
       }
     }
 
-    // ✅ Insert new movie
+    // Insert new movie including genre
     await sql.query(
       `INSERT INTO ${genreSegment} 
-        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id)
+        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
        VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id]
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
     );
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
