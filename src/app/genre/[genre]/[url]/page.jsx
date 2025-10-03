@@ -325,11 +325,11 @@ const MoviePage = ({ params }) => {
 
           <div className="my-3">
             <Button variant={isLiked ? "danger" : "outline-danger"} onClick={handleLike} className="me-2">
-              {isLiked ? <HeartFill /> : <Heart />} {likedCount}
+              {isLiked ? <HeartFill /> : <Heart />}
             </Button>
 
             <Button variant={isWatched ? "primary" : "outline-primary"} onClick={handleWatchlist}>
-              {isWatched ? <TvFill /> : <Tv />} {watchCount}
+              {isWatched ? <TvFill /> : <Tv />} 
             </Button>
           </div>
 
