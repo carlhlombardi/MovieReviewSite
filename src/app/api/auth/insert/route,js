@@ -13,11 +13,7 @@ const slugify = (title, tmdb_id) => {
 
 // Slugify genre for table and URL use
 const slugifyGenre = (genre) => {
-  return genre
-    .toString()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '') // remove spaces/symbols
-    .trim();
+return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
 
 export async function POST(req) {

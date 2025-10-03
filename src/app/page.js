@@ -16,12 +16,7 @@ const slugify = (title, tmdb_id) => {
 
 // Slugify genre names for URLs and table routing
 const slugifyGenre = (genre) => {
-  return genre
-    .toString()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .replace(/_+/g, "_");
+return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
 
 const Home = () => {
