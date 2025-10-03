@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './GenrePage.module.css'; // ✅ Rename your CSS file to match
+import styles from './module.css'; // ✅ Rename your CSS file to match
 
 const GenrePage = () => {
   const { genre } = useParams(); // Get genre from dynamic route
