@@ -81,12 +81,10 @@ const GenrePage = () => {
   }
 
   return (
-    <Container className="py-4">
-      <Row>
-        <Col>
-        <h1>{genre} PAGE</h1>
-        </Col>
-      </Row>
+  <Container className="py-4">
+    <div className={styles.hero}>
+      <h1 className={styles.heroTitle}>{capitalize(genre)} Movies</h1>
+    </div>
 
       <Row className="mt-3 mb-4 text-center">
         <Col>

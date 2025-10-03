@@ -1,3 +1,24 @@
+.hero {
+  width: 100%;
+  padding: 80px 20px;
+  background: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.85), rgba(85, 85, 85, 0.85)),
+    url('../../../../public/images/background.png'); /* adjust path as needed */
+  background-size: cover;
+  background-position: center;
+  color: white;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
 .imagewrapper {
     position: relative;
     width: 100%;
