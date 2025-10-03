@@ -29,12 +29,11 @@ const Footer = () => (
           <h5 className="text-uppercase">Genres</h5>
           <ul className="list-unstyled">
             <li><Link href="/genre/action">Action</Link></li>
-            <li><Link href="/genre/classic">Classic</Link></li>
             <li><Link href="/genre/comedy">Comedy</Link></li>
             <li><Link href="/genre/documentary">Documentary</Link></li>
             <li><Link href="/genre/drama">Drama</Link></li>
             <li><Link href="/genre/horror">Horror</Link></li>
-            <li><Link href="/genre/sci-fi">Sci-Fi</Link></li>
+            <li><Link href="/genre/sciencefiction">Sci-Fi</Link></li>
           </ul>
         </Col>
       </Row>

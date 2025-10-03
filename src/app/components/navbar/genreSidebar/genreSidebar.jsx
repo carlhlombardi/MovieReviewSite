@@ -11,12 +11,11 @@ const GenreSidebar = ({ handleClose }) => {
 
   const genreLinks = [
     { title: "Action", path: "/genre/action" },
-    { title: "Classic", path: "/genre/classic" },
     { title: "Comedy", path: "/genre/comedy" },
     { title: "Documentaries", path: "/genre/documentary" },
     { title: "Drama", path: "/genre/drama" },
     { title: "Horror", path: "/genre/horror" },
-    { title: "Sci-Fi", path: "/genre/sci-fi" },
+    { title: "Sci-Fi", path: "/genre/sciencefiction" },
   ];
 
   const handleLinkClick = (path) => {
