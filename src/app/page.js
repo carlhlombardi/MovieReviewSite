@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
-// ✅ Slugify movie titles for URLs
+// Slugify movie titles for URLs
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
     .toString()
@@ -14,7 +14,7 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// ✅ Slugify genre names for URLs and table routing
+// Slugify genre names for URLs and table routing
 const slugifyGenre = (genre) => {
   return genre
     .toString()
@@ -23,7 +23,6 @@ const slugifyGenre = (genre) => {
     .replace(/^_+|_+$/g, "")
     .replace(/_+/g, "_");
 };
-
 
 const Home = () => {
   const router = useRouter();
@@ -38,7 +37,26 @@ const Home = () => {
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // ✅ Handle input + get suggestions
+  // Fetch horror + sci-fi data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const horrorRes = await fetch("/api/data/horrormovies");
+        const horrorResult = await horrorRes.json();
+        setHorrorData(horrorResult);
+
+        const sciFiRes = await fetch("/api/data/scifimovies");
+        const sciFiResult = await sciFiRes.json();
+        setSciFiData(sciFiResult);
+      } catch (error) {
+        console.error("Error fetching genre data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Handle input change and fetch suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -60,7 +78,7 @@ const Home = () => {
     }
   };
 
-  // ✅ Hide suggestions on outside click
+  // Hide suggestions on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -77,57 +95,57 @@ const Home = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Handle suggestion click: fetch details, insert, redirect
-const handleSuggestionClick = async (movie) => {
-  setSearchQuery(movie.title);
-  setShowSuggestions(false);
+  // Handle suggestion click: fetch details, insert, and redirect
+  const handleSuggestionClick = async (movie) => {
+    setSearchQuery(movie.title);
+    setShowSuggestions(false);
 
-  try {
-    const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
-    if (!res.ok) throw new Error("Failed to fetch movie details");
+    try {
+      const res = await fetch(`/api/auth/search?movieId=${movie.id}`);
+      if (!res.ok) throw new Error("Failed to fetch movie details");
 
-    const apiResponse = await res.json();
+      const apiResponse = await res.json();
+      const movieData = apiResponse.results?.[0];
 
-    const movieData = apiResponse.results?.[0];
-    console.log("movieData:", movieData);
+      if (!movieData || !movieData.title || !movieData.year) {
+        console.error("Missing title or year:", movieData);
+        alert("Movie data is incomplete.");
+        return;
+      }
 
-    if (!movieData || !movieData.title || !movieData.year) {
-      console.error("Missing title or year:", movieData);
-      alert("Movie data is incomplete.");
-      return;
+      const genreSlug = slugifyGenre(movieData.genre);
+      const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
+
+      const insertRes = await fetch(`/api/data/${genreSlug}movies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...movieData,
+          url: slugifiedUrl,
+        }),
+      });
+
+      const insertData = await insertRes.json();
+
+      if (!insertRes.ok) {
+        alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
+        return;
+      }
+
+      router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
+    } catch (error) {
+      console.error("Error in handleSuggestionClick:", error);
+      alert("An unexpected error occurred. Check the console.");
     }
+  };
 
-   const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
-
-const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    ...movieData,
-    url: slugifiedUrl,
-  }),
-});
-
-    const insertData = await insertRes.json();
-    if (!insertRes.ok) {
-      alert(`Failed to insert movie: ${insertData.error || insertData.message}`);
-      return;
-    }
-
-    router.push(`/genre/${slugifyGenre(movieData.genre)}/${slugifiedUrl}`);
-  } catch (error) {
-    console.error("Error in handleSuggestionClick:", error);
-    alert("An unexpected error occurred. Check the console.");
-  }
-};
-
-  // ✅ Manual search submit
+  // Manual search submit handler
   const handleSearch = (e) => {
     e.preventDefault();
     handleSearchDirect(searchQuery);
   };
 
-  // ✅ Search for movies directly by query
+  // Search for movies directly by query
   const handleSearchDirect = async (query) => {
     if (!query.trim()) return;
 
@@ -146,7 +164,7 @@ const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`
     <Container className="py-5">
       <h1 className="text-center mb-4">Movie Search</h1>
 
-      {/* 🔍 Search Input */}
+      {/* Search Input */}
       <Form onSubmit={handleSearch} className="mb-4 position-relative">
         <Form.Control
           type="text"
@@ -158,7 +176,7 @@ const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`
           ref={inputRef}
         />
 
-        {/* 💡 Suggestions Dropdown */}
+        {/* Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <ul
             ref={suggestionsRef}
@@ -179,7 +197,7 @@ const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`
         )}
       </Form>
 
-      {/* 📋 Optional Search Results if manual search is used */}
+      {/* Optional Search Results for manual search */}
       {searchResults.length > 0 && (
         <Row className="mb-4 justify-content-center">
           <h2 className="text-center">Search Results</h2>

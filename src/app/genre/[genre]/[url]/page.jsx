@@ -6,7 +6,7 @@ import Image from "next/image";
 import Comments from "@/app/components/footer/comments/comments";
 import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
 
-// === ✅ Helper Functions ===
+// === Helper Functions ===
 
 // Slugify genre for table name: e.g., "Science Fiction" → "sciencefiction"
 const slugifyGenre = (genre) => {
@@ -22,10 +22,10 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Generalized fetchData using genre table and movie URL
+// Fetch movie data from backend
 const fetchData = async (genre, url) => {
-    const genreSlug = slugifyGenre(genre);
-    const genreTable = `${genreSlug}movies`;
+  const genreSlug = slugifyGenre(genre);
+  const genreTable = `${genreSlug}movies`;
 
   try {
     const response = await fetch(
@@ -42,8 +42,10 @@ const fetchData = async (genre, url) => {
 // Check if user is logged in
 const checkUserLoggedIn = async () => {
   try {
+    if (typeof window === "undefined") return false; // SSR safety
     const token = localStorage.getItem("token");
     if (!token) return false;
+
     const response = await fetch("https://movie-review-site-seven.vercel.app/api/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -57,6 +59,7 @@ const checkUserLoggedIn = async () => {
 // Fetch like status for movie
 const fetchLikeStatus = async (url) => {
   try {
+    if (typeof window === "undefined") return { isLiked: false, likeCount: 0 };
     const token = localStorage.getItem("token");
     const response = await fetch(
       `https://movie-review-site-seven.vercel.app/api/auth/likes?url=${encodeURIComponent(url)}`,
@@ -79,6 +82,7 @@ const fetchLikeStatus = async (url) => {
 // Fetch watchlist status for movie
 const fetchWatchlistStatus = async (url) => {
   try {
+    if (typeof window === "undefined") return { isWatched: false, watchCount: 0 };
     const token = localStorage.getItem("token");
     const response = await fetch(
       `https://movie-review-site-seven.vercel.app/api/auth/watchlist?url=${encodeURIComponent(url)}`,
@@ -101,11 +105,14 @@ const fetchWatchlistStatus = async (url) => {
 // Toggle watchlist status
 const toggleWatchlist = async (url, action) => {
   try {
+    if (typeof window === "undefined") throw new Error("Window object is undefined");
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Token missing");
+
     const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/watchlist${
       action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
     }`;
+
     const response = await fetch(fetchUrl, {
       method: action === "add" ? "POST" : "DELETE",
       headers: {
@@ -114,6 +121,7 @@ const toggleWatchlist = async (url, action) => {
       },
       body: action === "add" ? JSON.stringify({ url }) : undefined,
     });
+
     if (!response.ok) throw new Error("Failed to toggle watchlist");
     return await response.json();
   } catch (error) {
@@ -125,10 +133,14 @@ const toggleWatchlist = async (url, action) => {
 // Toggle like status
 const toggleLike = async (url, action) => {
   try {
+    if (typeof window === "undefined") throw new Error("Window object is undefined");
     const token = localStorage.getItem("token");
+    if (!token) throw new Error("Token missing");
+
     const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/likes${
       action === "unlike" ? `?url=${encodeURIComponent(url)}` : ""
     }`;
+
     const response = await fetch(fetchUrl, {
       method: action === "like" ? "POST" : "DELETE",
       headers: {
@@ -137,6 +149,7 @@ const toggleLike = async (url, action) => {
       },
       body: action === "like" ? JSON.stringify({ url }) : undefined,
     });
+
     if (!response.ok) throw new Error("Like toggle failed");
     return await response.json();
   } catch (error) {
@@ -148,8 +161,8 @@ const toggleLike = async (url, action) => {
 const MoviePage = ({ params }) => {
   const { genre, url } = params;
 
-  const decodedUrl = decodeURIComponent(url);
-  const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
+  // Use the url param directly as slugified URL (already slugified)
+  const slugifiedUrl = url;
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,14 +175,15 @@ const MoviePage = ({ params }) => {
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
 
+  // Fetch user rating and average rating
   const fetchUserRating = useCallback(async () => {
     try {
+      if (typeof window === "undefined") return;
       const token = localStorage.getItem("token");
       if (!token) return;
+
       const response = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(
-          slugifiedUrl
-        )}`,
+        `https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(slugifiedUrl)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -177,7 +191,9 @@ const MoviePage = ({ params }) => {
           },
         }
       );
+
       if (!response.ok) throw new Error("User rating fetch failed");
+
       const ratingData = await response.json();
       setUserRating(Number(ratingData.userRating || 0));
       setAverageRating(Number(ratingData.averageRating || 0));
@@ -186,6 +202,7 @@ const MoviePage = ({ params }) => {
     }
   }, [slugifiedUrl]);
 
+  // Handle like button click
   const handleLike = async () => {
     const action = isLiked ? "unlike" : "like";
     const result = await toggleLike(slugifiedUrl, action);
@@ -195,6 +212,7 @@ const MoviePage = ({ params }) => {
     }
   };
 
+  // Handle watchlist button click
   const handleWatchlist = async () => {
     const action = isWatched ? "remove" : "add";
     const result = await toggleWatchlist(slugifiedUrl, action);
@@ -204,9 +222,13 @@ const MoviePage = ({ params }) => {
     }
   };
 
+  // Submit user rating
   const handleRatingSubmit = async () => {
     try {
+      if (typeof window === "undefined") return;
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("User not logged in");
+
       const response = await fetch(
         "https://movie-review-site-seven.vercel.app/api/auth/movie_ratings",
         {
@@ -218,6 +240,7 @@ const MoviePage = ({ params }) => {
           body: JSON.stringify({ url: slugifiedUrl, rating: userRating }),
         }
       );
+
       if (!response.ok) throw new Error("Rating submit failed");
       await fetchUserRating();
     } catch (error) {
@@ -225,29 +248,38 @@ const MoviePage = ({ params }) => {
     }
   };
 
+  // Initial data fetching
   useEffect(() => {
     const init = async () => {
       try {
-        const movieData = await fetchData(genre, slugifiedUrl);
-        if (movieData) setData(movieData);
+        setIsLoading(true);
 
+        // Fetch movie data
+        const movieData = await fetchData(genre, slugifiedUrl);
+        if (!movieData) throw new Error("Movie not found");
+        setData(movieData);
+
+        // Check login status
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
 
         if (loggedIn) {
+          // Fetch like status
           const likeStatus = await fetchLikeStatus(slugifiedUrl);
           setIsLiked(likeStatus.isLiked);
           setLikedCount(likeStatus.likeCount);
 
+          // Fetch watchlist status
           const watchStatus = await fetchWatchlistStatus(slugifiedUrl);
           setIsWatched(watchStatus.isWatched);
           setWatchCount(watchStatus.watchCount);
 
+          // Fetch ratings
           await fetchUserRating();
         }
       } catch (err) {
         console.error(err);
-        setError("Failed to load movie");
+        setError(err.message || "Failed to load movie");
       } finally {
         setIsLoading(false);
       }
@@ -256,9 +288,9 @@ const MoviePage = ({ params }) => {
     init();
   }, [genre, slugifiedUrl, fetchUserRating]);
 
-  if (isLoading) return <Spinner animation="border" />;
-  if (error) return <Alert variant="danger">{error}</Alert>;
-  if (!data) return <Alert variant="warning">Movie not found</Alert>;
+  if (isLoading) return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
+  if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
+  if (!data) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
 
   const {
     film,
@@ -274,69 +306,64 @@ const MoviePage = ({ params }) => {
   } = data;
 
   return (
-    <Container>
+    <Container className="my-5">
       <Row>
-        <Col xs={12} md={6} className="text-center order-md-2 mt-5 mb-3">
+        <Col xs={12} md={6} className="text-center order-md-2 mb-3">
           {image_url ? (
             <Image src={image_url} alt={film} width={300} height={450} />
           ) : (
-            <div>No image</div>
+            <div>No image available</div>
           )}
         </Col>
-        <Col xs={12} md={6} className="text-center m-auto order-md-1">
-          <h1>{film}</h1>
-          {isLoggedIn && (
-            <>
-              <Button variant="link" onClick={handleLike}>
-                {isLiked ? <HeartFill color="red" /> : <Heart color="gray" />}
-              </Button>
-              <Button variant="link" onClick={handleWatchlist}>
-                {isWatched ? <TvFill color="green" /> : <Tv color="gray" />}
-              </Button>
-            </>
-          )}
-          <h5>Director: {director}</h5>
-          <h5>Screenwriters: {screenwriters}</h5>
-          <h5>Producer(s): {producer}</h5>
-          <h5>Studio: {studio}</h5>
-          <h5>Year: {year}</h5>
-          <h6>Run Time: {run_time} Minutes</h6>
-        </Col>
-        <Col xs={12} className="text-center mt-4">
-          <h3>Review</h3>
-          <p>{review}</p>
-          <h4>My Rating: {my_rating} Stars</h4>
-        </Col>
-      </Row>
+        <Col xs={12} md={6} className="order-md-1">
+          <h1>{film} ({year})</h1>
+          <p><strong>Studio:</strong> {studio}</p>
+          <p><strong>Director:</strong> {director}</p>
+          <p><strong>Screenwriters:</strong> {screenwriters}</p>
+          <p><strong>Producer:</strong> {producer}</p>
+          <p><strong>Runtime:</strong> {run_time} minutes</p>
 
-      <Row className="mt-4">
-        <Col>
+          <div className="my-3">
+            <Button variant={isLiked ? "danger" : "outline-danger"} onClick={handleLike} className="me-2">
+              {isLiked ? <HeartFill /> : <Heart />} {likedCount}
+            </Button>
+
+            <Button variant={isWatched ? "primary" : "outline-primary"} onClick={handleWatchlist}>
+              {isWatched ? <TvFill /> : <Tv />} {watchCount}
+            </Button>
+          </div>
+
           {isLoggedIn && (
-            <div className="text-center p-4 border rounded shadow-sm">
-              <h2>Rate This Film</h2>
+            <div className="my-3">
+              <label htmlFor="ratingInput" className="form-label">Your Rating (1-5):</label>
               <input
-                type="range"
-                min="0"
-                max="100"
+                id="ratingInput"
+                type="number"
+                min={1}
+                max={5}
                 value={userRating}
                 onChange={(e) => setUserRating(Number(e.target.value))}
-                className="form-range mb-3"
+                className="form-control mb-2"
               />
-              <Button onClick={handleRatingSubmit}>Submit Rating</Button>
-              <h5>Average Rating: {averageRating.toFixed(2)}%</h5>
-              <h5>Your Rating: {userRating.toFixed(2)}%</h5>
+              <Button onClick={handleRatingSubmit} disabled={userRating < 1 || userRating > 5}>
+                Submit Rating
+              </Button>
+              <p className="mt-2">Average Rating: {averageRating.toFixed(2)}</p>
+            </div>
+          )}
+
+          {review && (
+            <div className="mt-4">
+              <h4>Review:</h4>
+              <p>{review}</p>
             </div>
           )}
         </Col>
       </Row>
 
       <Row>
-        <Col className="text-center mt-5">
-          {isLoggedIn ? (
-            <Comments movieUrl={slugifiedUrl} />
-          ) : (
-            <Alert variant="info">Please log in to like, watch, rate, or comment.</Alert>
-          )}
+        <Col xs={12} className="mt-5">
+          <Comments genre={genre} url={slugifiedUrl} />
         </Col>
       </Row>
     </Container>
