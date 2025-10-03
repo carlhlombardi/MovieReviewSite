@@ -39,7 +39,6 @@ const Footer = () => (
             <li><Link href="/genre/fantasy">Fantasy</Link></li>
             <li><Link href="/genre/history">History</Link></li>
             <li><Link href="/genre/horror">Horror</Link></li>
-            <li><Link href="/genre/musical">Musical</Link></li>
             <li><Link href="/genre/music">Music</Link></li>
             <li><Link href="/genre/mystery">Mystery</Link></li>
             <li><Link href="/genre/romance">Romance</Link></li>
