@@ -84,14 +84,7 @@ const GenrePage = () => {
     <Container className="py-4">
       <Row>
         <Col>
-          <Image
-            src={`/images/hero/${capitalize(genre)}.jpg`}
-            alt={`${capitalize(genre)} Hero`}
-            width={1325}
-            height={275}
-            className="img-fluid"
-            priority
-          />
+        <h1>{genre} PAGE</>
         </Col>
       </Row>
 
