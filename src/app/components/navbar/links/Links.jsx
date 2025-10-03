@@ -21,12 +21,24 @@ const Links = ({ handleClose }) => {
 
   const genreLinks = [
     { title: "Action", path: "/genre/action" },
-    { title: "Classic", path: "/genre/classic" },
+    { title: "Adventure", path: "/genre/adventure" },
+    { title: "Animation", path: "/genre/animation" },
     { title: "Comedy", path: "/genre/comedy" },
-    { title: "Documentaries", path: "/genre/documentary" },
+    { title: "Crime", path: "/genre/crime" },
+    { title: "Documentary", path: "/genre/documentary" },
     { title: "Drama", path: "/genre/drama" },
+    { title: "Family", path: "/genre/family" },
+    { title: "Fantasy", path: "/genre/fantasy" },
+    { title: "History", path: "/genre/history" },
     { title: "Horror", path: "/genre/horror" },
-    { title: "Sci-Fi", path: "/genre/sci-fi" },
+    { title: "Music", path: "/genre/music" },
+    { title: "Mystery", path: "/genre/mystery" },
+    { title: "Romance", path: "/genre/romance" },
+    { title: "Science Fiction", path: "/genre/sciencefiction" },
+    { title: "Thriller", path: "/genre/thriller" },
+    { title: "Made For TV Movie", path: "/genre/tvmovie" },
+    { title: "War", path: "/genre/war" },
+    { title: "Western", path: "/genre/western" }
   ];
 
   useEffect(() => {
