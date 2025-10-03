@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Container, Row, Col, Form } from "react-bootstrap";
 
-// ✅ Slugify function to clean up URLs (also used on MoviePage)
+// ✅ Slugify movie titles for URLs
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
     .toString()
@@ -12,6 +12,16 @@ const slugify = (title, tmdb_id) => {
     .replace(/'/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+};
+
+// ✅ Slugify genre names for URLs and table routing
+const slugifyGenre = (genre) => {
+  return genre
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
 };
 
 
@@ -27,25 +37,6 @@ const Home = () => {
 
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
-
-  // ✅ Fetch horror + sci-fi data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const horrorRes = await fetch("/api/data/horrormovies");
-        const horrorResult = await horrorRes.json();
-        setHorrorData(horrorResult);
-
-        const sciFiRes = await fetch("/api/data/scifimovies");
-        const sciFiResult = await sciFiRes.json();
-        setSciFiData(sciFiResult);
-      } catch (error) {
-        console.error("Error fetching genre data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   // ✅ Handle input + get suggestions
   const handleInputChange = async (e) => {
@@ -106,7 +97,7 @@ const handleSuggestionClick = async (movie) => {
       return;
     }
 
-   const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
+   const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
 
 const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`, {
   method: "POST",
@@ -123,7 +114,7 @@ const insertRes = await fetch(`/api/data/${movieData.genre.toLowerCase()}movies`
       return;
     }
 
-    router.push(`/genre/${movieData.genre.toLowerCase()}/${slugifiedUrl}`);
+    router.push(`/genre/${slugifyGenre(movieData.genre)}/${slugifiedUrl}`);
   } catch (error) {
     console.error("Error in handleSuggestionClick:", error);
     alert("An unexpected error occurred. Check the console.");

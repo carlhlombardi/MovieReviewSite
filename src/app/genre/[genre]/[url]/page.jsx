@@ -8,21 +8,27 @@ import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
 
 // === ✅ Helper Functions ===
 
-// Slugify function to clean up URLs
-const slugify = (title, year) => {
-  return `${title}-${year}`
-    .toString()
+// Slugify genre for table name: e.g., "Science Fiction" → "sciencefiction"
+const slugifyGenre = (genre) => {
+  return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+};
+
+// Slugify movie title + tmdb_id: e.g., "Inception", 12345 → "inception-12345"
+const slugify = (title, tmdb_id) => {
+  return `${title}-${tmdb_id}`
     .toLowerCase()
     .replace(/'/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 };
 
-// Generalized fetchData
+// Generalized fetchData using genre table and movie URL
 const fetchData = async (genre, url) => {
+  const genreTable = `${slugifyGenre(genre)}movies`;
+
   try {
     const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/data/${genre}movies?url=${encodeURIComponent(url)}`
+      `https://movie-review-site-seven.vercel.app/api/data/${genreTable}?url=${encodeURIComponent(url)}`
     );
     if (!response.ok) throw new Error("Failed to fetch movie data");
     return await response.json();
@@ -141,13 +147,9 @@ const toggleLike = async (url, action) => {
 const MoviePage = ({ params }) => {
   const { genre, url } = params;
 
-  // decode URL for slug
   const decodedUrl = decodeURIComponent(url);
-
-  // NOTE: You don’t have title and year here, so slugify using decodedUrl directly
-  // If you want title/year, you can extract them after fetching data
-  const slugifiedUrl = decodedUrl; // use decodedUrl directly for fetching
-
+  const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
+  
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");

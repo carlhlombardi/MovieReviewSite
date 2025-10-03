@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-// Slugify using TMDB ID for uniqueness
+// Slugify movie title and TMDB ID for uniqueness
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
     .toString()
@@ -9,6 +9,15 @@ const slugify = (title, tmdb_id) => {
     .replace(/'/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+};
+
+// Slugify genre for table and URL use
+const slugifyGenre = (genre) => {
+  return genre
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '') // remove spaces/symbols
+    .trim();
 };
 
 export async function POST(req) {
@@ -52,8 +61,9 @@ export async function POST(req) {
       );
     }
 
-    // Sanitize and construct genre table name
-    const genreTable = `${genre.toLowerCase().replace(/\s+/g, '')}movies`;
+    // Slugify genre for table and URL
+    const genreSlug = slugifyGenre(genre);
+    const genreTable = `${genreSlug}movies`;
 
     // Validate genreTable name (allow only a-z, 0-9, _)
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
@@ -75,8 +85,8 @@ export async function POST(req) {
       );
     }
 
-    // Generate slug from title and tmdb_id
-    const slugifiedUrl = slugify(title, sanitizedTmdbId);
+    // Generate slugified URL: genre/title-tmdbid
+    const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
 
     // Check for duplicates
     const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
