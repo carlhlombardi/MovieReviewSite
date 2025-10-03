@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-// Helper: Slugify movie title and TMDB ID for unique URLs
 const slugify = (title, tmdbId) => {
   return `${title}-${tmdbId}`
     .toString()
@@ -11,37 +10,35 @@ const slugify = (title, tmdbId) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Helper: Slugify genre for table name and URLs
-const slugifyGenre = (genre) => {
-  return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
-};
+const slugifyGenre = (genre) =>
+  genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log("Incoming POST data:", body);
 
     const {
-      title,
+      film, // instead of title
       year,
       tmdb_id,
       director = "",
       screenwriters = "",
-      producers = "",
-      studios = "",
+      producer = "", // singular
+      studio = "",   // singular
       run_time = null,
+      my_rating = null,
+      review = "",
+      image_url = "",
       genre,
     } = body;
 
-    // Validate required fields
-    if (!title || !genre || !year || !tmdb_id) {
+    if (!film || !genre || !year || !tmdb_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, genre, year, or tmdb_id' },
+        { error: 'Missing required fields: film, genre, year, tmdb_id' },
         { status: 400 }
       );
     }
 
-    // Sanitize and validate numeric fields
     const sanitizedYear = Number(year);
     const sanitizedTmdbId = Number(tmdb_id);
     const sanitizedRunTime = run_time !== null ? Number(run_time) : null;
@@ -57,11 +54,9 @@ export async function POST(req) {
       );
     }
 
-    // Prepare genre slug and table name
     const genreSlug = slugifyGenre(genre);
     const genreTable = `${genreSlug}movies`;
 
-    // Validate genre table name format (only a-z, 0-9, _)
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
       return NextResponse.json(
         { error: 'Invalid genre table name' },
@@ -69,33 +64,22 @@ export async function POST(req) {
       );
     }
 
-    // Verify genre table exists
     try {
       await sql.query(`SELECT 1 FROM ${genreTable} LIMIT 1;`);
-    } catch (err) {
-      console.error("Genre table check error:", err);
+    } catch {
       return NextResponse.json(
         { error: `Genre table '${genreTable}' does not exist.` },
         { status: 400 }
       );
     }
 
-    // Generate slugified URL path
-    const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
-    
-    // Trim and validate genre string to store
+    const slugifiedUrl = `${genreSlug}/${slugify(film, sanitizedTmdbId)}`;
     const genreToStore = genre.trim();
-    if (genreToStore.length === 0) {
-      return NextResponse.json(
-        { error: 'Genre cannot be an empty string' },
-        { status: 400 }
-      );
-    }
 
-    // Check if the movie already exists by URL
+    // check if exists by tmdb_id
     const existing = await sql.query(
-      `SELECT 1 FROM ${genreTable} WHERE url = $1 LIMIT 1;`,
-      [slugifiedUrl]
+      `SELECT 1 FROM ${genreTable} WHERE tmdb_id = $1 LIMIT 1;`,
+      [sanitizedTmdbId]
     );
 
     if (existing.rows.length > 0) {
@@ -105,24 +89,27 @@ export async function POST(req) {
       );
     }
 
-    // Insert the new movie record
     const insertQuery = `
       INSERT INTO ${genreTable} 
-        (title, year, studios, director, screenwriters, producers, run_time, url, genre)
+        (film, year, studio, director, screenwriters, producer, run_time, my_rating, review, url, image_url, genre, tmdb_id)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     `;
 
     await sql.query(insertQuery, [
-      title,
+      film,
       sanitizedYear,
-      studios,
+      studio,
       director,
       screenwriters,
-      producers,
+      producer,
       sanitizedRunTime,
+      my_rating,
+      review,
       slugifiedUrl,
-      genreToStore
+      image_url,
+      genreToStore,
+      sanitizedTmdbId
     ]);
 
     return NextResponse.json(
