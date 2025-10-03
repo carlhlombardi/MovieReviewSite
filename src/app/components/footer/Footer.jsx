@@ -29,11 +29,25 @@ const Footer = () => (
           <h5 className="text-uppercase">Genres</h5>
           <ul className="list-unstyled">
             <li><Link href="/genre/action">Action</Link></li>
+            <li><Link href="/genre/adventure">Adventure</Link></li>
+            <li><Link href="/genre/animation">Animation</Link></li>
             <li><Link href="/genre/comedy">Comedy</Link></li>
+            <li><Link href="/genre/crime">Crime</Link></li>
             <li><Link href="/genre/documentary">Documentary</Link></li>
             <li><Link href="/genre/drama">Drama</Link></li>
+            <li><Link href="/genre/family">Family</Link></li>
+            <li><Link href="/genre/fantasy">Fantasy</Link></li>
+            <li><Link href="/genre/history">History</Link></li>
             <li><Link href="/genre/horror">Horror</Link></li>
-            <li><Link href="/genre/sciencefiction">Sci-Fi</Link></li>
+            <li><Link href="/genre/musical">Musical</Link></li>
+            <li><Link href="/genre/music">Music</Link></li>
+            <li><Link href="/genre/mystery">Mystery</Link></li>
+            <li><Link href="/genre/romance">Romance</Link></li>
+            <li><Link href="/genre/sciencefiction">Science Fiction</Link></li>
+            <li><Link href="/genre/thriller">Thriller</Link></li>
+            <li><Link href="/genre/tvmovie">Made For TV Movies</Link></li>
+            <li><Link href="/genre/war">War</Link></li>
+            <li><Link href="/genre/western">Western</Link></li>
           </ul>
         </Col>
       </Row>
