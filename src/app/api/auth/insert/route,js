@@ -1,127 +1,80 @@
-import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+export async function POST(req, { params }) {
+  const genreSegment = params.genre.toLowerCase();
 
-const slugify = (title, tmdbId) => {
-  return `${title}-${tmdbId}`
-    .toString()
-    .toLowerCase()
-    .replace(/'/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-};
+  if (!allowedTables.includes(genreSegment)) {
+    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
+  }
 
-const slugifyGenre = (genre) =>
-  genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
-
-export async function POST(req) {
   try {
-    const body = await req.json();
-
-    const {
-      film, // instead of title
+    let {
+      title,
       year,
-      tmdb_id,
       director = "",
       screenwriters = "",
-      producer = "", // singular
-      studio = "",   // singular
+      producers = "",
+      studios = "",
       run_time = null,
-      my_rating = null,
-      review = "",
-      image_url = "",
-      genre,
-    } = body;
-
-    if (!film || !genre || !year || !tmdb_id) {
-      return NextResponse.json(
-        { error: 'Missing required fields: film, genre, year, tmdb_id' },
-        { status: 400 }
-      );
-    }
-
-    const sanitizedYear = Number(year);
-    const sanitizedTmdbId = Number(tmdb_id);
-    const sanitizedRunTime = run_time !== null ? Number(run_time) : null;
-
-    if (
-      isNaN(sanitizedYear) ||
-      isNaN(sanitizedTmdbId) ||
-      (run_time !== null && isNaN(sanitizedRunTime))
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid number for year, tmdb_id, or run_time' },
-        { status: 400 }
-      );
-    }
-
-    const genreSlug = slugifyGenre(genre);
-    const genreTable = `${genreSlug}movies`;
-
-    if (!/^[a-z0-9_]+$/.test(genreTable)) {
-      return NextResponse.json(
-        { error: 'Invalid genre table name' },
-        { status: 400 }
-      );
-    }
-
-    try {
-      await sql.query(`SELECT 1 FROM ${genreTable} LIMIT 1;`);
-    } catch {
-      return NextResponse.json(
-        { error: `Genre table '${genreTable}' does not exist.` },
-        { status: 400 }
-      );
-    }
-
-    const slugifiedUrl = `${genreSlug}/${slugify(film, sanitizedTmdbId)}`;
-    const genreToStore = genre.trim();
-
-    // check if exists by tmdb_id
-    const existing = await sql.query(
-      `SELECT 1 FROM ${genreTable} WHERE tmdb_id = $1 LIMIT 1;`,
-      [sanitizedTmdbId]
-    );
-
-    if (existing.rows.length > 0) {
-      return NextResponse.json(
-        { message: 'Movie already exists' },
-        { status: 200 }
-      );
-    }
-
-    const insertQuery = `
-      INSERT INTO ${genreTable} 
-        (film, year, studio, director, screenwriters, producer, run_time, my_rating, review, url, image_url, genre, tmdb_id)
-      VALUES 
-        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-    `;
-
-    await sql.query(insertQuery, [
-      film,
-      sanitizedYear,
-      studio,
-      director,
-      screenwriters,
-      producer,
-      sanitizedRunTime,
-      my_rating,
-      review,
-      slugifiedUrl,
+      url,
       image_url,
-      genreToStore,
-      sanitizedTmdbId
-    ]);
+      tmdb_id,
+      genre,
+    } = await req.json();
 
-    return NextResponse.json(
-      { message: 'Movie inserted successfully' },
-      { status: 201 }
+    if (!title || !year || !tmdb_id || !genre) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, year, tmdb_id, or genre' },
+        { status: 400 }
+      );
+    }
+
+    // Normalize studios
+    if (Array.isArray(studios)) {
+      studios = studios[0];
+    } else if (typeof studios === 'string') {
+      studios = studios.split(',')[0].trim();
+    }
+
+    // Normalize producers
+    if (Array.isArray(producers)) {
+      producers = producers[0];
+    } else if (typeof producers === 'string') {
+      producers = producers.split(',')[0].trim();
+    }
+
+    // Slugify URL
+    const slugify = (title, tmdb_id) =>
+      `${title}-${tmdb_id}`.toLowerCase()
+        .replace(/'/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    const genreSlug = genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+
+    if (!url) {
+      url = slugify(title, tmdb_id);
+    }
+
+    const existing = await sql.query(`SELECT 1 FROM ${genreSegment} WHERE url = $1`, [url]);
+    if (existing.rows.length > 0) {
+      return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
+    }
+
+    if (!image_url) {
+      const fetchedImageUrl = await fetchTmdbPoster(title, year);
+      if (fetchedImageUrl) image_url = fetchedImageUrl;
+    }
+
+    await sql.query(
+      `INSERT INTO ${genreSegment} 
+        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
+       VALUES 
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
     );
 
+    return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
   } catch (error) {
     console.error('Insert failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to insert movie' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
