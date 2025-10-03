@@ -134,10 +134,6 @@ const GenrePage = () => {
                       height={300}
                       className="img-fluid rounded"
                     />
-                    <div className="text-center mt-2">
-                      <strong>{item.title ?? item.film}</strong>{" "}
-                      ({item.year})
-                    </div>
                   </div>
                 </Link>
               </Col>
