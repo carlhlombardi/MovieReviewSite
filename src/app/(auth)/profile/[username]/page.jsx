@@ -8,7 +8,6 @@ import Comments from "@/app/components/footer/comments/comments";
 
 // Slugify genre same as your movie page / insert logic
 const slugifyGenre = (genre) => {
-  if (!genre) return "unknown";
   return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
 
