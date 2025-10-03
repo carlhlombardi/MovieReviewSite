@@ -84,7 +84,7 @@ const GenrePage = () => {
     <Container className="py-4">
       <Row>
         <Col>
-        <h1>{genre} PAGE</>
+        <h1>{genre} PAGE</h1>
         </Col>
       </Row>
 
