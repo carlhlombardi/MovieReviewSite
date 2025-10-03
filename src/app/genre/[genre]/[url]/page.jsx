@@ -24,7 +24,8 @@ const slugify = (title, tmdb_id) => {
 
 // Generalized fetchData using genre table and movie URL
 const fetchData = async (genre, url) => {
-  const genreTable = `${slugifyGenre(genre)}movies`;
+    const genreSlug = slugifyGenre(genre);
+    const genreTable = `${genreSlug}movies`;
 
   try {
     const response = await fetch(
@@ -149,7 +150,7 @@ const MoviePage = ({ params }) => {
 
   const decodedUrl = decodeURIComponent(url);
   const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
-  
+
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
