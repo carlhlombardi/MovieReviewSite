@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
-// Slugify movie title and TMDB ID for uniqueness
-const slugify = (title, tmdb_id) => {
-  return `${title}-${tmdb_id}`
+// Helper: Slugify movie title and TMDB ID for unique URLs
+const slugify = (title, tmdbId) => {
+  return `${title}-${tmdbId}`
     .toString()
     .toLowerCase()
     .replace(/'/g, "")
@@ -11,9 +11,9 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Slugify genre for table and URL use
+// Helper: Slugify genre for table name and URLs
 const slugifyGenre = (genre) => {
-return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+  return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
 
 export async function POST(req) {
@@ -33,15 +33,15 @@ export async function POST(req) {
       genre,
     } = body;
 
-    // Validate required fields presence
+    // Validate required fields
     if (!title || !genre || !year || !tmdb_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, genre, year or tmdb_id' },
+        { error: 'Missing required fields: title, genre, year, or tmdb_id' },
         { status: 400 }
       );
     }
 
-    // Convert year and tmdb_id to numbers explicitly
+    // Sanitize and validate numeric fields
     const sanitizedYear = Number(year);
     const sanitizedTmdbId = Number(tmdb_id);
     const sanitizedRunTime = run_time !== null ? Number(run_time) : null;
@@ -57,11 +57,11 @@ export async function POST(req) {
       );
     }
 
-    // Slugify genre for table and URL
+    // Prepare genre slug and table name
     const genreSlug = slugifyGenre(genre);
     const genreTable = `${genreSlug}movies`;
 
-    // Validate genreTable name (allow only a-z, 0-9, _)
+    // Validate genre table name format (only a-z, 0-9, _)
     if (!/^[a-z0-9_]+$/.test(genreTable)) {
       return NextResponse.json(
         { error: 'Invalid genre table name' },
@@ -69,10 +69,9 @@ export async function POST(req) {
       );
     }
 
-    // Check if genre table exists
+    // Verify genre table exists
     try {
-      const checkTableExistsQuery = `SELECT 1 FROM ${genreTable} LIMIT 1;`;
-      await sql.query(checkTableExistsQuery);
+      await sql.query(`SELECT 1 FROM ${genreTable} LIMIT 1;`);
     } catch (err) {
       console.error("Genre table check error:", err);
       return NextResponse.json(
@@ -81,13 +80,23 @@ export async function POST(req) {
       );
     }
 
-    // Generate slugified URL: genre/title-tmdbid
+    // Generate slugified URL path
     const slugifiedUrl = `${genreSlug}/${slugify(title, sanitizedTmdbId)}`;
+    
+    // Trim and validate genre string to store
     const genreToStore = genre.trim();
+    if (genreToStore.length === 0) {
+      return NextResponse.json(
+        { error: 'Genre cannot be an empty string' },
+        { status: 400 }
+      );
+    }
 
-    // Check for duplicates
-    const existingMoviesQuery = `SELECT * FROM ${genreTable} WHERE url = $1;`;
-    const existing = await sql.query(existingMoviesQuery, [slugifiedUrl]);
+    // Check if the movie already exists by URL
+    const existing = await sql.query(
+      `SELECT 1 FROM ${genreTable} WHERE url = $1 LIMIT 1;`,
+      [slugifiedUrl]
+    );
 
     if (existing.rows.length > 0) {
       return NextResponse.json(
@@ -96,13 +105,14 @@ export async function POST(req) {
       );
     }
 
-    // Insert new movie
+    // Insert the new movie record
     const insertQuery = `
       INSERT INTO ${genreTable} 
         (title, year, studios, director, screenwriters, producers, run_time, url, genre)
       VALUES 
         ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `;
+
     await sql.query(insertQuery, [
       title,
       sanitizedYear,
