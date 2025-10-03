@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './GenrePage.module.css'; // make sure this matches actual file
+import styles from './module.css'; // make sure this matches actual file
 
 const GenrePage = () => {
   const { genre } = useParams();
