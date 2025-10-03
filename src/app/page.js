@@ -192,24 +192,6 @@ const Home = () => {
         )}
       </Form>
 
-      {/* Optional Search Results for manual search */}
-      {searchResults.length > 0 && (
-        <Row className="mb-4 justify-content-center">
-          <h2 className="text-center">Search Results</h2>
-          {searchResults.map((movie, index) => (
-            <Col key={index} xs={12} md={8} lg={6}>
-              <div className="p-3 border rounded mb-3">
-                <p><strong>Title:</strong> {movie.title}</p>
-                <p><strong>Year:</strong> {movie.year}</p>
-                <p><strong>Director:</strong> {movie.director}</p>
-                <p><strong>Screenwriters:</strong> {movie.screenwriters}</p>
-                <p><strong>Producers:</strong> {movie.producers}</p>
-                <p><strong>Studio:</strong> {movie.studios}</p>
-              </div>
-            </Col>
-          ))}
-        </Row>
-      )}
     </Container>
   );
 };
