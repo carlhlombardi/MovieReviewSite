@@ -316,7 +316,7 @@ const MoviePage = ({ params }) => {
           )}
         </Col>
         <Col xs={12} md={6} className="order-md-1">
-          <h2 style = "text-center">{film} ({year})</h2>
+          <h2 className="text-center">{film} ({year})</h2>
           <p><strong>Studio:</strong> {studio}</p>
           <p><strong>Director:</strong> {director}</p>
           <p><strong>Screenwriters:</strong> {screenwriters}</p>
