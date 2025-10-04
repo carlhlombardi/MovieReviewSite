@@ -1,20 +1,22 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
+// === GET: total watch count + user watch status ===
 export async function GET(request) {
   try {
     const urlObj = new URL(request.url);
     const movieUrl = urlObj.searchParams.get('url');
-
     if (!movieUrl) {
       return new Response(JSON.stringify({ message: 'Movie URL is required' }), { status: 400 });
     }
 
-    // Total watch count using dynamic function
-    const watchcountResult = await sql`SELECT get_movie_watchcount(${movieUrl}) AS watchcount;`;
+    // total watch count across all movies (via function)
+    const watchcountResult = await sql`
+      SELECT get_movie_watchcount(${movieUrl}) AS watchcount;
+    `;
     const watchcount = parseInt(watchcountResult.rows[0].watchcount ?? 0, 10);
 
-    // Check auth
+    // auth (optional)
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     if (!token) {
@@ -30,7 +32,7 @@ export async function GET(request) {
       return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
     }
 
-    // User’s watch status
+    // user’s watch status
     const iswatchedResult = await sql`
       SELECT iswatched
       FROM wantedforcollection
@@ -40,11 +42,12 @@ export async function GET(request) {
 
     return new Response(JSON.stringify({ watchcount, iswatched }), { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error('GET watch error:', error);
     return new Response(JSON.stringify({ message: 'Failed to fetch watch status' }), { status: 500 });
   }
 }
 
+// === POST: add/update movie to wantedforcollection ===
 export async function POST(request) {
   try {
     const { url } = await request.json();
@@ -67,21 +70,17 @@ export async function POST(request) {
       return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
     }
 
-    // Dynamically fetch movie from any table
+    // fetch movie details from view (function already created)
     const movieResult = await sql`SELECT * FROM get_movie_details(${url});`;
     const movie = movieResult.rows[0];
     if (!movie) {
       return new Response(JSON.stringify({ message: 'Movie not found' }), { status: 404 });
     }
 
-    const title = movie.film;
-    const genre = movie.genre;
-    const image_url = movie.image_url;
-
-    // Insert or update wantedforcollection
+    // insert/update wantedforcollection
     await sql`
       INSERT INTO wantedforcollection (username, url, title, genre, iswatched, watchcount, image_url)
-      VALUES (${user.username}, ${url}, ${title}, ${genre}, TRUE, 1, ${image_url})
+      VALUES (${user.username}, ${url}, ${movie.film}, ${movie.genre}, TRUE, 1, ${movie.image_url})
       ON CONFLICT (username, url) DO UPDATE 
         SET iswatched = EXCLUDED.iswatched,
             watchcount = CASE 
@@ -91,13 +90,14 @@ export async function POST(request) {
             END;
     `;
 
-    return new Response(JSON.stringify({ message: 'Item watched' }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Item marked as watched' }), { status: 201 });
   } catch (error) {
     console.error('Add watch error:', error);
     return new Response(JSON.stringify({ message: 'Failed to add watch' }), { status: 500 });
   }
 }
 
+// === DELETE: mark movie as not watched ===
 export async function DELETE(request) {
   try {
     const urlObj = new URL(request.url);

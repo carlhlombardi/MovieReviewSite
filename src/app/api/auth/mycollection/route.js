@@ -1,9 +1,7 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-/**
- * === GET: total likes + user like status ===
- */
+// === GET: total likes + user like status ===
 export async function GET(request) {
   try {
     const urlObj = new URL(request.url);
@@ -15,26 +13,18 @@ export async function GET(request) {
       });
     }
 
-    // total like count across all genre tables
+    // total like count from the unified view
     const likecountResult = await sql`
       SELECT COUNT(*) AS likecount
-      FROM (
-        SELECT url, image_url FROM horrormovies
-        UNION ALL SELECT url, image_url FROM scifimovies
-        UNION ALL SELECT url, image_url FROM comedymovies
-        UNION ALL SELECT url, image_url FROM actionmovies
-        UNION ALL SELECT url, image_url FROM documentarymovies
-        UNION ALL SELECT url, image_url FROM classicmovies
-        UNION ALL SELECT url, image_url FROM dramamovies
-      ) AS all_movies
-      JOIN mycollection ON all_movies.url = mycollection.url
+      FROM everymovie
+      JOIN mycollection ON everymovie.url = mycollection.url
       WHERE mycollection.url = ${movieUrl}
         AND mycollection.image_url IS NOT NULL
         AND mycollection.isliked = TRUE;
     `;
     const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
-    // auth check
+    // auth
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.split(' ')[1];
     if (!token) {
@@ -65,16 +55,14 @@ export async function GET(request) {
       status: 200,
     });
   } catch (error) {
-    console.error('GET error:', error);
+    console.error(error);
     return new Response(JSON.stringify({ message: 'Failed to fetch likes' }), {
       status: 500,
     });
   }
 }
 
-/**
- * === POST: add or toggle movie in mycollection ===
- */
+// === POST: add movie to mycollection ===
 export async function POST(request) {
   try {
     const { url } = await request.json();
@@ -86,7 +74,6 @@ export async function POST(request) {
         status: 401,
       });
     }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
@@ -98,15 +85,9 @@ export async function POST(request) {
       });
     }
 
-    // union all genre tables to get film data
+    // get movie details from unified view
     const movieResult = await sql`
-      SELECT film, genre, image_url FROM horrormovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM scifimovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM comedymovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM actionmovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM documentarymovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM classicmovies WHERE url = ${url}
-      UNION ALL SELECT film, genre, image_url FROM dramamovies WHERE url = ${url};
+      SELECT film, genre, image_url FROM everymovie WHERE url = ${url};
     `;
     const movie = movieResult.rows[0];
     if (!movie) {
@@ -115,8 +96,7 @@ export async function POST(request) {
       });
     }
 
-    // insert or update
-    await sql`
+    const postResult = await sql`
       INSERT INTO mycollection (username, url, title, genre, isliked, likedcount, image_url)
       VALUES (${user.username}, ${url}, ${movie.film}, ${movie.genre}, TRUE, 1, ${movie.image_url})
       ON CONFLICT (username, url) DO UPDATE
@@ -125,22 +105,21 @@ export async function POST(request) {
             WHEN mycollection.isliked = TRUE AND EXCLUDED.isliked = FALSE THEN mycollection.likedcount - 1
             WHEN mycollection.isliked = FALSE AND EXCLUDED.isliked = TRUE THEN mycollection.likedcount + 1
             ELSE mycollection.likedcount END
+      RETURNING username, url, title, genre, likedcount, image_url;
     `;
 
     return new Response(JSON.stringify({ message: 'Item liked' }), {
       status: 201,
     });
   } catch (error) {
-    console.error('POST error:', error);
+    console.error('Add like error:', error);
     return new Response(JSON.stringify({ message: 'Failed to add like' }), {
       status: 500,
     });
   }
 }
 
-/**
- * === DELETE: remove or unlike from mycollection ===
- */
+// === DELETE: remove movie from mycollection ===
 export async function DELETE(request) {
   try {
     const urlObj = new URL(request.url);
@@ -182,7 +161,7 @@ export async function DELETE(request) {
       status: 200,
     });
   } catch (error) {
-    console.error('DELETE error:', error);
+    console.error('Delete like error:', error);
     return new Response(JSON.stringify({ message: 'Failed to remove like' }), {
       status: 500,
     });
