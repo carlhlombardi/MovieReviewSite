@@ -77,7 +77,7 @@ export default function MyCollectionPage() {
     <Container className="py-4">
       <div className={styles.hero}>
         <h1 className={styles.heroTitle}>
-          {capitalize(username)}’s My Collection
+        My Collection
         </h1>
       </div>
 
