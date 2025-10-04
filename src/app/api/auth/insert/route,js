@@ -65,12 +65,24 @@ export async function POST(req, { params }) {
     }
 
     await sql.query(
-      `INSERT INTO ${genreSegment} 
-        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-       VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
-    );
+  `INSERT INTO ${genreSegment} 
+     (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
+   VALUES 
+     ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+  [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
+);
+
+// also insert into allmovies
+await sql.query(
+  `INSERT INTO allmovies 
+     (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
+   VALUES 
+     ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+   ON CONFLICT (tmdb_id, genre) DO UPDATE
+     SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
+         producer=$6, run_time=$7, url=$8, image_url=$9`,  // optional upsert
+  [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
+);
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
   } catch (error) {
