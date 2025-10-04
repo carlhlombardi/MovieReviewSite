@@ -51,28 +51,31 @@ async function fetchTmdbPoster(title, year) {
 }
 
 export async function GET(req, { params }) {
-  // We still take the genre from URL but always pull from allmovies
   const genreSegment = params.genre.toLowerCase();
   const urlParam = new URL(req.url).searchParams.get('url');
 
+  if (!allowedTables.includes(genreSegment)) {
+    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
+  }
+
   try {
     if (urlParam) {
-      // Single movie page – always from allmovies
-      const result = await sql.query(
-        `SELECT * FROM allmovies WHERE url = $1`,
-        [urlParam]
-      );
+      // ✅ Single movie – always from allmovies
+      const result = await sql.query(`SELECT * FROM allmovies WHERE url = $1`, [urlParam]);
       if (result.rows.length === 0) {
         return NextResponse.json({ error: 'Movie not found' }, { status: 404 });
       }
       return NextResponse.json(result.rows[0]);
     } else {
-      // List of movies for a genre – filter allmovies by genre
-      const result = await sql.query(
-        `SELECT * FROM allmovies WHERE genre = $1`,
-        [genreSegment]
-      );
-      return NextResponse.json(result.rows);
+      if (genreSegment === 'allmovies') {
+        // ✅ "All Movies" page
+        const result = await sql.query(`SELECT * FROM allmovies`);
+        return NextResponse.json(result.rows);
+      } else {
+        // ✅ Genre pages – pull from that genre table
+        const result = await sql.query(`SELECT * FROM ${genreSegment}`);
+        return NextResponse.json(result.rows);
+      }
     }
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -135,7 +138,7 @@ export async function POST(req, { params }) {
     }
 
     // Check existing
-    const existing = await sql.query(`SELECT * FROM ${genreSegment} WHERE url = $1`, [url]);
+    const existing = await sql.query(`SELECT * FROM allmovies WHERE tmdb_id = $1 AND genre = $2`, [tmdb_id, genreSlug]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
@@ -148,16 +151,18 @@ export async function POST(req, { params }) {
       }
     }
 
-    // Insert into genre table (no my_rating/review here unless you’ve added those columns)
-    await sql.query(
-      `INSERT INTO ${genreSegment} 
-       (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-       VALUES 
-       ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
-    );
+    // Insert into genre table
+    if (genreSegment !== 'allmovies') {
+      await sql.query(
+        `INSERT INTO ${genreSegment} 
+         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
+         VALUES 
+         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
+      );
+    }
 
-    // Insert/upsert into allmovies including my_rating & review
+    // Insert/upsert into allmovies (with rating + review)
     await sql.query(
       `INSERT INTO allmovies 
        (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre, my_rating, review)
