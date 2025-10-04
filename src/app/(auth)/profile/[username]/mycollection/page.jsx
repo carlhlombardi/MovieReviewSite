@@ -6,10 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './MyCollectionPage.module.css'; // make sure this file exists
 
-const MyCollectionPage = () => {
-  // ✅ use the real param name ([username])
+export default function MyCollectionPage() {
   const { username } = useParams();
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
@@ -27,18 +25,8 @@ const MyCollectionPage = () => {
       try {
         setLoading(true);
         setError(null);
-
-        // call your API route
-        const res = await fetch(`/api/profile/${username}/mycollection`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
-        }
-
+        const res = await fetch(`/api/profile/${username}/mycollection`);
+        if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
         setMovies(json.movies ?? []);
       } catch (err) {
@@ -53,110 +41,65 @@ const MyCollectionPage = () => {
     fetchCollection();
   }, [username]);
 
-  // Sorting logic
+  // Sort movies whenever list or criteria changes
   useEffect(() => {
     const sorted = [...movies].sort((a, b) => {
       const key = sortCriteria;
       const va = (a[key] ?? a.title ?? '').toString();
       const vb = (b[key] ?? b.title ?? '').toString();
-
-      if (key === 'year') {
-        return (Number(a.year) || 0) - (Number(b.year) || 0);
-      }
       return va.localeCompare(vb);
     });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
-  const handleSortChange = (criteria) => {
-    setSortCriteria(criteria);
-  };
-
-  if (loading) {
-    return (
-      <Container className="py-4">
-        <p>Loading…</p>
-      </Container>
-    );
-  }
-  if (error) {
-    return (
-      <Container className="py-4">
-        <p>Error: {error}</p>
-      </Container>
-    );
-  }
+  if (loading) return <Container className="py-4">Loading…</Container>;
+  if (error) return <Container className="py-4">Error: {error}</Container>;
 
   return (
     <Container className="py-4">
-      <div className={styles.hero}>
-        <h1 className={styles.heroTitle}>
-          {capitalize(username)}’s My Collection
-        </h1>
-      </div>
+      <h1>{capitalize(username)}’s My Collection</h1>
 
       <Row className="mt-3 mb-4 text-center">
         <Col>
           <label className="me-2">Sort by:</label>
-          <div className="d-flex flex-wrap justify-content-center">
-            {['title', 'genre'].map((criteria) => (
-              <Button
-                key={criteria}
-                variant={sortCriteria === criteria ? 'primary' : 'secondary'}
-                onClick={() => handleSortChange(criteria)}
-                className={`m-1 ${
-                  sortCriteria === criteria ? 'active' : ''
-                }`}
-              >
-                {capitalize(criteria)}
-              </Button>
-            ))}
-          </div>
+          {['title', 'genre'].map((criteria) => (
+            <Button
+              key={criteria}
+              variant={sortCriteria === criteria ? 'primary' : 'secondary'}
+              onClick={() => setSortCriteria(criteria)}
+              className="m-1"
+            >
+              {capitalize(criteria)}
+            </Button>
+          ))}
         </Col>
       </Row>
 
       <Row>
         {sortedMovies.length > 0 ? (
-          sortedMovies.map((item) => {
-            if (!item.url) return null;
-
-            return (
-              <Col
-                key={item.url}
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                className="mb-4"
+          sortedMovies.map((item) => (
+            <Col key={item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <Link
+                href={`/movie/${encodeURIComponent(item.url)}`}
+                className="text-decoration-none"
               >
-                <Link
-                  href={`/movie/${encodeURIComponent(item.url)}`}
-                  className="text-decoration-none"
-                >
-                  <div className={styles.imagewrapper}>
-                    <Image
-                      src={decodeURIComponent(
-                        item.image_url || '/images/fallback.jpg'
-                      )}
-                      alt={item.title}
-                      width={200}
-                      height={300}
-                      className="img-fluid rounded"
-                    />
-                  </div>
-                  <p className="mt-2 text-center">{item.title}</p>
-                </Link>
-              </Col>
-            );
-          })
+                <Image
+                  src={item.image_url || '/images/fallback.jpg'}
+                  alt={item.title}
+                  width={200}
+                  height={300}
+                  className="img-fluid rounded"
+                />
+                <p className="mt-2 text-center">{item.title}</p>
+              </Link>
+            </Col>
+          ))
         ) : (
           <Col>
-            <p className="text-center">No liked movies yet.</p>
+            <p className="text-center">No movies in your collection.</p>
           </Col>
         )}
       </Row>
     </Container>
   );
-};
-
-export default MyCollectionPage;
+}
