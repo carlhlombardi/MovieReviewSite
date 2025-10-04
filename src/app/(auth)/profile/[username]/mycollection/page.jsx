@@ -108,23 +108,22 @@ export default function MyCollectionPage() {
       <Row>
         {sortedMovies.length > 0 ? (
           sortedMovies.map((item) => (
-            <Col key={item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
-              <Link
-                href={`/movie/${encodeURIComponent(item.url)}`}
-                className="text-decoration-none"
-              >
-                <div className={styles.imagewrapper}>
-                  <Image
-                    src={item.image_url || '/images/fallback.jpg'}
-                    alt={item.title}
-                    width={200}
-                    height={300}
-                    className="img-fluid rounded"
-                  />
-                </div>
-                <p className="mt-2 text-center">{item.title}</p>
-              </Link>
-            </Col>
+           <Col key={item.id ?? item.row_id} xs={12} sm={6} md={4} lg={3} className="mb-4">
+                <Link
+                  href={`/genre/${genre}/${encodeURIComponent(item.url)}`}
+                  className="text-decoration-none"
+                >
+                  <div className={styles.imagewrapper}>
+                    <Image
+                      src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
+                      alt={item.title ?? item.film}
+                      width={200}
+                      height={300}
+                      className="img-fluid rounded"
+                    />
+                  </div>
+                </Link>
+              </Col>
           ))
         ) : (
           <Col>
