@@ -3,7 +3,7 @@
   padding: 80px 20px;
   background: 
     linear-gradient(to right, rgba(0, 0, 0, 0.85), rgba(85, 85, 85, 0.85)),
-    url('../../../../public/images/background.png'); /* adjust path as needed */
+    url('../../../../../../public/images/background.png'); /* adjust path as needed */
   background-size: cover;
   background-position: center;
   color: white;
