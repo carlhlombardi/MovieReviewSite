@@ -1,56 +1,64 @@
+// src/app/api/auth/profile/[username]/mycollection/route.js
+
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
-import { NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic';
 
 export async function GET(req, { params }) {
+  const { username } = params;
+
+  // ✅ get token from Authorization header
+  const authHeader = req.headers.get('authorization');
+  const token = authHeader?.split(' ')[1];
+
+  if (!token) {
+    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+      status: 401,
+    });
+  }
+
   try {
-    const { username } = params;
+    // ✅ verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userIdFromToken = decoded.userId;
 
-    const authHeader = req.headers.get('Authorization');
-    const token = authHeader?.split(' ')[1]; // Bearer <token>
-
-    if (!token) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // verify token
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      console.error('JWT verify failed:', err);
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
-    // check user exists
-    const userRes = await sql`
-      SELECT id, username FROM users WHERE username = ${username};
-    `;
+    // ✅ get the user by username
+    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
+
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      });
     }
 
-    // ensure token belongs to this user
-    if (decoded.userId !== user.id) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    // ✅ optional security: only allow current logged-in user to access their own collection
+    if (user.id !== userIdFromToken) {
+      return new Response(JSON.stringify({ message: 'Forbidden' }), {
+        status: 403,
+      });
     }
 
-    // fetch their collection
-    const collectionRes = await sql`
-      SELECT id, title, genre, url, image_url
-      FROM mycollection
-      WHERE username = ${username};
+    // ✅ fetch that user’s movies (adjust table/columns to your schema)
+    const moviesRes = await sql`
+      SELECT 
+        m.title,
+        m.genre,
+        m.image_url,
+        m.url
+      FROM liked_movies lm
+      JOIN movies m ON m.id = lm.movie_id
+      WHERE lm.user_id = ${user.id};
     `;
 
-    return NextResponse.json({ movies: collectionRes.rows }, { status: 200 });
+    return new Response(
+      JSON.stringify({ movies: moviesRes.rows }),
+      { status: 200 }
+    );
   } catch (err) {
-    console.error('Error in mycollection API:', err);
-    return NextResponse.json(
-      { message: 'Server error', details: err.message },
-      { status: 500 }
+    console.error('Error in mycollection route:', err);
+    return new Response(
+      JSON.stringify({ message: 'Invalid token or server error' }),
+      { status: 401 }
     );
   }
 }
