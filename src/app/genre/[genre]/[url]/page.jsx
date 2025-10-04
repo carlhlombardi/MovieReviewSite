@@ -299,6 +299,8 @@ const MoviePage = ({ params }) => {
           </div>
           )}
           </Col>
+          </Row>
+          <Row>
           <Col>
           {(myRating || review) && (
             <div className="mt-4">
@@ -317,7 +319,7 @@ const MoviePage = ({ params }) => {
             </div>
           )}
         </Col>
-      </Row>
+        </Row>
     </Container>
   );
 };
