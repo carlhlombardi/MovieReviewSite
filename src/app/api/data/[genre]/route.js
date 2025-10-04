@@ -3,6 +3,7 @@ import { sql } from '@vercel/postgres';
 
 const allowedTables = [
   'actionmovies',
+  'allmovies',
   'adventuremovies',
   'animationmovies',
   'comedymovies',
