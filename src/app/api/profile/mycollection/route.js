@@ -1,11 +1,14 @@
 // src/app/api/profile/[username]/mycollection/route.js
-import { sql } from '@vercel/postgres'; // or your own DB client
+// mark this route as dynamic to avoid prerendering error
+export const dynamic = 'force-dynamic';
+
+import { sql } from '@vercel/postgres'; // or your DB client
 
 export async function GET(req, { params }) {
-  const { username } = params;
+  const { username } = params; // ✅ Now it’s defined
 
   try {
-    // Adjust the query to your DB schema
+    // adjust to your DB schema
     const { rows } = await sql`
       SELECT url, title, genre, image_url
       FROM mycollection
