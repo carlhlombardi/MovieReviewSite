@@ -26,16 +26,15 @@ export default function MyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        // ✅ get token from localStorage (or cookie if you store it differently)
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('No auth token found. Please log in.');
         }
 
-        // ✅ fetch from the protected API route
-        await fetch(`/api/auth/profile/${username}/mycollection`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
+        // ✅ assign to res here
+        const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
@@ -85,9 +84,7 @@ export default function MyCollectionPage() {
   return (
     <Container className="py-4">
       <div className={styles.hero}>
-        <h1 className={styles.heroTitle}>
-          My Collection
-        </h1>
+        <h1 className={styles.heroTitle}>My Collection</h1>
       </div>
 
       <Row className="mt-3 mb-4 text-center">
