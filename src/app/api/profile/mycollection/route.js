@@ -1,29 +1,17 @@
 // src/app/api/profile/[username]/mycollection/route.js
-// mark this route as dynamic to avoid prerendering error
-export const dynamic = 'force-dynamic';
+import { NextResponse } from "next/server";
 
-import { sql } from '@vercel/postgres'; // or your DB client
+// This ensures Next.js doesn't try to prerender statically
+export const dynamic = "force-dynamic";
 
 export async function GET(req, { params }) {
-  const { username } = params; // ✅ Now it’s defined
+  const { username } = params;
 
-  try {
-    // adjust to your DB schema
-    const { rows } = await sql`
-      SELECT url, title, genre, image_url
-      FROM mycollection
-      WHERE username = ${username} AND isliked = TRUE;
-    `;
+  // 🔥 Replace with your DB call:
+  const movies = [
+    { id: 1, title: "Inception", year: 2010 },
+    { id: 2, title: "The Dark Knight", year: 2008 },
+  ];
 
-    return new Response(JSON.stringify({ movies: rows }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err) {
-    console.error('DB error:', err);
-    return new Response(
-      JSON.stringify({ message: 'Failed to fetch collection' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
-  }
+  return NextResponse.json({ username, movies });
 }
