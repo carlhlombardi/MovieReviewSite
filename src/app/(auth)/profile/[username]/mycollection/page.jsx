@@ -26,8 +26,19 @@ export default function MyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        // fetch from API route
-        const res = await fetch(`/api/profile/${username}/mycollection`);
+        // ✅ get token from localStorage (or cookie if you store it differently)
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No auth token found. Please log in.');
+        }
+
+        // ✅ fetch from the protected API route
+        const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
@@ -46,7 +57,7 @@ export default function MyCollectionPage() {
     fetchCollection();
   }, [username]);
 
-  // Sort movies
+  // Sort movies whenever movies or sortCriteria changes
   useEffect(() => {
     const sorted = [...movies].sort((a, b) => {
       const key = sortCriteria;
@@ -77,7 +88,7 @@ export default function MyCollectionPage() {
     <Container className="py-4">
       <div className={styles.hero}>
         <h1 className={styles.heroTitle}>
-        My Collection
+          My Collection
         </h1>
       </div>
 
