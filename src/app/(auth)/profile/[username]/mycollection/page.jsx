@@ -33,11 +33,9 @@ export default function MyCollectionPage() {
         }
 
         // ✅ fetch from the protected API route
-        const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await fetch(`/api/auth/profile/${username}/mycollection`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
 
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
