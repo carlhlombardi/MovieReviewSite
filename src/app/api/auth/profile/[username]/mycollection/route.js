@@ -43,7 +43,7 @@ export async function GET(req, { params }) {
         m.genre,
         m.image_url,
         m.url
-      FROM liked_movies lm
+      FROM mycollection lm
       JOIN movies m ON m.id = lm.movie_id
       WHERE lm.user_id = ${user.id};
     `;
