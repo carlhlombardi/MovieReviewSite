@@ -391,23 +391,23 @@ return (
         )}
 
         {/* ✅ Only show our rating + review if both exist */}
-        {(my_rating || review) && (
-          <div className="mt-4">
-            {my_rating && (
-              <>
-                <h4>Our Rating</h4>
-                <p>{my_rating}</p>
-              </>
-            )}
+     {(my_rating || review) && (
+  <div className="mt-4">
+    {my_rating && (
+      <>
+        <h4>Our Rating</h4>
+        <p>{my_rating}</p>
+      </>
+    )}
+    {review && (
+      <>
+        <h4>Review:</h4>
+        <p>{review}</p>
+      </>
+    )}
+  </div>
+)}
 
-            {review && (
-              <>
-                <h4>Review:</h4>
-                <p>{review}</p>
-              </>
-            )}
-          </div>
-        )}
       </Col>
     </Row>
 
