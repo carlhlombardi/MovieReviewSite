@@ -110,7 +110,7 @@ export default function MyCollectionPage() {
           sortedMovies.map((item) => (
            <Col key={item.id ?? item.row_id} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <Link
-                  href={`/genre/${genre}/${encodeURIComponent(item.url)}`}
+                  href={`/genre/${item.genre}/${encodeURIComponent(item.url)}`}
                   className="text-decoration-none"
                 >
                   <div className={styles.imagewrapper}>
