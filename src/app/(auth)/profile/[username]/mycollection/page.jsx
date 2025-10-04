@@ -1,3 +1,4 @@
+// src/app/(auth)/profile/[username]/mycollection/page.jsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,29 +6,32 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './MyCollectionPage.module.css'; // create a CSS module similar to GenrePage.module.css
+import styles from './MyCollectionPage.module.css'; // make sure this file exists
 
 const MyCollectionPage = () => {
-  const { profilename } = useParams();
+  // ✅ use the real param name ([username])
+  const { username } = useParams();
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
   const [sortCriteria, setSortCriteria] = useState('title');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+  const capitalize = (str) =>
+    str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
   useEffect(() => {
-    if (!profilename) return;
+    if (!username) return;
 
     const fetchCollection = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`/api/profile/${profilename}/mycollection`, {
+        // call your API route
+        const res = await fetch(`/api/profile/${username}/mycollection`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token') ?? ''}`,
+            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
           },
         });
 
@@ -47,7 +51,7 @@ const MyCollectionPage = () => {
     };
 
     fetchCollection();
-  }, [profilename]);
+  }, [username]);
 
   // Sorting logic
   useEffect(() => {
@@ -69,16 +73,26 @@ const MyCollectionPage = () => {
   };
 
   if (loading) {
-    return <Container className="py-4"><p>Loading…</p></Container>;
+    return (
+      <Container className="py-4">
+        <p>Loading…</p>
+      </Container>
+    );
   }
   if (error) {
-    return <Container className="py-4"><p>Error: {error}</p></Container>;
+    return (
+      <Container className="py-4">
+        <p>Error: {error}</p>
+      </Container>
+    );
   }
 
   return (
     <Container className="py-4">
       <div className={styles.hero}>
-        <h1 className={styles.heroTitle}>{capitalize(profilename)}’s My Collection</h1>
+        <h1 className={styles.heroTitle}>
+          {capitalize(username)}’s My Collection
+        </h1>
       </div>
 
       <Row className="mt-3 mb-4 text-center">
@@ -90,7 +104,9 @@ const MyCollectionPage = () => {
                 key={criteria}
                 variant={sortCriteria === criteria ? 'primary' : 'secondary'}
                 onClick={() => handleSortChange(criteria)}
-                className={`m-1 ${sortCriteria === criteria ? 'active' : ''}`}
+                className={`m-1 ${
+                  sortCriteria === criteria ? 'active' : ''
+                }`}
               >
                 {capitalize(criteria)}
               </Button>
@@ -105,14 +121,23 @@ const MyCollectionPage = () => {
             if (!item.url) return null;
 
             return (
-              <Col key={item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <Col
+                key={item.url}
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+                className="mb-4"
+              >
                 <Link
                   href={`/movie/${encodeURIComponent(item.url)}`}
                   className="text-decoration-none"
                 >
                   <div className={styles.imagewrapper}>
                     <Image
-                      src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
+                      src={decodeURIComponent(
+                        item.image_url || '/images/fallback.jpg'
+                      )}
                       alt={item.title}
                       width={200}
                       height={300}
