@@ -15,11 +15,10 @@ export async function GET(req, { params }) {
   }
 
   try {
-    // ✅ verify token and take userId
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userIdFromToken = decoded.userId; // 👈 this matches your payload
+    const userIdFromToken = decoded.userId;
 
-    // ✅ get the user by username
+    // ✅ check that the token matches the username you’re requesting
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
 
@@ -29,23 +28,17 @@ export async function GET(req, { params }) {
       });
     }
 
-    // ✅ only allow current logged-in user to access their own collection
     if (user.id !== userIdFromToken) {
       return new Response(JSON.stringify({ message: 'Forbidden' }), {
         status: 403,
       });
     }
 
-    // ✅ fetch that user’s movies
+    // ✅ now just pull movies from mycollection where username matches
     const moviesRes = await sql`
-      SELECT 
-        m.title,
-        m.genre,
-        m.image_url,
-        m.url
-      FROM mycollection lm
-      JOIN allmovies m ON m.id = lm.movie_id
-      WHERE lm.user_id = ${user.id};
+      SELECT title, genre, image_url, url
+      FROM mycollection
+      WHERE username = ${username};
     `;
 
     return new Response(
