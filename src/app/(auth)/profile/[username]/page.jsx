@@ -103,28 +103,6 @@ export default function ProfilePage() {
             Movies Owned — View Full Collection
           </a>
         </Card.Header>
-        <Card.Body>
-          {likedMovies.length > 0 ? (
-            <Row>
-              {likedMovies.map((movie) => (
-                <Col key={movie.url} xs={6} md={3} className="mb-4">
-                  <a href={`/genre/${slugifyGenre(movie.genre)}/${movie.url}`}>
-                    <Image
-                      src={movie.image_url}
-                      alt={movie.title}
-                      width={150}
-                      height={225}
-                      style={{ objectFit: "cover" }}
-                    />
-                    <div>{movie.title}</div>
-                  </a>
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <p>No liked movies found.</p>
-          )}
-        </Card.Body>
       </Card>
 
       {/* ✅ Removed Watchlist / Watched Movies card completely */}
