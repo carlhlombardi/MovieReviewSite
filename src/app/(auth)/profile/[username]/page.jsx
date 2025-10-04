@@ -104,31 +104,6 @@ export default function ProfilePage() {
           </a>
         </Card.Header>
       </Card>
-
-      {/* ✅ Removed Watchlist / Watched Movies card completely */}
-
-      {isSelf && (
-        <Card className="mb-4">
-          <Card.Header as="h5">Your Comments</Card.Header>
-          <Card.Body>
-            <Form.Select
-              value={selectedMovieUrl}
-              onChange={(e) => setSelectedMovieUrl(e.target.value)}
-            >
-              <option value="">Select movie</option>
-              {likedMovies.map((movie) => (
-                <option key={movie.url} value={movie.url}>
-                  {movie.title}
-                </option>
-              ))}
-            </Form.Select>
-          </Card.Body>
-        </Card>
-      )}
-
-      {isSelf && selectedMovieUrl && (
-        <Comments movieUrl={selectedMovieUrl} isProfilePage={true} />
-      )}
     </div>
   );
 }
