@@ -326,85 +326,99 @@ const MoviePage = ({ params }) => {
     image_url,
   } = data;
 
-  return (
-    <Container className="my-5">
-      <Row>
-        <Col xs={12} md={6} className="text-center order-md-2 mb-3">
-          {image_url ? (
-            <Image src={image_url} alt={film} width={300} height={450} />
-          ) : (
-            <div>No image available</div>
-          )}
-        </Col>
-        <Col xs={12} md={6} className="order-md-1">
-          <h2 className="text-center">
-            {film} ({year})
-          </h2>
-          <p><strong>Studio:</strong> {studio}</p>
-          <p><strong>Director:</strong> {director}</p>
-          <p><strong>Screenwriters:</strong> {screenwriters}</p>
-          <p><strong>Producer:</strong> {producer}</p>
-          <p><strong>Runtime:</strong> {run_time} minutes</p>
+return (
+  <Container className="my-5">
+    <Row>
+      <Col xs={12} md={6} className="text-center order-md-2 mb-3">
+        {image_url ? (
+          <Image src={image_url} alt={film} width={300} height={450} />
+        ) : (
+          <div>No image available</div>
+        )}
+      </Col>
+      <Col xs={12} md={6} className="order-md-1">
+        <h2 className="text-center">
+          {film} {year && `(${year})`}
+        </h2>
+        {studio && <p><strong>Studio:</strong> {studio}</p>}
+        {director && <p><strong>Director:</strong> {director}</p>}
+        {screenwriters && <p><strong>Screenwriters:</strong> {screenwriters}</p>}
+        {producer && <p><strong>Producer:</strong> {producer}</p>}
+        {run_time && <p><strong>Runtime:</strong> {run_time} minutes</p>}
 
+        <div className="my-3">
+          <Button
+            variant={isOwned ? "danger" : "outline-danger"}
+            onClick={handleOwnIt}
+            className="me-2"
+          >
+            {isOwned ? <HeartFill /> : <Heart />} Own It
+          </Button>
+
+          <Button
+            variant={isWanted ? "primary" : "outline-primary"}
+            onClick={handleWantIt}
+          >
+            {isWanted ? <TvFill /> : <Tv />} Want It
+          </Button>
+        </div>
+
+        {isLoggedIn && (
           <div className="my-3">
-            {/* Own It button */}
+            <label htmlFor="ratingInput" className="form-label">
+              Your Rating (1-5):
+            </label>
+            <input
+              id="ratingInput"
+              type="number"
+              min={1}
+              max={5}
+              value={userRating}
+              onChange={(e) => setUserRating(Number(e.target.value))}
+              className="form-control mb-2"
+            />
             <Button
-              variant={isOwned ? "danger" : "outline-danger"}
-              onClick={handleOwnIt}
-              className="me-2"
+              onClick={handleRatingSubmit}
+              disabled={userRating < 1 || userRating > 5}
             >
-              {isOwned ? <HeartFill /> : <Heart />} Own It
+              Submit Rating
             </Button>
-
-            {/* Want It button */}
-            <Button
-              variant={isWanted ? "primary" : "outline-primary"}
-              onClick={handleWantIt}
-            >
-              {isWanted ? <TvFill /> : <Tv />} Want It
-            </Button>
-          </div>
-
-          {isLoggedIn && (
-            <div className="my-3">
-              <label htmlFor="ratingInput" className="form-label">
-                Your Rating (1-5):
-              </label>
-              <input
-                id="ratingInput"
-                type="number"
-                min={1}
-                max={5}
-                value={userRating}
-                onChange={(e) => setUserRating(Number(e.target.value))}
-                className="form-control mb-2"
-              />
-              <Button
-                onClick={handleRatingSubmit}
-                disabled={userRating < 1 || userRating > 5}
-              >
-                Submit Rating
-              </Button>
+            {/* ✅ Only show avg rating if one exists */}
+            {averageRating > 0 && (
               <p className="mt-2">Average Rating: {averageRating.toFixed(2)}</p>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {review && (
-            <div className="mt-4">
-              <h4>Review:</h4>
-              <p>{review}</p>
-            </div>
-          )}
-        </Col>
-      </Row>
+        {/* ✅ Only show our rating + review if both exist */}
+        {(my_rating || review) && (
+          <div className="mt-4">
+            {my_rating && (
+              <>
+                <h4>Our Rating</h4>
+                <p>{my_rating}</p>
+              </>
+            )}
 
-      <Row>
-        <Col xs={12} className="mt-5">
-          <Comments genre={genre} url={slugifiedUrl} />
-        </Col>
-      </Row>
-    </Container>
-  );
+            {review && (
+              <>
+                <h4>Review:</h4>
+                <p>{review}</p>
+              </>
+            )}
+          </div>
+        )}
+      </Col>
+    </Row>
+
+    <Row>
+      <Col xs={12} className="mt-5">
+        <Comments genre={genre} url={slugifiedUrl} />
+      </Col>
+    </Row>
+  </Container>
+);
+
 };
 
 export default MoviePage;
