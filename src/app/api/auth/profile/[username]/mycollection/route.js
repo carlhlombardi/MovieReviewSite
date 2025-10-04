@@ -1,29 +1,17 @@
 // src/app/api/profile/[username]/mycollection/route.js
-export const dynamic = 'force-dynamic'; // prevents static generation
+import { NextResponse } from "next/server";
 
-// use your actual DB client instead of fake data:
-import { sql } from '@vercel/postgres';
+// This ensures Next.js doesn't try to prerender statically
+export const dynamic = "force-dynamic";
 
 export async function GET(req, { params }) {
   const { username } = params;
 
-  try {
-    // your DB query
-    const { rows } = await sql`
-      SELECT url, title, genre, image_url
-      FROM mycollection
-      WHERE username = ${username} AND isliked = TRUE;
-    `;
+  // 🔥 Replace with your DB call:
+  const movies = [
+    { id: 1, title: "Inception", year: 2010 },
+    { id: 2, title: "The Dark Knight", year: 2008 },
+  ];
 
-    return new Response(JSON.stringify({ movies: rows }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: 'DB error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  return NextResponse.json({ username, movies });
 }

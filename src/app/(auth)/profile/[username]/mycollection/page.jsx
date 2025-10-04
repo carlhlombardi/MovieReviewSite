@@ -1,105 +1,47 @@
-// src/app/(auth)/profile/[username]/mycollection/page.jsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Container, Row, Col, Button } from 'react-bootstrap';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 export default function MyCollectionPage() {
   const { username } = useParams();
   const [movies, setMovies] = useState([]);
-  const [sortedMovies, setSortedMovies] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('title');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const capitalize = (str) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
   useEffect(() => {
     if (!username) return;
-
-    const fetchCollection = async () => {
+    const fetchMovies = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const res = await fetch(`/api/profile/${username}/mycollection`);
-        if (!res.ok) throw new Error(await res.text());
-        const json = await res.json();
-        setMovies(json.movies ?? []);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setMovies(data.movies || []);
       } catch (err) {
-        console.error('Error fetching mycollection:', err);
-        setError(err.message);
-        setMovies([]);
+        console.error("Error fetching mycollection:", err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchCollection();
+    fetchMovies();
   }, [username]);
 
-  // Sort movies whenever list or criteria changes
-  useEffect(() => {
-    const sorted = [...movies].sort((a, b) => {
-      const key = sortCriteria;
-      const va = (a[key] ?? a.title ?? '').toString();
-      const vb = (b[key] ?? b.title ?? '').toString();
-      return va.localeCompare(vb);
-    });
-    setSortedMovies(sorted);
-  }, [movies, sortCriteria]);
-
-  if (loading) return <Container className="py-4">Loading…</Container>;
-  if (error) return <Container className="py-4">Error: {error}</Container>;
+  if (loading) return <p>Loading…</p>;
 
   return (
-    <Container className="py-4">
-      <h1>{capitalize(username)}’s My Collection</h1>
-
-      <Row className="mt-3 mb-4 text-center">
-        <Col>
-          <label className="me-2">Sort by:</label>
-          {['title', 'genre'].map((criteria) => (
-            <Button
-              key={criteria}
-              variant={sortCriteria === criteria ? 'primary' : 'secondary'}
-              onClick={() => setSortCriteria(criteria)}
-              className="m-1"
-            >
-              {capitalize(criteria)}
-            </Button>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">{username}’s Collection</h1>
+      {movies.length === 0 ? (
+        <p>No movies yet.</p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-4">
+          {movies.map((movie) => (
+            <li key={movie.id} className="border rounded p-2">
+              <h2 className="font-semibold">{movie.title}</h2>
+              <p className="text-sm text-gray-600">{movie.year}</p>
+            </li>
           ))}
-        </Col>
-      </Row>
-
-      <Row>
-        {sortedMovies.length > 0 ? (
-          sortedMovies.map((item) => (
-            <Col key={item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
-              <Link
-                href={`/movie/${encodeURIComponent(item.url)}`}
-                className="text-decoration-none"
-              >
-                <Image
-                  src={item.image_url || '/images/fallback.jpg'}
-                  alt={item.title}
-                  width={200}
-                  height={300}
-                  className="img-fluid rounded"
-                />
-                <p className="mt-2 text-center">{item.title}</p>
-              </Link>
-            </Col>
-          ))
-        ) : (
-          <Col>
-            <p className="text-center">No movies in your collection.</p>
-          </Col>
-        )}
-      </Row>
-    </Container>
+        </ul>
+      )}
+    </div>
   );
 }
