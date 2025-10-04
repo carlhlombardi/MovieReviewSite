@@ -6,9 +6,8 @@ import { Alert, Spinner, Card, Row, Col, Form } from "react-bootstrap";
 import Image from "next/image";
 import Comments from "@/app/components/footer/comments/comments";
 
-// Slugify genre same as your movie page / insert logic
 const slugifyGenre = (genre) => {
-  return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+  return genre?.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
 
 export default function ProfilePage() {
@@ -19,10 +18,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [likedMovies, setLikedMovies] = useState([]);
-  const [watchedMovies, setWatchedMovies] = useState([]);
   const [selectedMovieUrl, setSelectedMovieUrl] = useState("");
 
-  // Fetch profile, liked, watched
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -49,15 +46,6 @@ export default function ProfilePage() {
         if (likRes.ok) {
           const likData = await likRes.json();
           setLikedMovies(likData.likedMovies || []);
-        }
-
-        // Watched / watchlist
-        const watRes = await fetch("/api/auth/watched-movies", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (watRes.ok) {
-          const watData = await watRes.json();
-          setWatchedMovies(watData.watchedMovies || []);
         }
       } catch (err) {
         console.error("Error in profile fetch:", err);
@@ -105,12 +93,20 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
+      {/* ✅ Movies Owned card now links to mycollection page */}
       <Card className="mb-4">
-        <Card.Header as="h5">Liked Movies</Card.Header>
+        <Card.Header as="h5">
+          <a
+            href={`/profile/${profile.username}/mycollection`}
+            className="text-decoration-none"
+          >
+            Movies Owned — View Full Collection
+          </a>
+        </Card.Header>
         <Card.Body>
           {likedMovies.length > 0 ? (
             <Row>
-              {likedMovies.map(movie => (
+              {likedMovies.map((movie) => (
                 <Col key={movie.url} xs={6} md={3} className="mb-4">
                   <a href={`/genre/${slugifyGenre(movie.genre)}/${movie.url}`}>
                     <Image
@@ -131,33 +127,7 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
-      {isSelf && (
-        <Card className="mb-4">
-          <Card.Header as="h5">Watchlist / Watched Movies</Card.Header>
-          <Card.Body>
-            {watchedMovies.length > 0 ? (
-              <Row>
-                {watchedMovies.map(movie => (
-                  <Col key={movie.url} xs={6} md={3} className="mb-4">
-                    <a href={`/genre/${slugifyGenre(movie.genre)}/${movie.url}`}>
-                      <Image
-                        src={movie.image_url}
-                        alt={movie.title}
-                        width={150}
-                        height={225}
-                        style={{ objectFit: "cover" }}
-                      />
-                      <div>{movie.title}</div>
-                    </a>
-                  </Col>
-                ))}
-              </Row>
-            ) : (
-              <p>No watched movies.</p>
-            )}
-          </Card.Body>
-        </Card>
-      )}
+      {/* ✅ Removed Watchlist / Watched Movies card completely */}
 
       {isSelf && (
         <Card className="mb-4">
@@ -168,13 +138,11 @@ export default function ProfilePage() {
               onChange={(e) => setSelectedMovieUrl(e.target.value)}
             >
               <option value="">Select movie</option>
-              {likedMovies
-                .concat(watchedMovies)
-                .map((movie) => (
-                  <option key={movie.url} value={movie.url}>
-                    {movie.title}
-                  </option>
-                ))}
+              {likedMovies.map((movie) => (
+                <option key={movie.url} value={movie.url}>
+                  {movie.title}
+                </option>
+              ))}
             </Form.Select>
           </Card.Body>
         </Card>
