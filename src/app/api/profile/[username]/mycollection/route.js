@@ -1,27 +1,37 @@
 import { NextResponse } from 'next/server';
+import pool from '@/lib/db';
 
-// Force this route to run dynamically (no static errors)
+// This tells Next not to statically render
 export const dynamic = 'force-dynamic';
 
 // GET /api/profile/:username/mycollection
-export async function GET(request, { params }) {
-  const { username } = params;
+export async function GET(req, { params }) {
+  try {
+    const { username } = params;
 
-  // TODO: Replace this with your real DB call
-  const movies = [
-    {
-      url: '/inception',
-      title: 'Inception',
-      genre: 'Sci-Fi',
-      image_url: '/images/inception.jpg'
-    },
-    {
-      url: '/darkknight',
-      title: 'The Dark Knight',
-      genre: 'Action',
-      image_url: '/images/darkknight.jpg'
+    if (!username) {
+      return NextResponse.json({ error: 'Missing username' }, { status: 400 });
     }
-  ];
 
-  return NextResponse.json({ username, movies });
+    // Query your Postgres table; adjust the table/columns to your schema
+    const { rows } = await pool.query(
+      `SELECT 
+         id,
+         title,
+         genre,
+         url,
+         image_url
+       FROM mycollection
+       WHERE username = $1`,
+      [username]
+    );
+
+    return NextResponse.json({ movies: rows });
+  } catch (err) {
+    console.error('Error fetching mycollection API:', err);
+    return NextResponse.json(
+      { error: 'Server error', details: err.message },
+      { status: 500 }
+    );
+  }
 }
