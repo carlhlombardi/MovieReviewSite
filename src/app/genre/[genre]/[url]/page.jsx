@@ -353,7 +353,7 @@ const MoviePage = ({ params }) => {
               onClick={handleOwnIt}
               className="me-2"
             >
-              {isOwned ? <HeartFill /> : <Heart />} Own It ({ownCount})
+              {isOwned ? <HeartFill /> : <Heart />} Own It
             </Button>
 
             {/* Want It button */}
@@ -361,7 +361,7 @@ const MoviePage = ({ params }) => {
               variant={isWanted ? "primary" : "outline-primary"}
               onClick={handleWantIt}
             >
-              {isWanted ? <TvFill /> : <Tv />} Want It ({wantCount})
+              {isWanted ? <TvFill /> : <Tv />} Want It
             </Button>
           </div>
 
