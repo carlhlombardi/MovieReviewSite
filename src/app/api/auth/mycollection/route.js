@@ -1,92 +1,190 @@
-import { NextResponse } from "next/server";
-import { pool } from "@/lib/db"; // adjust import to your db pool
+import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken';
 
-// GET: check if current user has this movie in their collection
-export async function GET(req) {
+/**
+ * === GET: total likes + user like status ===
+ */
+export async function GET(request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const url = searchParams.get("url");
-    const token = req.headers.get("authorization")?.split(" ")[1];
+    const urlObj = new URL(request.url);
+    const movieUrl = urlObj.searchParams.get('url');
 
-    // decode user from token (same as your other auth routes)
-    const user = await verifyToken(token); // implement verifyToken same as wantedforcollection
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!movieUrl) {
+      return new Response(JSON.stringify({ message: 'Movie URL is required' }), {
+        status: 400,
+      });
+    }
 
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS likecount,
-              EXISTS (
-                SELECT 1 FROM mycollection WHERE user_id=$1 AND url=$2
-              ) AS isliked
-       FROM mycollection
-       WHERE url=$2`,
-      [user.id, url]
-    );
+    // total like count across all genre tables
+    const likecountResult = await sql`
+      SELECT COUNT(*) AS likecount
+      FROM (
+        SELECT url, image_url FROM horrormovies
+        UNION ALL SELECT url, image_url FROM scifimovies
+        UNION ALL SELECT url, image_url FROM comedymovies
+        UNION ALL SELECT url, image_url FROM actionmovies
+        UNION ALL SELECT url, image_url FROM documentarymovies
+        UNION ALL SELECT url, image_url FROM classicmovies
+        UNION ALL SELECT url, image_url FROM dramamovies
+      ) AS all_movies
+      JOIN mycollection ON all_movies.url = mycollection.url
+      WHERE mycollection.url = ${movieUrl}
+        AND mycollection.image_url IS NOT NULL
+        AND mycollection.isliked = TRUE;
+    `;
+    const likecount = parseInt(likecountResult.rows[0].likecount, 10);
 
-    return NextResponse.json(rows[0]);
-  } catch (err) {
-    console.error("GET mycollection error", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    // auth check
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token) {
+      return new Response(JSON.stringify({ likecount, isliked: false }), {
+        status: 200,
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const userResult = await sql`SELECT username FROM users WHERE id = ${userId};`;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      });
+    }
+
+    const islikedResult = await sql`
+      SELECT isliked FROM mycollection
+      WHERE username = ${user.username} AND url = ${movieUrl};
+    `;
+    const isliked =
+      islikedResult.rowCount > 0 ? islikedResult.rows[0].isliked : false;
+
+    return new Response(JSON.stringify({ likecount, isliked }), {
+      status: 200,
+    });
+  } catch (error) {
+    console.error('GET error:', error);
+    return new Response(JSON.stringify({ message: 'Failed to fetch likes' }), {
+      status: 500,
+    });
   }
 }
 
-// POST: add to mycollection
-export async function POST(req) {
+/**
+ * === POST: add or toggle movie in mycollection ===
+ */
+export async function POST(request) {
   try {
-    const body = await req.json();
-    const { url } = body;
-    const token = req.headers.get("authorization")?.split(" ")[1];
-    const user = await verifyToken(token);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { url } = await request.json();
 
-    await pool.query(
-      `INSERT INTO mycollection (user_id, url)
-       VALUES ($1,$2)
-       ON CONFLICT (user_id,url) DO NOTHING`,
-      [user.id, url]
-    );
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token) {
+      return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+        status: 401,
+      });
+    }
 
-    // return updated count
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS likecount FROM mycollection WHERE url=$1`,
-      [url]
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
 
-    return NextResponse.json({ likeCount: rows[0].likecount });
-  } catch (err) {
-    console.error("POST mycollection error", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const userResult = await sql`SELECT username FROM users WHERE id = ${userId};`;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      });
+    }
+
+    // union all genre tables to get film data
+    const movieResult = await sql`
+      SELECT film, genre, image_url FROM horrormovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM scifimovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM comedymovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM actionmovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM documentarymovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM classicmovies WHERE url = ${url}
+      UNION ALL SELECT film, genre, image_url FROM dramamovies WHERE url = ${url};
+    `;
+    const movie = movieResult.rows[0];
+    if (!movie) {
+      return new Response(JSON.stringify({ message: 'Movie not found' }), {
+        status: 404,
+      });
+    }
+
+    // insert or update
+    await sql`
+      INSERT INTO mycollection (username, url, title, genre, isliked, likedcount, image_url)
+      VALUES (${user.username}, ${url}, ${movie.film}, ${movie.genre}, TRUE, 1, ${movie.image_url})
+      ON CONFLICT (username, url) DO UPDATE
+        SET isliked = EXCLUDED.isliked,
+          likedcount = CASE
+            WHEN mycollection.isliked = TRUE AND EXCLUDED.isliked = FALSE THEN mycollection.likedcount - 1
+            WHEN mycollection.isliked = FALSE AND EXCLUDED.isliked = TRUE THEN mycollection.likedcount + 1
+            ELSE mycollection.likedcount END
+    `;
+
+    return new Response(JSON.stringify({ message: 'Item liked' }), {
+      status: 201,
+    });
+  } catch (error) {
+    console.error('POST error:', error);
+    return new Response(JSON.stringify({ message: 'Failed to add like' }), {
+      status: 500,
+    });
   }
 }
 
-// DELETE: remove from mycollection
-export async function DELETE(req) {
+/**
+ * === DELETE: remove or unlike from mycollection ===
+ */
+export async function DELETE(request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const url = searchParams.get("url");
-    const token = req.headers.get("authorization")?.split(" ")[1];
-    const user = await verifyToken(token);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const urlObj = new URL(request.url);
+    const movieUrl = urlObj.searchParams.get('url');
 
-    await pool.query(
-      `DELETE FROM mycollection WHERE user_id=$1 AND url=$2`,
-      [user.id, url]
-    );
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
+    if (!token || !movieUrl) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized or missing movie URL' }),
+        { status: 401 }
+      );
+    }
 
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS likecount FROM mycollection WHERE url=$1`,
-      [url]
-    );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
 
-    return NextResponse.json({ likeCount: rows[0].likecount });
-  } catch (err) {
-    console.error("DELETE mycollection error", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const userResult = await sql`SELECT username FROM users WHERE id = ${userId};`;
+    const user = userResult.rows[0];
+    if (!user) {
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      });
+    }
+
+    const deleteResult = await sql`
+      UPDATE mycollection
+      SET isliked = FALSE
+      WHERE username = ${user.username} AND url = ${movieUrl}
+      RETURNING username, url;
+    `;
+    if (deleteResult.rowCount === 0) {
+      return new Response(JSON.stringify({ message: 'Item not found' }), {
+        status: 404,
+      });
+    }
+
+    return new Response(JSON.stringify({ message: 'Like removed' }), {
+      status: 200,
+    });
+  } catch (error) {
+    console.error('DELETE error:', error);
+    return new Response(JSON.stringify({ message: 'Failed to remove like' }), {
+      status: 500,
+    });
   }
-}
-
-// helper: verify token
-async function verifyToken(token) {
-  // same logic you’re using in wantedforcollection to decode JWT
-  // e.g. const decoded = jwt.verify(token, process.env.JWT_SECRET)
-  // return {id: decoded.id}
 }
