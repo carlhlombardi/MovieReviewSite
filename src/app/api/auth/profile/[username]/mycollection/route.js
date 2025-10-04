@@ -44,7 +44,7 @@ export async function GET(req, { params }) {
         m.image_url,
         m.url
       FROM mycollection lm
-      JOIN movies m ON m.id = lm.movie_id
+      JOIN allmovies m ON m.id = lm.movie_id
       WHERE lm.user_id = ${user.id};
     `;
 
