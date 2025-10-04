@@ -15,11 +15,11 @@ export async function GET(req, { params }) {
   }
 
   try {
+    // ✅ verify token and take userId
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userIdFromToken = decoded.userId; // 👈 this matches your payload
 
-    // handle multiple payload shapes
-    const userIdFromToken = decoded.userId || decoded.id || decoded.sub;
-
+    // ✅ get the user by username
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
 
@@ -29,13 +29,14 @@ export async function GET(req, { params }) {
       });
     }
 
-    // only allow logged-in user to access their own collection
+    // ✅ only allow current logged-in user to access their own collection
     if (user.id !== userIdFromToken) {
       return new Response(JSON.stringify({ message: 'Forbidden' }), {
         status: 403,
       });
     }
 
+    // ✅ fetch that user’s movies
     const moviesRes = await sql`
       SELECT 
         m.title,
@@ -47,13 +48,14 @@ export async function GET(req, { params }) {
       WHERE lm.user_id = ${user.id};
     `;
 
-    return new Response(JSON.stringify({ movies: moviesRes.rows }), {
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ movies: moviesRes.rows }),
+      { status: 200 }
+    );
   } catch (err) {
     console.error('Error in mycollection route:', err);
     return new Response(
-      JSON.stringify({ message: 'Invalid token or server error' }),
+      JSON.stringify({ message: 'Invalid token or server error', error: err.message }),
       { status: 401 }
     );
   }
