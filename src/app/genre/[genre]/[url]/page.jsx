@@ -280,6 +280,7 @@ const MoviePage = ({ params }) => {
           {producer && <p><strong>Producer:</strong> {producer}</p>}
           {run_time && <p><strong>Runtime:</strong> {run_time} minutes</p>}
 
+          {isLoggedIn && (
           <div className="my-3">
             <Button
               variant={isOwned ? "danger" : "outline-danger"}
@@ -296,33 +297,9 @@ const MoviePage = ({ params }) => {
               {isWanted ? <TvFill /> : <Tv />} Want It
             </Button>
           </div>
-
-          {isLoggedIn && (
-            <div className="my-3">
-              <label htmlFor="ratingInput" className="form-label">
-                Your Rating (1-5):
-              </label>
-              <input
-                id="ratingInput"
-                type="number"
-                min={1}
-                max={5}
-                value={userRating}
-                onChange={(e) => setUserRating(Number(e.target.value))}
-                className="form-control mb-2"
-              />
-              <Button
-                onClick={handleRatingSubmit}
-                disabled={userRating < 1 || userRating > 5}
-              >
-                Submit Rating
-              </Button>
-              {averageRating > 0 && (
-                <p className="mt-2">Average Rating: {averageRating.toFixed(2)}</p>
-              )}
-            </div>
           )}
-
+          </Col>
+          <Col>
           {(myRating || review) && (
             <div className="mt-4">
               {myRating && (
@@ -339,12 +316,6 @@ const MoviePage = ({ params }) => {
               )}
             </div>
           )}
-        </Col>
-      </Row>
-
-      <Row>
-        <Col xs={12} className="mt-5">
-          <Comments genre={genre} url={slugifiedUrl} />
         </Col>
       </Row>
     </Container>
