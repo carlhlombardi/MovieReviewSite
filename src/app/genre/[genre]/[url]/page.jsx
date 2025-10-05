@@ -32,36 +32,67 @@ const getCurrentUser = async () => {
 export const toggleOwnIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/mycollection`;
+
+  // build the payload explicitly
+  const payload =
+    action === 'like'
+      ? {
+          username,                // even though backend infers from params, harmless to send
+          url: movieData.url,
+          isliked: movieData.isliked ?? true, // default true
+          likedcount: movieData.likedcount ?? 0,
+          title: movieData.title,
+          genre: movieData.genre,
+          image_url: movieData.image_url,
+        }
+      : { url: movieData.url }; // for DELETE only url is needed
+
   const res = await fetch(endpoint, {
     method: action === 'like' ? 'POST' : 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body:
-      action === 'like'
-        ? JSON.stringify(movieData) // {title, genre, image_url, url}
-        : JSON.stringify({ url: movieData.url }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Own It toggle failed');
+
+  if (!res.ok) {
+    const errMsg = await res.text();
+    throw new Error(`Own It toggle failed: ${errMsg}`);
+  }
   return await res.json();
 };
-
 export const toggleWantIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/wantedformycollection`;
+
+  // build the payload explicitly
+  const payload =
+    action === 'add'
+      ? {
+          username,                          // optional, backend infers from params
+          url: movieData.url,
+          title: movieData.title,
+          genre: movieData.genre,
+          iswatched: movieData.iswatched ?? true, // default true
+          watchcount: movieData.watchcount ?? 0,
+          image_url: movieData.image_url,
+        }
+      : { url: movieData.url }; // for DELETE only url needed
+
   const res = await fetch(endpoint, {
     method: action === 'add' ? 'POST' : 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body:
-      action === 'add'
-        ? JSON.stringify({ ...movieData, iswatched: true }) // ensure iswatched is sent
-        : JSON.stringify({ url: movieData.url }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Want It toggle failed');
+
+  if (!res.ok) {
+    const errMsg = await res.text();
+    throw new Error(`Want It toggle failed: ${errMsg}`);
+  }
   return await res.json();
 };
 
