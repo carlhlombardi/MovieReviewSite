@@ -175,26 +175,30 @@ export default function Home() {
           <h2 className="mb-3">Newly Added</h2>
           <Row>
             {newlyAdded.map((movie) => (
-              <Col key={movie.id} xs={12} md={6} lg={4} className="mb-4">
+              <Col key={movie.id} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <Card
-  onClick={() =>
-    router.push(
-      `/genre/${slugifyGenre(movie.genre)}/${slugify(
-        movie.title,
-        movie.tmdb_id
-      )}`
-    )
-  }
-  style={{ cursor: "pointer" }}
->
-  <Card.Img
-    variant="top"
-    src={movie.image_url || "/images/fallback.jpg"}
-    alt={movie.title}
-    className="img-fluid rounded"
-    style={{ width: "200px", height: "300px", objectFit: "cover" }}
-  />
-</Card>
+                  onClick={() =>
+                    router.push(
+                      `/genre/${slugifyGenre(movie.genre)}/${slugify(
+                        movie.title,
+                        movie.tmdb_id
+                      )}`
+                    )
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  <Card.Img
+                    variant="top"
+                    src={movie.image_url || "/images/fallback.jpg"}
+                    alt={movie.title}
+                    className="img-fluid rounded"
+                    style={{
+                      width: "100%",
+                      height: "300px",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Card>
               </Col>
             ))}
           </Row>
