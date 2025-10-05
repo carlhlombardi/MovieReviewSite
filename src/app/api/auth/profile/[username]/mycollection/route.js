@@ -70,11 +70,11 @@ export async function POST(req, { params }) {
     }
 
     await sql`
-      INSERT INTO mycollection (username, film, genre, image_url, url, isliked, likedcount)
+      INSERT INTO mycollection (username, title, genre, image_url, url, isliked, likedcount)
       VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${isliked}, ${likedcount})
       ON CONFLICT (username, url)
       DO UPDATE SET
-        film = EXCLUDED.film,
+        title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
         isliked = ${isliked},
