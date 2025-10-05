@@ -34,7 +34,7 @@ export default function WantedForMyCollectionPage() {
         if (!token) throw new Error('No auth token found. Please log in.');
 
         const res = await fetch(
-          `/api/auth/profile/${username}/wantedforcollection`,
+          `/api/auth/profile/${username}/wantedformycollection`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
