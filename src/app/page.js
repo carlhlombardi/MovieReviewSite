@@ -38,7 +38,7 @@ export default function Home() {
   useEffect(() => {
     const fetchNewlyAdded = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/data/newlyadded?limit=12`);
+        const res = await fetch(`${API_URL}/api/data/newlyadded?limit=8`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         setNewlyAdded(data.results || []);
