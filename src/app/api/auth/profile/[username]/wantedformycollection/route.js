@@ -55,15 +55,22 @@ export async function POST(req, { params }) {
   if (verified instanceof Response) return verified;
 
   try {
-    const { title, genre, image_url, url, iswatched = true, watchcount = 0 } = await req.json();
+    // 1️⃣ Read the whole body first
+    const body = await req.json();
+
+    // 2️⃣ Log it to Vercel logs
+    console.log('📩 wantedforcollection POST body:', body);
+
+    // 3️⃣ Destructure after logging
+    const { title, genre, image_url, url, iswatched = true, watchcount = 0 } = body;
 
     if (!title || !url) {
       return new Response(JSON.stringify({ message: 'title and url are required' }), { status: 400 });
     }
 
     await sql`
-      INSERT INTO wantedforcollection (username, film, genre, image_url, url, iswatched, watchcount)
-      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${iswatched}, ${watchcount})
+      INSERT INTO wantedforcollection (username, url, title, genre, iswatched, watchcount, image_url)
+      VALUES (${username}, ${url}, ${title}, ${genre}, ${iswatched}, ${watchcount}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
         title = EXCLUDED.title,
@@ -75,10 +82,8 @@ export async function POST(req, { params }) {
 
     return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), { status: 201 });
   } catch (err) {
-    console.error('Error in wantedforcollection POST:', err);
-    console.log('req body', await req.json());
+    console.error('❌ Error in wantedforcollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
-    
   }
 }
 
