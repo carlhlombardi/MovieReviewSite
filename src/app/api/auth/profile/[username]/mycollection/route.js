@@ -45,7 +45,7 @@ export async function GET(req, { params }) {
     await verifyUser(req, username);
 
     const { rows } = await sql`
-      SELECT title, genre, image_url, url, isliked, iswatched
+      SELECT title, genre, image_url, url, isliked
       FROM mycollection
       WHERE username = ${username}
       ORDER BY title;

@@ -1,36 +1,43 @@
+// src/app/api/auth/profile/[username]/wantedformycollection/route.js
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
-// Reuse the same user verification helper:
+// Verify token matches username
 async function verifyUser(req, username) {
   const authHeader = req.headers.get('authorization');
   const token = authHeader?.split(' ')[1];
-  if (!token) throw new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+  if (!token) {
+    throw new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+  }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const userIdFromToken = decoded.userId;
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    throw new Response(JSON.stringify({ message: 'Invalid token' }), { status: 401 });
+  }
 
   const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
   const user = userRes.rows[0];
   if (!user) throw new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
-  if (user.id !== userIdFromToken)
+  if (user.id !== decoded.userId)
     throw new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
 
   return user;
 }
 
-// GET: fetch wanted-for-my-collection
+// ✅ GET: fetch wanted-for-my-collection movies including iswatched
 export async function GET(req, { params }) {
   const { username } = params;
   try {
     await verifyUser(req, username);
 
-    const moviesRes = await sql`
+    const { rows } = await sql`
       SELECT title, genre, image_url, url, iswatched
       FROM wantedforcollection
       WHERE username = ${username};
     `;
-    return new Response(JSON.stringify({ movies: moviesRes.rows }), { status: 200 });
+    return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     if (err instanceof Response) return err;
     console.error('Error in wantedforcollection GET:', err);
@@ -38,18 +45,31 @@ export async function GET(req, { params }) {
   }
 }
 
-// POST: add or mark as wanted
+// ✅ POST: add or mark as wanted / watched
 export async function POST(req, { params }) {
   const { username } = params;
   try {
     await verifyUser(req, username);
-    const { title, genre, image_url, url } = await req.json();
 
+    // Accept iswatched from the body (default false if missing)
+    const { title, genre, image_url, url, iswatched = true } = await req.json();
+
+    if (!title || !url) {
+      throw new Response(JSON.stringify({ message: 'title and url are required' }), { status: 400 });
+    }
+
+    // Insert or update existing row and set iswatched
     await sql`
-      INSERT INTO wantedforcollection (username, title, genre, image_url, url)
-      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url})
-      ON CONFLICT (username, url) DO NOTHING;
+      INSERT INTO wantedforcollection (username, title, genre, image_url, url, iswatched)
+      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${iswatched})
+      ON CONFLICT (username, url)
+      DO UPDATE SET
+        title = EXCLUDED.title,
+        genre = EXCLUDED.genre,
+        image_url = EXCLUDED.image_url,
+        iswatched = ${iswatched};
     `;
+
     return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), { status: 201 });
   } catch (err) {
     if (err instanceof Response) return err;
@@ -58,16 +78,19 @@ export async function POST(req, { params }) {
   }
 }
 
-// DELETE: remove from wanted list
+// ✅ DELETE: remove from wanted list
 export async function DELETE(req, { params }) {
   const { username } = params;
   try {
     await verifyUser(req, username);
     const { url } = await req.json();
+    if (!url) {
+      throw new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
+    }
 
     await sql`
       DELETE FROM wantedforcollection
-      WHERE username = ${username} AND url = ${url}
+      WHERE username = ${username} AND url = ${url};
     `;
     return new Response(JSON.stringify({ message: 'Movie removed from wanted list' }), { status: 200 });
   } catch (err) {
