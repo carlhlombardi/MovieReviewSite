@@ -100,10 +100,23 @@ export default function ProfilePage() {
             href={`/profile/${profile.username}/mycollection`}
             className="text-decoration-none"
           >
-            Movies Owned — View Full Collection
+            Movies Owned — View My Collection
           </a>
         </Card.Header>
       </Card>
+
+       {/* ✅ Movies Owned card now links to wantedformycollection page */}
+      <Card className="mb-4">
+        <Card.Header as="h5">
+          <a
+            href={`/profile/${profile.username}/wantedformycollection`}
+            className="text-decoration-none"
+          >
+            Movies Wanted — View My Wish List
+          </a>
+        </Card.Header>
+      </Card>
+
     </div>
   );
 }
