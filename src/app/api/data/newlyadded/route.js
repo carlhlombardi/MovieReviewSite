@@ -9,7 +9,7 @@ export async function GET(request) {
   try {
     // Parse `limit` param from URL (default 5)
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '12', 10);
+    const limit = parseInt(searchParams.get('limit') || '8', 10);
 
     // Use parameterized query to prevent SQL injection
     const result = await sql`

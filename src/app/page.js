@@ -175,7 +175,7 @@ export default function Home() {
       {/* Newly Added Section */}
       {newlyAdded.length > 0 && (
         <div>
-          <h2 className="mb-3">Newly Added</h2>
+         <h2 className="mt-3 mb-3 text-center">Newly Added Films</h2>
           <Row>
             {newlyAdded.map((item) => (
               <Col
