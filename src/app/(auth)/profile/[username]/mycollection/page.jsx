@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
-import { useParams } from 'next/navigation';
+import { Container, Row, Col, Button } from 'react-bootstrap';
+import { useParams, useRouter } from 'next/navigation';
 import styles from './MyCollectionPage.module.css';
 
 export default function MyCollectionPage() {
   const { username } = useParams();
+  const router = useRouter();
+
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
   const [sortCriteria, setSortCriteria] = useState('title');
@@ -29,17 +31,15 @@ export default function MyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('401'); // no token → auth error
-        }
-
+        // ✅ no localStorage, just include cookies
         const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         });
 
         if (res.status === 401) {
-          throw new Error('401');
+          // not logged in → go to login
+          router.push('/login');
+          return;
         }
 
         if (!res.ok) {
@@ -54,13 +54,14 @@ export default function MyCollectionPage() {
         );
 
         // dedupe by url
-        const deduped = Array.from(new Map(combined.map((m) => [m.url, m])).values());
+        const deduped = Array.from(
+          new Map(combined.map((m) => [m.url, m])).values()
+        );
 
         setMovies(deduped);
       } catch (err) {
         console.error('Error fetching mycollection:', err);
-        // specifically flag 401 to render login page
-        setError(err.message === '401' ? '401' : err.message);
+        setError(err.message);
         setMovies([]);
       } finally {
         setLoading(false);
@@ -68,7 +69,7 @@ export default function MyCollectionPage() {
     };
 
     fetchCollection();
-  }, [username]);
+  }, [username, router]);
 
   // Sort movies whenever movies or sortCriteria changes
   useEffect(() => {
@@ -87,23 +88,6 @@ export default function MyCollectionPage() {
         <p>Loading…</p>
       </Container>
     );
-
-  // show special 401 page
-  if (error === '401') {
-    return (
-      <Container className="py-4 text-center">
-        <div>
-          <h2>401 Error!!</h2>
-          <h3>Please Log In</h3>
-          <Link href="/login">
-            <Button className={styles.authButtonsButton}>
-              Go to Login
-            </Button>
-          </Link>
-        </div>
-      </Container>
-    );
-  }
 
   if (error)
     return (
@@ -153,7 +137,9 @@ export default function MyCollectionPage() {
               >
                 <div className={styles.imagewrapper + ' position-relative'}>
                   <Image
-                    src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
+                    src={decodeURIComponent(
+                      item.image_url || '/images/fallback.jpg'
+                    )}
                     alt={item.title ?? item.film}
                     width={200}
                     height={300}
@@ -165,7 +151,7 @@ export default function MyCollectionPage() {
           ))
         ) : (
           <Col>
-            <p className="text-center">No liked or watched movies yet.</p>
+            <p className="text-center">No movies added to collection yet.</p>
           </Col>
         )}
       </Row>

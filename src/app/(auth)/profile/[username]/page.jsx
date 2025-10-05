@@ -2,13 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Alert, Spinner, Card, Row, Col, Form } from "react-bootstrap";
-import Image from "next/image";
-import Comments from "@/app/components/footer/comments/comments";
-
-const slugifyGenre = (genre) => {
-  return genre?.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
-};
+import { Alert, Spinner, Card } from "react-bootstrap";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -17,36 +11,26 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [likedMovies, setLikedMovies] = useState([]);
-  const [selectedMovieUrl, setSelectedMovieUrl] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        // Profile – cookie is automatically sent
+        const profileRes = await fetch("/api/auth/profile", {
+          credentials: "include", // <--- important for cookies
+        });
+
+        if (profileRes.status === 401) {
           router.push("/login");
           return;
         }
 
-        // Profile
-        const profileRes = await fetch("/api/auth/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
         if (!profileRes.ok) {
           throw new Error("Failed to fetch profile");
         }
+
         const profileData = await profileRes.json();
         setProfile(profileData);
-
-        // Liked movies
-        const likRes = await fetch("/api/auth/liked-movies", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (likRes.ok) {
-          const likData = await likRes.json();
-          setLikedMovies(likData.likedMovies || []);
-        }
       } catch (err) {
         console.error("Error in profile fetch:", err);
         setError(err.message || "Something went wrong");
@@ -68,11 +52,19 @@ export default function ProfilePage() {
   }
 
   if (error) {
-    return <Alert variant="danger" className="mt-5">{error}</Alert>;
+    return (
+      <Alert variant="danger" className="mt-5">
+        {error}
+      </Alert>
+    );
   }
 
   if (!profile) {
-    return <Alert variant="warning" className="mt-5">Profile not found.</Alert>;
+    return (
+      <Alert variant="warning" className="mt-5">
+        Profile not found.
+      </Alert>
+    );
   }
 
   const isSelf = profile.username === profileUsername;
@@ -88,12 +80,16 @@ export default function ProfilePage() {
       <Card className="mb-4">
         <Card.Header as="h5">Profile Details</Card.Header>
         <Card.Body>
-          <p><strong>Username:</strong> {profile.username}</p>
-          <p><strong>Date Joined:</strong> {new Date(profile.date_joined).toLocaleDateString()}</p>
+          <p>
+            <strong>Username:</strong> {profile.username}
+          </p>
+          <p>
+            <strong>Date Joined:</strong>{" "}
+            {new Date(profile.date_joined).toLocaleDateString()}
+          </p>
         </Card.Body>
       </Card>
 
-      {/* ✅ Movies Owned card now links to mycollection page */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
@@ -105,7 +101,6 @@ export default function ProfilePage() {
         </Card.Header>
       </Card>
 
-       {/* ✅ Movies Owned card now links to wantedformycollection page */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
@@ -116,7 +111,6 @@ export default function ProfilePage() {
           </a>
         </Card.Header>
       </Card>
-
     </div>
   );
 }

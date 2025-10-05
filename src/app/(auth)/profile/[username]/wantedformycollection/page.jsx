@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import styles from './WantedForMyCollection.module.css';
 
 export default function WantedForMyCollectionPage() {
   const { username } = useParams();
+  const router = useRouter();
+
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
   const [sortCriteria, setSortCriteria] = useState('title');
@@ -29,21 +31,20 @@ export default function WantedForMyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('401'); // signal no token
-        }
-
+        // ✅ No localStorage, just include cookies
         const res = await fetch(
           `/api/auth/profile/${username}/wantedforcollection`,
           {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include', // <--- important
           }
         );
 
         if (res.status === 401) {
-          throw new Error('401');
+          // not logged in, redirect to login
+          router.push('/login');
+          return;
         }
+
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
@@ -56,8 +57,7 @@ export default function WantedForMyCollectionPage() {
         setMovies(onlyWatched);
       } catch (err) {
         console.error('Error fetching wantedforcollection:', err);
-        // store just "401" so we know it's an auth error
-        setError(err.message === '401' ? '401' : err.message);
+        setError(err.message);
         setMovies([]);
       } finally {
         setLoading(false);
@@ -65,7 +65,7 @@ export default function WantedForMyCollectionPage() {
     };
 
     fetchWanted();
-  }, [username]);
+  }, [username, router]);
 
   useEffect(() => {
     const sorted = [...movies].sort((a, b) => {
@@ -85,24 +85,6 @@ export default function WantedForMyCollectionPage() {
     );
   }
 
-  // show special 401 page
-  if (error === '401') {
-    return (
-      <Container className="py-4 text-center">
-        <div>
-          <h2>401 Error!!</h2>
-          <h3>Please Log In</h3>
-          <Link href="/login">
-            <Button className={styles.authButtonsButton}>
-              Go to Login
-            </Button>
-          </Link>
-        </div>
-      </Container>
-    );
-  }
-
-  // show generic error
   if (error) {
     return (
       <Container className="py-4">
