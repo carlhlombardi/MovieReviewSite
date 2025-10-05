@@ -96,9 +96,10 @@ const fetchWantStatus = async (url) => {
 const toggleOwnIt = async (url, action) => {
   try {
     const token = localStorage.getItem("token");
-    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/mycollection${
-      action === "unlike" ? `?url=${encodeURIComponent(url)}` : ""
-    }`;
+    const fetchUrl =
+      `https://movie-review-site-seven.vercel.app/api/auth/profile/${username}/mycollection${
+        action === "unlike" ? `?url=${encodeURIComponent(url)}` : ""
+      }`;
     const response = await fetch(fetchUrl, {
       method: action === "like" ? "POST" : "DELETE",
       headers: {
@@ -118,9 +119,10 @@ const toggleOwnIt = async (url, action) => {
 const toggleWantIt = async (url, action) => {
   try {
     const token = localStorage.getItem("token");
-    const fetchUrl = `https://movie-review-site-seven.vercel.app/api/auth/wantedforcollection${
-      action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
-    }`;
+    const fetchUrl =
+      `https://movie-review-site-seven.vercel.app/api/auth/profile/${username}/wantedforcollection${
+        action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
+      }`;
     const response = await fetch(fetchUrl, {
       method: action === "add" ? "POST" : "DELETE",
       headers: {
