@@ -1,26 +1,29 @@
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
-/** Verify that the token matches the username. */
+/** Verify that the token matches the username and return the user row. */
 async function verifyUser(req, username) {
   const authHeader = req.headers.get('authorization');
   const token = authHeader?.split(' ')[1];
   if (!token) {
-    throw new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+    return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
   }
 
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
-    throw new Response(JSON.stringify({ message: 'Invalid token' }), { status: 401 });
+    return new Response(JSON.stringify({ message: 'Invalid token' }), { status: 401 });
   }
 
   const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
   const user = userRes.rows[0];
-  if (!user) throw new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
-  if (user.id !== decoded.userId)
-    throw new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
+  if (!user) {
+    return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
+  }
+  if (user.id !== decoded.userId) {
+    return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
+  }
 
   return user;
 }
@@ -28,9 +31,10 @@ async function verifyUser(req, username) {
 /** GET /api/auth/profile/[username]/mycollection */
 export async function GET(req, { params }) {
   const { username } = params;
-  try {
-    await verifyUser(req, username);
+  const verified = await verifyUser(req, username);
+  if (verified instanceof Response) return verified;
 
+  try {
     const { rows } = await sql`
       SELECT title, genre, image_url, url, isliked
       FROM mycollection
@@ -39,7 +43,6 @@ export async function GET(req, { params }) {
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
-    if (err instanceof Response) return err;
     console.error('Error in mycollection GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
@@ -48,15 +51,19 @@ export async function GET(req, { params }) {
 /** POST /api/auth/profile/[username]/mycollection */
 export async function POST(req, { params }) {
   const { username } = params;
+  const verified = await verifyUser(req, username);
+  if (verified instanceof Response) return verified;
+
   try {
-    await verifyUser(req, username);
     const { title, genre, image_url, url } = await req.json();
 
     if (!title || !genre || !url) {
-      throw new Response(JSON.stringify({ message: 'title, genre and url are required' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: 'title, genre and url are required' }),
+        { status: 400 }
+      );
     }
 
-    // Insert or update existing row to isliked=true
     await sql`
       INSERT INTO mycollection (username, title, genre, image_url, url, isliked)
       VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, true)
@@ -70,7 +77,6 @@ export async function POST(req, { params }) {
 
     return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
-    if (err instanceof Response) return err;
     console.error('Error in mycollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
@@ -79,11 +85,13 @@ export async function POST(req, { params }) {
 /** DELETE /api/auth/profile/[username]/mycollection */
 export async function DELETE(req, { params }) {
   const { username } = params;
+  const verified = await verifyUser(req, username);
+  if (verified instanceof Response) return verified;
+
   try {
-    await verifyUser(req, username);
     const { url } = await req.json();
     if (!url) {
-      throw new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
+      return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
     }
 
     await sql`
@@ -93,7 +101,6 @@ export async function DELETE(req, { params }) {
 
     return new Response(JSON.stringify({ message: 'Movie removed' }), { status: 200 });
   } catch (err) {
-    if (err instanceof Response) return err;
     console.error('Error in mycollection DELETE:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
