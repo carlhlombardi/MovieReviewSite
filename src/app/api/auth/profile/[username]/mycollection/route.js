@@ -26,7 +26,7 @@ export async function GET(req, { params }) {
     await verifyUser(req, username);
 
     const moviesRes = await sql`
-      SELECT title, genre, image_url, url
+      SELECT title, genre, image_url, url, isliked
       FROM mycollection
       WHERE username = ${username};
     `;
