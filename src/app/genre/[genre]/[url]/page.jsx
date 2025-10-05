@@ -109,22 +109,6 @@ export default function MoviePage({ params }) {
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
 
-  const fetchUserRating = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      const res = await fetch(
-        `/api/auth/movie_ratings?url=${encodeURIComponent(slugifiedUrl)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error('User rating fetch failed');
-      const ratingData = await res.json();
-      // optional: store ratingData if needed
-    } catch (err) {
-      console.error('Rating fetch error:', err);
-    }
-  }, [slugifiedUrl]);
-
   const handleOwnIt = async () => {
     const action = isOwned ? 'unlike' : 'like';
     const result = await toggleOwnIt(username, data, action);
