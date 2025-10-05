@@ -64,7 +64,7 @@ export const toggleOwnIt = async (username, movieData, action) => {
 };
 export const toggleWantIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
-  const endpoint = `/api/auth/profile/${username}/wantedformycollection`;
+  const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
 
   // build the payload explicitly
   const payload =
