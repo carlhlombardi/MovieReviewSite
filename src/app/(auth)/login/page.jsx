@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { useAuth } from '@/app/(auth)/contexts/AuthContext';
 
-// base URL in env var for security / flexibility
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function LoginPage() {
@@ -22,29 +21,17 @@ export default function LoginPage() {
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // don’t log credentials anywhere
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-        credentials: 'include', // allows secure cookies if backend sets them
+        credentials: 'include', // cookie will be set by backend
       });
 
       if (!response.ok) {
-        // show a generic error to avoid leaking info
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Invalid username or password');
+        // Always show same error
+        throw new Error('Invalid username or password');
       }
 
-      const data = await response.json();
-      const { token } = data;
-
-      // if backend sets HttpOnly cookie, you don’t need to store token at all
-      if (token) {
-        // prefer sessionStorage over localStorage
-        sessionStorage.setItem('token', token);
-      }
-
+      // No token to parse — cookie is set automatically
       setIsLoggedIn(true);
       router.push(`/profile/${encodeURIComponent(username)}`);
     } catch (err) {
@@ -63,6 +50,7 @@ export default function LoginPage() {
             type="text"
             placeholder="Enter username"
             value={username}
+            minLength={3}
             onChange={(e) => setUsername(e.target.value)}
             required
           />
@@ -73,7 +61,9 @@ export default function LoginPage() {
             type="password"
             placeholder="Password"
             value={password}
+            minLength={8}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
             required
           />
         </Form.Group>
