@@ -36,10 +36,10 @@ export async function GET(req, { params }) {
 
   try {
     const { rows } = await sql`
-      SELECT title, genre, image_url, url, iswatched, watchcount
+      SELECT film, genre, image_url, url, iswatched, watchcount
       FROM wantedforcollection
       WHERE username = ${username}
-      ORDER BY title;
+      ORDER BY film;
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
@@ -62,7 +62,7 @@ export async function POST(req, { params }) {
     }
 
     await sql`
-      INSERT INTO wantedforcollection (username, title, genre, image_url, url, iswatched, watchcount)
+      INSERT INTO wantedforcollection (username, film, genre, image_url, url, iswatched, watchcount)
       VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${iswatched}, ${watchcount})
       ON CONFLICT (username, url)
       DO UPDATE SET
