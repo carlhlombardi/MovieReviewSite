@@ -28,7 +28,8 @@ const getCurrentUser = async () => {
 };
 
 // === toggle helpers ===
-const toggleOwnIt = async (username, movieData, action) => {
+// === toggle helpers ===
+export const toggleOwnIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/mycollection`;
   const res = await fetch(endpoint, {
@@ -39,16 +40,16 @@ const toggleOwnIt = async (username, movieData, action) => {
     },
     body:
       action === 'like'
-        ? JSON.stringify(movieData)
+        ? JSON.stringify(movieData) // {title, genre, image_url, url}
         : JSON.stringify({ url: movieData.url }),
   });
   if (!res.ok) throw new Error('Own It toggle failed');
   return await res.json();
 };
 
-const toggleWantIt = async (username, movieData, action) => {
+export const toggleWantIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
-  const endpoint = `/api/auth/profile/${username}/wantedformycollection`; // ← fixed
+  const endpoint = `/api/auth/profile/${username}/wantedformycollection`;
   const res = await fetch(endpoint, {
     method: action === 'add' ? 'POST' : 'DELETE',
     headers: {
@@ -57,12 +58,13 @@ const toggleWantIt = async (username, movieData, action) => {
     },
     body:
       action === 'add'
-        ? JSON.stringify(movieData)
+        ? JSON.stringify({ ...movieData, iswatched: true }) // ensure iswatched is sent
         : JSON.stringify({ url: movieData.url }),
   });
   if (!res.ok) throw new Error('Want It toggle failed');
   return await res.json();
 };
+
 
 export default function MoviePage({ params }) {
   const { genre, url } = params;

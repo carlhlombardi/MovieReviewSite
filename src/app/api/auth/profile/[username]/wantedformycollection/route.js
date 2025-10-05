@@ -1,4 +1,3 @@
-// src/app/api/auth/profile/[username]/wantedformycollection/route.js
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
@@ -51,7 +50,7 @@ export async function POST(req, { params }) {
   try {
     await verifyUser(req, username);
 
-    // Accept iswatched from the body (default false if missing)
+    // Accept iswatched from the body (default true if missing)
     const { title, genre, image_url, url, iswatched = true } = await req.json();
 
     if (!title || !url) {
