@@ -31,7 +31,6 @@ export default function MyCollectionPage() {
           throw new Error('No auth token found. Please log in.');
         }
 
-        // ✅ assign to res here
         const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -41,7 +40,9 @@ export default function MyCollectionPage() {
         }
 
         const json = await res.json();
-        setMovies(json.movies ?? []);
+        // ✅ only keep liked items
+        const onlyLiked = (json.movies ?? []).filter((m) => m.isliked === true);
+        setMovies(onlyLiked);
       } catch (err) {
         console.error('Error fetching mycollection:', err);
         setError(err.message);
@@ -56,12 +57,15 @@ export default function MyCollectionPage() {
 
   // Sort movies whenever movies or sortCriteria changes
   useEffect(() => {
-    const sorted = [...movies].sort((a, b) => {
-      const key = sortCriteria;
-      const va = (a[key] ?? a.title ?? '').toString();
-      const vb = (b[key] ?? b.title ?? '').toString();
-      return va.localeCompare(vb);
-    });
+    // also filter here just in case
+    const sorted = [...movies]
+      .filter((m) => m.isliked === true)
+      .sort((a, b) => {
+        const key = sortCriteria;
+        const va = (a[key] ?? a.title ?? '').toString();
+        const vb = (b[key] ?? b.title ?? '').toString();
+        return va.localeCompare(vb);
+      });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
@@ -108,22 +112,29 @@ export default function MyCollectionPage() {
       <Row>
         {sortedMovies.length > 0 ? (
           sortedMovies.map((item) => (
-           <Col key={item.id ?? item.row_id} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                <Link
-                  href={`/genre/${item.genre}/${encodeURIComponent(item.url)}`}
-                  className="text-decoration-none"
-                >
-                  <div className={styles.imagewrapper}>
-                    <Image
-                      src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
-                      alt={item.title ?? item.film}
-                      width={200}
-                      height={300}
-                      className="img-fluid rounded"
-                    />
-                  </div>
-                </Link>
-              </Col>
+            <Col
+              key={item.id ?? item.row_id ?? item.url}
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              className="mb-4"
+            >
+              <Link
+                href={`/genre/${item.genre}/${encodeURIComponent(item.url)}`}
+                className="text-decoration-none"
+              >
+                <div className={styles.imagewrapper}>
+                  <Image
+                    src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
+                    alt={item.title ?? item.film}
+                    width={200}
+                    height={300}
+                    className="img-fluid rounded"
+                  />
+                </div>
+              </Link>
+            </Col>
           ))
         ) : (
           <Col>

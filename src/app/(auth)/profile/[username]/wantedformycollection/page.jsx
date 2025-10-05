@@ -44,7 +44,11 @@ export default function WantedForMyCollectionPage() {
         }
 
         const json = await res.json();
-        setMovies(json.movies ?? []);
+        // ✅ filter to only movies with iswatched === true
+        const onlyWatched = (json.movies ?? []).filter(
+          (m) => m.iswatched === true
+        );
+        setMovies(onlyWatched);
       } catch (err) {
         console.error('Error fetching wantedformycollection:', err);
         setError(err.message);
@@ -57,13 +61,16 @@ export default function WantedForMyCollectionPage() {
     fetchCollection();
   }, [username]);
 
+  // sort + filter (extra safety)
   useEffect(() => {
-    const sorted = [...movies].sort((a, b) => {
-      const key = sortCriteria;
-      const va = (a[key] ?? a.title ?? '').toString();
-      const vb = (b[key] ?? b.title ?? '').toString();
-      return va.localeCompare(vb);
-    });
+    const sorted = [...movies]
+      .filter((m) => m.iswatched === true)
+      .sort((a, b) => {
+        const key = sortCriteria;
+        const va = (a[key] ?? a.title ?? '').toString();
+        const vb = (b[key] ?? b.title ?? '').toString();
+        return va.localeCompare(vb);
+      });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
@@ -136,7 +143,7 @@ export default function WantedForMyCollectionPage() {
           ))
         ) : (
           <Col>
-            <p className="text-center">No wanted movies yet.</p>
+            <p className="text-center">No watched wanted movies yet.</p>
           </Col>
         )}
       </Row>
