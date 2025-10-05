@@ -39,7 +39,7 @@ export const toggleOwnIt = async (username, movieData, action) => {
           url: movieData.url,
           isliked: movieData.isliked ?? true,
           likedcount: movieData.likedcount ?? 0,
-          title: movieData.title,
+          title: movieData.film,
           genre: movieData.genre,
           image_url: movieData.image_url,
         }
@@ -70,7 +70,7 @@ export const toggleWantIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          title: movieData.title,              // ✅ added
+          title: movieData.film,              // ✅ added
           genre: movieData.genre,
           iswatched: movieData.iswatched ?? true,
           watchcount: movieData.watchcount ?? 0,
