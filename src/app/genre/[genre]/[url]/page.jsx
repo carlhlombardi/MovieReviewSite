@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Container, Row, Col, Alert, Spinner, Button } from "react-bootstrap";
 import Image from "next/image";
 import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
+import jwtDecode from "jwt-decode";
 
 // === Helper Functions ===
 const slugifyGenre = (genre) =>
@@ -12,120 +13,103 @@ const slugifyGenre = (genre) =>
 const fetchData = async (genre, url) => {
   const genreSlug = slugifyGenre(genre);
   const genreTable = `${genreSlug}movies`;
-
-  try {
-    const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/data/${genreTable}?url=${encodeURIComponent(
-        url
-      )}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch movie data");
-    return await response.json();
-  } catch (error) {
-    console.error("Fetch data error:", error);
-    return null;
-  }
+  const res = await fetch(
+    `/api/data/${genreTable}?url=${encodeURIComponent(url)}`
+  );
+  if (!res.ok) throw new Error("Failed to fetch movie data");
+  return await res.json();
 };
 
 const checkUserLoggedIn = async () => {
-  try {
-    if (typeof window === "undefined") return false;
-    const token = localStorage.getItem("token");
-    if (!token) return false;
-
-    const response = await fetch(
-      "https://movie-review-site-seven.vercel.app/api/auth/me",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    return response.ok;
-  } catch (error) {
-    console.error("Login check failed", error);
-    return false;
-  }
+  if (typeof window === "undefined") return false;
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  const res = await fetch("/api/auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.ok;
 };
 
 // === toggle helpers ===
 const toggleOwnIt = async (username, url, action) => {
-  try {
-    const token = localStorage.getItem("token");
-    const fetchUrl =
-      `https://movie-review-site-seven.vercel.app/api/auth/profile/${username}/mycollection${
-        action === "unlike" ? `?url=${encodeURIComponent(url)}` : ""
-      }`;
-    const response = await fetch(fetchUrl, {
-      method: action === "like" ? "POST" : "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: action === "like" ? JSON.stringify({ url }) : undefined,
-    });
-    if (!response.ok) throw new Error("Own It toggle failed");
-    return await response.json();
-  } catch (error) {
-    console.error("Own It toggle failed", error);
-    return null;
-  }
+  const token = localStorage.getItem("token");
+  const endpoint = `/api/auth/profile/${username}/mycollection${
+    action === "unlike" ? `?url=${encodeURIComponent(url)}` : ""
+  }`;
+  const res = await fetch(endpoint, {
+    method: action === "like" ? "POST" : "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: action === "like" ? JSON.stringify({ url }) : undefined,
+  });
+  if (!res.ok) throw new Error("Own It toggle failed");
+  return await res.json();
 };
 
 const toggleWantIt = async (username, url, action) => {
-  try {
-    const token = localStorage.getItem("token");
-    const fetchUrl =
-      `https://movie-review-site-seven.vercel.app/api/auth/profile/${username}/wantedforcollection${
-        action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
-      }`;
-    const response = await fetch(fetchUrl, {
-      method: action === "add" ? "POST" : "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: action === "add" ? JSON.stringify({ url }) : undefined,
-    });
-    if (!response.ok) throw new Error("Want It toggle failed");
-    return await response.json();
-  } catch (error) {
-    console.error("Want It toggle failed", error);
-    return null;
-  }
+  const token = localStorage.getItem("token");
+  const endpoint = `/api/auth/profile/${username}/wantedforcollection${
+    action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
+  }`;
+  const res = await fetch(endpoint, {
+    method: action === "add" ? "POST" : "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: action === "add" ? JSON.stringify({ url }) : undefined,
+  });
+  if (!res.ok) throw new Error("Want It toggle failed");
+  return await res.json();
 };
 
-const MoviePage = ({ params }) => {
-  const { genre, url, username } = params;
+export default function MoviePage({ params }) {
+  const { genre, url } = params;
   const slugifiedUrl = url;
+
+  // pull username from token:
+  const [username, setUsername] = useState(null);
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
 
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
 
+  // decode token once
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUsername(decoded.username);
+      } catch {
+        setUsername(null);
+      }
+    }
+  }, []);
+
   const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-
-      const response = await fetch(
-        `https://movie-review-site-seven.vercel.app/api/auth/movie_ratings?url=${encodeURIComponent(
-          slugifiedUrl
-        )}`,
+      const res = await fetch(
+        `/api/auth/movie_ratings?url=${encodeURIComponent(slugifiedUrl)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (!response.ok) throw new Error("User rating fetch failed");
-      const ratingData = await response.json();
+      if (!res.ok) throw new Error("User rating fetch failed");
+      const ratingData = await res.json();
       setUserRating(Number(ratingData.userRating || 0));
       setAverageRating(Number(ratingData.averageRating || 0));
-    } catch (error) {
-      console.error("Rating fetch error:", error);
+    } catch (err) {
+      console.error("Rating fetch error:", err);
     }
   }, [slugifiedUrl]);
 
@@ -141,59 +125,40 @@ const MoviePage = ({ params }) => {
     if (result) setIsWanted(action === "add");
   };
 
-  const handleRatingSubmit = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "https://movie-review-site-seven.vercel.app/api/auth/movie_ratings",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ url: slugifiedUrl, rating: userRating }),
-        }
-      );
-      if (!response.ok) throw new Error("Rating submit failed");
-      await fetchUserRating();
-    } catch (error) {
-      console.error("Submit rating error:", error);
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       try {
         setIsLoading(true);
-
         const movieData = await fetchData(genre, slugifiedUrl);
-        if (!movieData) throw new Error("Movie not found");
         setData(movieData);
 
         const loggedIn = await checkUserLoggedIn();
         setIsLoggedIn(loggedIn);
 
-        if (loggedIn) {
+        if (loggedIn && username) {
           const token = localStorage.getItem("token");
 
-          // inline fetch own-status
+          // fetch isliked
           const ownRes = await fetch(
-            `/api/auth/mycollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            `/api/auth/profile/${username}/mycollection?url=${encodeURIComponent(
+              slugifiedUrl
+            )}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const ownData = ownRes.ok ? await ownRes.json() : { isliked: false };
-          setIsOwned(ownData.isliked || false);
+          setIsOwned(!!ownData.isliked);
 
-          // inline fetch want-status
+          // fetch iswatched
           const wantRes = await fetch(
-            `/api/auth/wantedforcollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            `/api/auth/profile/${username}/wantedforcollection?url=${encodeURIComponent(
+              slugifiedUrl
+            )}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const wantData = wantRes.ok
             ? await wantRes.json()
             : { iswatched: false };
-          setIsWanted(wantData.iswatched || false);
+          setIsWanted(!!wantData.iswatched);
 
           await fetchUserRating();
         }
@@ -205,19 +170,13 @@ const MoviePage = ({ params }) => {
       }
     };
 
-    init();
-  }, [genre, slugifiedUrl, fetchUserRating]); // ✅ no missing deps now
+    if (username !== null) init();
+  }, [genre, slugifiedUrl, username, fetchUserRating]);
 
   if (isLoading)
-    return (
-      <Spinner animation="border" role="status" className="d-block mx-auto my-5" />
-    );
+    return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
   if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
   if (!data) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
-
-  const myRating =
-    data.my_rating ?? data.myrating ?? data.myRating ?? null;
-  const review = data.review ?? data.Review ?? null;
 
   const {
     film,
@@ -228,6 +187,8 @@ const MoviePage = ({ params }) => {
     producer,
     run_time,
     image_url,
+    my_rating,
+    review,
   } = data;
 
   return (
@@ -272,12 +233,12 @@ const MoviePage = ({ params }) => {
       </Row>
       <Row>
         <Col>
-          {(myRating || review) && (
+          {(my_rating || review) && (
             <div className="mt-4">
-              {myRating && (
+              {my_rating && (
                 <>
                   <h4>Our Rating</h4>
-                  <p>{myRating}</p>
+                  <p>{my_rating}</p>
                 </>
               )}
               {review && (
@@ -292,6 +253,4 @@ const MoviePage = ({ params }) => {
       </Row>
     </Container>
   );
-};
-
-export default MoviePage;
+}

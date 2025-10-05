@@ -34,7 +34,7 @@ export default function WantedForMyCollectionPage() {
         if (!token) throw new Error('No auth token found. Please log in.');
 
         const res = await fetch(
-          `/api/auth/profile/${username}/wantedformycollection`,
+          `/api/auth/profile/${username}/wantedforcollection`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -143,7 +143,7 @@ export default function WantedForMyCollectionPage() {
           ))
         ) : (
           <Col>
-            <p className="text-center">No watched movies yet.</p>
+            <p className="text-center">No wanted movies yet.</p>
           </Col>
         )}
       </Row>
