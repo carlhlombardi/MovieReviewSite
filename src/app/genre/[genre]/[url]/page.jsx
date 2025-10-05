@@ -166,7 +166,7 @@ export default function MoviePage({ params }) {
     };
 
     init();
-  }, [genre, slugifiedUrl, fetchUserRating]);
+  }, [genre, slugifiedUrl]);
 
   if (isLoading)
     return (
