@@ -39,6 +39,35 @@
     object-fit: cover; /* Cover the area while maintaining aspect ratio */
   }
 
+  .authButtonsWrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .authButtons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px; /* Adjust the gap as needed */
+    margin: 1rem;
+  }
+
+  .authButtonsButton {
+    color: white;
+    background-color: var(--bg);
+    font-size: 1.3rem;
+    border-radius: 5px;
+    padding: .5rem;
+    border: 2px solid white;
+  }
+  
+  @media (max-width: 992px) {
+    .authButtons {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
   @media (min-width: 768px) and (max-width: 1024px) {
     .custom-col {
       justify-content: center;

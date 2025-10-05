@@ -93,7 +93,7 @@ export default function WantedForMyCollectionPage() {
           <h2>401 Error!!</h2>
           <h3>Please Log In</h3>
           <Link href="/login">
-            <Button variant="primary" className="mt-3">
+            <Button className={styles.authButtonsButton}>
               Go to Login
             </Button>
           </Link>
