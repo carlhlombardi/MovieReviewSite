@@ -19,14 +19,14 @@ const fetchData = async (genre, url) => {
   return await res.json();
 };
 
-const checkUserLoggedIn = async () => {
-  if (typeof window === "undefined") return false;
+const getCurrentUser = async () => {
   const token = localStorage.getItem("token");
-  if (!token) return false;
+  if (!token) return null;
   const res = await fetch("/api/auth/me", {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return res.ok;
+  if (!res.ok) return null;
+  return await res.json(); // expect { username: '...' }
 };
 
 // === toggle helpers ===
@@ -68,9 +68,7 @@ export default function MoviePage({ params }) {
   const { genre, url } = params;
   const slugifiedUrl = url;
 
-  // pull username from token:
   const [username, setUsername] = useState(null);
-
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,19 +79,6 @@ export default function MoviePage({ params }) {
 
   const [userRating, setUserRating] = useState(0);
   const [averageRating, setAverageRating] = useState(0);
-
-  // decode token once
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUsername(decoded.username);
-      } catch {
-        setUsername(null);
-      }
-    }
-  }, []);
 
   const fetchUserRating = useCallback(async () => {
     try {
@@ -131,17 +116,16 @@ export default function MoviePage({ params }) {
         const movieData = await fetchData(genre, slugifiedUrl);
         setData(movieData);
 
-        const loggedIn = await checkUserLoggedIn();
-        setIsLoggedIn(loggedIn);
+        const user = await getCurrentUser();
+        if (user && user.username) {
+          setIsLoggedIn(true);
+          setUsername(user.username);
 
-        if (loggedIn && username) {
           const token = localStorage.getItem("token");
 
           // fetch isliked
           const ownRes = await fetch(
-            `/api/auth/profile/${username}/mycollection?url=${encodeURIComponent(
-              slugifiedUrl
-            )}`,
+            `/api/auth/profile/${user.username}/mycollection?url=${encodeURIComponent(slugifiedUrl)}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const ownData = ownRes.ok ? await ownRes.json() : { isliked: false };
@@ -149,9 +133,7 @@ export default function MoviePage({ params }) {
 
           // fetch iswatched
           const wantRes = await fetch(
-            `/api/auth/profile/${username}/wantedforcollection?url=${encodeURIComponent(
-              slugifiedUrl
-            )}`,
+            `/api/auth/profile/${user.username}/wantedforcollection?url=${encodeURIComponent(slugifiedUrl)}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const wantData = wantRes.ok
@@ -169,8 +151,8 @@ export default function MoviePage({ params }) {
       }
     };
 
-    if (username !== null) init();
-  }, [genre, slugifiedUrl, username, fetchUserRating]);
+    init();
+  }, [genre, slugifiedUrl, fetchUserRating]);
 
   if (isLoading)
     return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
