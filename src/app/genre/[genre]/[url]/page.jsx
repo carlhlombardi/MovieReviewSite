@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Container, Row, Col, Alert, Spinner, Button } from "react-bootstrap";
 import Image from "next/image";
-import Comments from "@/app/components/footer/comments/comments";
 import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
 
 // === Helper Functions ===
@@ -47,53 +46,8 @@ const checkUserLoggedIn = async () => {
   }
 };
 
-// === Own/Want helpers ===
-const fetchOwnStatus = async (url) => {
-  try {
-    if (typeof window === "undefined") return { isLiked: false, likeCount: 0 };
-    const token = localStorage.getItem("token");
-    const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/mycollection?url=${encodeURIComponent(
-        url
-      )}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!response.ok) throw new Error("Own It status fetch failed");
-    const data = await response.json();
-    return {
-      isLiked: data.isliked || false,
-      likeCount: data.likecount || 0,
-    };
-  } catch (error) {
-    console.error("Fetch own-it error:", error);
-    return { isLiked: false, likeCount: 0 };
-  }
-};
-
-const fetchWantStatus = async (url) => {
-  try {
-    if (typeof window === "undefined")
-      return { isWatched: false, watchCount: 0 };
-    const token = localStorage.getItem("token");
-    const response = await fetch(
-      `https://movie-review-site-seven.vercel.app/api/auth/wantedforcollection?url=${encodeURIComponent(
-        url
-      )}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!response.ok) throw new Error("Want It status fetch failed");
-    const data = await response.json();
-    return {
-      isWatched: data.iswatched || false,
-      watchCount: data.watchcount || 0,
-    };
-  } catch (error) {
-    console.error("Fetch want-it error:", error);
-    return { isWatched: false, watchCount: 0 };
-  }
-};
-
-const toggleOwnIt = async (url, action) => {
+// === toggle helpers ===
+const toggleOwnIt = async (username, url, action) => {
   try {
     const token = localStorage.getItem("token");
     const fetchUrl =
@@ -116,7 +70,7 @@ const toggleOwnIt = async (url, action) => {
   }
 };
 
-const toggleWantIt = async (url, action) => {
+const toggleWantIt = async (username, url, action) => {
   try {
     const token = localStorage.getItem("token");
     const fetchUrl =
@@ -140,7 +94,7 @@ const toggleWantIt = async (url, action) => {
 };
 
 const MoviePage = ({ params }) => {
-  const { genre, url } = params;
+  const { genre, url, username } = params;
   const slugifiedUrl = url;
 
   const [data, setData] = useState(null);
@@ -177,13 +131,13 @@ const MoviePage = ({ params }) => {
 
   const handleOwnIt = async () => {
     const action = isOwned ? "unlike" : "like";
-    const result = await toggleOwnIt(slugifiedUrl, action);
+    const result = await toggleOwnIt(username, slugifiedUrl, action);
     if (result) setIsOwned(action === "like");
   };
 
   const handleWantIt = async () => {
     const action = isWanted ? "remove" : "add";
-    const result = await toggleWantIt(slugifiedUrl, action);
+    const result = await toggleWantIt(username, slugifiedUrl, action);
     if (result) setIsWanted(action === "add");
   };
 
@@ -214,7 +168,6 @@ const MoviePage = ({ params }) => {
         setIsLoading(true);
 
         const movieData = await fetchData(genre, slugifiedUrl);
-        console.log("🎯 movieData response:", movieData); // 👈 console log
         if (!movieData) throw new Error("Movie not found");
         setData(movieData);
 
@@ -222,10 +175,26 @@ const MoviePage = ({ params }) => {
         setIsLoggedIn(loggedIn);
 
         if (loggedIn) {
-          const ownStatus = await fetchOwnStatus(slugifiedUrl);
-          setIsOwned(ownStatus.isLiked);
-          const wantStatus = await fetchWantStatus(slugifiedUrl);
-          setIsWanted(wantStatus.isWatched);
+          const token = localStorage.getItem("token");
+
+          // inline fetch own-status
+          const ownRes = await fetch(
+            `/api/auth/mycollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const ownData = ownRes.ok ? await ownRes.json() : { isliked: false };
+          setIsOwned(ownData.isliked || false);
+
+          // inline fetch want-status
+          const wantRes = await fetch(
+            `/api/auth/wantedforcollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const wantData = wantRes.ok
+            ? await wantRes.json()
+            : { iswatched: false };
+          setIsWanted(wantData.iswatched || false);
+
           await fetchUserRating();
         }
       } catch (err) {
@@ -237,7 +206,7 @@ const MoviePage = ({ params }) => {
     };
 
     init();
-  }, [genre, slugifiedUrl, fetchUserRating]);
+  }, [genre, slugifiedUrl, fetchUserRating]); // ✅ no missing deps now
 
   if (isLoading)
     return (
@@ -246,7 +215,6 @@ const MoviePage = ({ params }) => {
   if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
   if (!data) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
 
-  // ✅ flexible rating/review extraction
   const myRating =
     data.my_rating ?? data.myrating ?? data.myRating ?? null;
   const review = data.review ?? data.Review ?? null;
@@ -283,27 +251,27 @@ const MoviePage = ({ params }) => {
           {run_time && <p><strong>Runtime:</strong> {run_time} minutes</p>}
 
           {isLoggedIn && (
-          <div className="my-3">
-            <Button
-              variant={isOwned ? "danger" : "outline-danger"}
-              onClick={handleOwnIt}
-              className="me-2"
-            >
-              {isOwned ? <HeartFill /> : <Heart />} Own It
-            </Button>
+            <div className="my-3">
+              <Button
+                variant={isOwned ? "danger" : "outline-danger"}
+                onClick={handleOwnIt}
+                className="me-2"
+              >
+                {isOwned ? <HeartFill /> : <Heart />} Own It
+              </Button>
 
-            <Button
-              variant={isWanted ? "primary" : "outline-primary"}
-              onClick={handleWantIt}
-            >
-              {isWanted ? <TvFill /> : <Tv />} Want It
-            </Button>
-          </div>
+              <Button
+                variant={isWanted ? "primary" : "outline-primary"}
+                onClick={handleWantIt}
+              >
+                {isWanted ? <TvFill /> : <Tv />} Want It
+              </Button>
+            </div>
           )}
-          </Col>
-          </Row>
-          <Row>
-          <Col>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
           {(myRating || review) && (
             <div className="mt-4">
               {myRating && (
@@ -321,7 +289,7 @@ const MoviePage = ({ params }) => {
             </div>
           )}
         </Col>
-        </Row>
+      </Row>
     </Container>
   );
 };

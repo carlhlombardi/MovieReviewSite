@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './MyCollectionPage.module.css'; // optional CSS
+import { HeartFill, TvFill } from 'react-bootstrap-icons';
+import styles from './MyCollectionPage.module.css';
 
 export default function MyCollectionPage() {
   const { username } = useParams();
@@ -18,10 +19,8 @@ export default function MyCollectionPage() {
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
-  // normalise any possible "truthy" value for isliked
-  const isLiked = (val) => {
-    return val === true || val === 'true' || val === 't' || val === 1 || val === '1';
-  };
+  const isTrue = (val) =>
+    val === true || val === 'true' || val === 't' || val === 1 || val === '1';
 
   useEffect(() => {
     if (!username) return;
@@ -32,26 +31,25 @@ export default function MyCollectionPage() {
         setError(null);
 
         const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No auth token found. Please log in.');
-        }
+        if (!token) throw new Error('No auth token found. Please log in.');
 
         const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) {
-          throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
-        }
+        if (!res.ok) throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
 
         const json = await res.json();
 
-        // ✅ only keep liked items (robust check)
-        const onlyLiked = (json.movies ?? []).filter((m) =>
-          isLiked(m.isliked ?? m.is_liked ?? m.liked)
+        // include liked or watched items
+        const combined = (json.movies ?? []).filter(
+          (m) => isTrue(m.isliked) || isTrue(m.iswatched)
         );
 
-        setMovies(onlyLiked);
+        // dedupe by url
+        const deduped = Array.from(new Map(combined.map(m=>[m.url,m])).values());
+
+        setMovies(deduped);
       } catch (err) {
         console.error('Error fetching mycollection:', err);
         setError(err.message);
@@ -75,21 +73,19 @@ export default function MyCollectionPage() {
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
-  if (loading) {
+  if (loading)
     return (
       <Container className="py-4">
         <p>Loading…</p>
       </Container>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <Container className="py-4">
         <p>Error: {error}</p>
       </Container>
     );
-  }
 
   return (
     <Container className="py-4">
@@ -130,7 +126,7 @@ export default function MyCollectionPage() {
                 href={`/genre/${item.genre}/${encodeURIComponent(item.url)}`}
                 className="text-decoration-none"
               >
-                <div className={styles.imagewrapper}>
+                <div className={styles.imagewrapper + ' position-relative'}>
                   <Image
                     src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
                     alt={item.title ?? item.film}
@@ -138,13 +134,17 @@ export default function MyCollectionPage() {
                     height={300}
                     className="img-fluid rounded"
                   />
+                  <div className="position-absolute top-0 start-0 m-1">
+                    {isTrue(item.isliked) && <HeartFill color="red" />}
+                    {isTrue(item.iswatched) && <TvFill color="blue" className="ms-2" />}
+                  </div>
                 </div>
               </Link>
             </Col>
           ))
         ) : (
           <Col>
-            <p className="text-center">No liked movies yet.</p>
+            <p className="text-center">No liked or watched movies yet.</p>
           </Col>
         )}
       </Row>

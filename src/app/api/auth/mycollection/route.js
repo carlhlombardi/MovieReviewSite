@@ -43,7 +43,7 @@ export async function POST(req, { params }) {
       ON CONFLICT (username, url)
       DO UPDATE SET isliked = true;
     `;
-    return new Response(JSON.stringify({ message: 'Liked added' }), { status: 200 });
+    return new Response(JSON.stringify({ message: 'Like added' }), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ message: 'Server error', error: err.message }), { status: 500 });
   }

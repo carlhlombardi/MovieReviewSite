@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './WantedForMyCollection.module.css'; // or WantedFormyCollection.module.css
+import styles from './WantedForMyCollection.module.css';
 
 export default function WantedForMyCollectionPage() {
   const { username } = useParams();
@@ -18,25 +18,21 @@ export default function WantedForMyCollectionPage() {
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
-  // normalise any possible "truthy" value for iswatched
-  const isWatched = (val) => {
-    return val === true || val === 'true' || val === 't' || val === 1 || val === '1';
-  };
+  // normalize any possible "truthy" value for iswatched
+  const isWatched = (val) =>
+    val === true || val === 'true' || val === 't' || val === 1 || val === '1';
 
   useEffect(() => {
     if (!username) return;
 
-    const fetchCollection = async () => {
+    const fetchWanted = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No auth token found. Please log in.');
-        }
+        if (!token) throw new Error('No auth token found. Please log in.');
 
-        // ✅ now calling the wantedformycollection API
         const res = await fetch(
           `/api/auth/profile/${username}/wantedformycollection`,
           {
@@ -49,7 +45,6 @@ export default function WantedForMyCollectionPage() {
         }
 
         const json = await res.json();
-        // ✅ only keep watched items (robust check)
         const onlyWatched = (json.movies ?? []).filter((m) =>
           isWatched(m.iswatched ?? m.is_watched ?? m.watched)
         );
@@ -64,7 +59,7 @@ export default function WantedForMyCollectionPage() {
       }
     };
 
-    fetchCollection();
+    fetchWanted();
   }, [username]);
 
   useEffect(() => {
@@ -134,7 +129,9 @@ export default function WantedForMyCollectionPage() {
               >
                 <div className={styles.imagewrapper}>
                   <Image
-                    src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
+                    src={decodeURIComponent(
+                      item.image_url || '/images/fallback.jpg'
+                    )}
                     alt={item.title ?? item.film}
                     width={200}
                     height={300}
