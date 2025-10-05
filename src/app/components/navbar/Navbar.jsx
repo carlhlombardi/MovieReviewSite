@@ -28,6 +28,24 @@ const NavbarComponent = () => {
     }
   };
 
+    const handleCollection = () => {
+    if (user && user.username) {
+      window.location.href = `/profile/${user.username}/mycollection`; // Redirect to user's collection
+    } else {
+      console.error('Username is required to have a collection.');
+    }
+  };
+
+
+    const handleWishlist = () => {
+    if (user && user.username) {
+      window.location.href = `/profile/${user.username}/wantedformycollection`; // Redirect to user's wantlist
+    } else {
+      console.error('Username is required to have a wishlist.');
+    }
+  };
+
+
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
@@ -56,6 +74,8 @@ const NavbarComponent = () => {
               {isLoggedIn ? (
                 <>
                   <button className={styles.authButtonsButton} onClick={handleProfile}>Profile</button>
+                  <button className={styles.authButtonsButton} onClick={handleCollection}>My Collection</button>
+                  <button className={styles.authButtonsButton} onClick={handleWishlist}>Wanted For Collection</button>
                   <button className={styles.authButtonsButton} onClick={handleLogout}>Logout</button>
                 </>
               ) : (
