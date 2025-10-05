@@ -163,7 +163,7 @@ export default function MoviePage({ params }) {
 
           // check if movie is in wantedforcollection
           const wantRes = await fetch(
-            `/api/auth/profile/${user.username}/wantedformycollection`,
+            `/api/auth/profile/${user.username}/wantedforcollection`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
