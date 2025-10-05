@@ -60,7 +60,7 @@ export async function POST(req, { params }) {
     // 2️⃣ Log it to Vercel logs
     console.log('📩 wantedforcollection POST body:', body);
 
-    const { title, genre, image_url, url, isliked = true, likedcount = 0 } = await req.json();
+    const { title, genre, image_url, url, isliked = true, likedcount = 0 } = body;
 
     if (!title || !genre || !url) {
       return new Response(
