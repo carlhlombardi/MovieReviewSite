@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Container, Form, Row, Col } from "react-bootstrap";
-import styles from "./page.module.css"; // your CSS file
+import styles from "./page.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -19,7 +19,7 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Slugify genre names for URLs and table routing
+// Slugify genre names for URLs
 const slugifyGenre = (genre) => {
   return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
@@ -30,11 +30,12 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [newlyAdded, setNewlyAdded] = useState([]);
+  const [newlyReviewed, setNewlyReviewed] = useState([]);
 
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // Fetch last 5 added movies
+  // Fetch last 8 added movies
   useEffect(() => {
     const fetchNewlyAdded = async () => {
       try {
@@ -47,6 +48,21 @@ export default function Home() {
       }
     };
     fetchNewlyAdded();
+  }, []);
+
+  // Fetch last 8 reviewed movies (review not null/blank)
+  useEffect(() => {
+    const fetchNewlyReviewed = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/data/newlyreviewed?limit=8`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setNewlyReviewed(data.results || []);
+      } catch (err) {
+        console.error("Could not load newly reviewed movies");
+      }
+    };
+    fetchNewlyReviewed();
   }, []);
 
   // Handle input change and fetch suggestions
@@ -86,7 +102,6 @@ export default function Home() {
         setShowSuggestions(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -175,7 +190,7 @@ export default function Home() {
       {/* Newly Added Section */}
       {newlyAdded.length > 0 && (
         <div>
-         <h2 className="mt-3 mb-3 text-center">Newly Added Films</h2>
+          <h2 className="mt-3 mb-3 text-center">Newly Added Films</h2>
           <Row>
             {newlyAdded.map((item) => (
               <Col
@@ -198,7 +213,46 @@ export default function Home() {
                       src={decodeURIComponent(
                         item.image_url || "/images/fallback.jpg"
                       )}
-                      alt={item.title}
+                      alt={item.film}
+                      width={200}
+                      height={300}
+                      className="img-fluid rounded"
+                    />
+                  </div>
+                </Link>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      )}
+
+      {/* Newly Reviewed Section */}
+      {newlyReviewed.length > 0 && (
+        <div>
+          <h2 className="mt-3 mb-3 text-center">Newly Reviewed Films</h2>
+          <Row>
+            {newlyReviewed.map((item) => (
+              <Col
+                key={item.id ?? item.row_id ?? item.url}
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+                className="mb-4"
+              >
+                <Link
+                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(
+                    item.film,
+                    item.tmdb_id
+                  )}`}
+                  className="text-decoration-none"
+                >
+                  <div className={styles.imagewrapper + " position-relative"}>
+                    <Image
+                      src={decodeURIComponent(
+                        item.image_url || "/images/fallback.jpg"
+                      )}
+                      alt={item.film}
                       width={200}
                       height={300}
                       className="img-fluid rounded"
