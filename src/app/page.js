@@ -188,7 +188,7 @@ export default function Home() {
               >
                 <Link
                   href={`/genre/${slugifyGenre(item.genre)}/${slugify(
-                    item.title,
+                    item.film,
                     item.tmdb_id
                   )}`}
                   className="text-decoration-none"
