@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Container, Form, Row, Col, Card } from "react-bootstrap";
+import Link from "next/link";
+import Image from "next/image";
+import { Container, Form, Row, Col } from "react-bootstrap";
+import styles from "./page.module.css"; // your CSS file
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -174,31 +177,34 @@ export default function Home() {
         <div>
           <h2 className="mb-3">Newly Added</h2>
           <Row>
-            {newlyAdded.map((movie) => (
-              <Col key={movie.id} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                <Card
-                  onClick={() =>
-                    router.push(
-                      `/genre/${slugifyGenre(movie.genre)}/${slugify(
-                        movie.title,
-                        movie.tmdb_id
-                      )}`
-                    )
-                  }
-                  style={{ cursor: "pointer" }}
+            {newlyAdded.map((item) => (
+              <Col
+                key={item.id ?? item.row_id ?? item.url}
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+                className="mb-4"
+              >
+                <Link
+                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(
+                    item.title,
+                    item.tmdb_id
+                  )}`}
+                  className="text-decoration-none"
                 >
-                  <Card.Img
-                    variant="top"
-                    src={movie.image_url || "/images/fallback.jpg"}
-                    alt={movie.title}
-                    className="img-fluid rounded"
-                    style={{
-                      width: "100%",
-                      height: "300px",
-                      objectFit: "cover",
-                    }}
-                  />
-                </Card>
+                  <div className={styles.imagewrapper + " position-relative"}>
+                    <Image
+                      src={decodeURIComponent(
+                        item.image_url || "/images/fallback.jpg"
+                      )}
+                      alt={item.title}
+                      width={200}
+                      height={300}
+                      className="img-fluid rounded"
+                    />
+                  </div>
+                </Link>
               </Col>
             ))}
           </Row>
