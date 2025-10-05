@@ -134,10 +134,6 @@ export default function MyCollectionPage() {
                     height={300}
                     className="img-fluid rounded"
                   />
-                  <div className="position-absolute top-0 start-0 m-1">
-                    {isTrue(item.isliked) && <HeartFill color="red" />}
-                    {isTrue(item.iswatched) && <TvFill color="blue" className="ms-2" />}
-                  </div>
                 </div>
               </Link>
             </Col>
