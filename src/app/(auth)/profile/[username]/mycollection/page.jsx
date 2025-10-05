@@ -18,6 +18,11 @@ export default function MyCollectionPage() {
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
+  // normalise any possible "truthy" value for isliked
+  const isLiked = (val) => {
+    return val === true || val === 'true' || val === 't' || val === 1 || val === '1';
+  };
+
   useEffect(() => {
     if (!username) return;
 
@@ -40,8 +45,12 @@ export default function MyCollectionPage() {
         }
 
         const json = await res.json();
-        // ✅ only keep liked items
-        const onlyLiked = (json.movies ?? []).filter((m) => m.isliked === true);
+
+        // ✅ only keep liked items (robust check)
+        const onlyLiked = (json.movies ?? []).filter((m) =>
+          isLiked(m.isliked ?? m.is_liked ?? m.liked)
+        );
+
         setMovies(onlyLiked);
       } catch (err) {
         console.error('Error fetching mycollection:', err);
@@ -57,15 +66,12 @@ export default function MyCollectionPage() {
 
   // Sort movies whenever movies or sortCriteria changes
   useEffect(() => {
-    // also filter here just in case
-    const sorted = [...movies]
-      .filter((m) => m.isliked === true)
-      .sort((a, b) => {
-        const key = sortCriteria;
-        const va = (a[key] ?? a.title ?? '').toString();
-        const vb = (b[key] ?? b.title ?? '').toString();
-        return va.localeCompare(vb);
-      });
+    const sorted = [...movies].sort((a, b) => {
+      const key = sortCriteria;
+      const va = (a[key] ?? a.title ?? '').toString();
+      const vb = (b[key] ?? b.title ?? '').toString();
+      return va.localeCompare(vb);
+    });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 

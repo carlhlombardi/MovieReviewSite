@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import styles from './WantedForMyCollection.module.css'; // you can rename to WantedFormyCollection.module.css
+import styles from './WantedForMyCollection.module.css'; // or WantedFormyCollection.module.css
 
 export default function WantedForMyCollectionPage() {
   const { username } = useParams();
@@ -17,6 +17,11 @@ export default function WantedForMyCollectionPage() {
 
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+
+  // normalise any possible "truthy" value for iswatched
+  const isWatched = (val) => {
+    return val === true || val === 'true' || val === 't' || val === 1 || val === '1';
+  };
 
   useEffect(() => {
     if (!username) return;
@@ -31,7 +36,7 @@ export default function WantedForMyCollectionPage() {
           throw new Error('No auth token found. Please log in.');
         }
 
-        // ✅ now calling the wantedformycollection API instead of mycollection
+        // ✅ now calling the wantedformycollection API
         const res = await fetch(
           `/api/auth/profile/${username}/wantedformycollection`,
           {
@@ -44,10 +49,11 @@ export default function WantedForMyCollectionPage() {
         }
 
         const json = await res.json();
-        // ✅ filter to only movies with iswatched === true
-        const onlyWatched = (json.movies ?? []).filter(
-          (m) => m.iswatched === true
+        // ✅ only keep watched items (robust check)
+        const onlyWatched = (json.movies ?? []).filter((m) =>
+          isWatched(m.iswatched ?? m.is_watched ?? m.watched)
         );
+
         setMovies(onlyWatched);
       } catch (err) {
         console.error('Error fetching wantedformycollection:', err);
@@ -61,16 +67,13 @@ export default function WantedForMyCollectionPage() {
     fetchCollection();
   }, [username]);
 
-  // sort + filter (extra safety)
   useEffect(() => {
-    const sorted = [...movies]
-      .filter((m) => m.iswatched === true)
-      .sort((a, b) => {
-        const key = sortCriteria;
-        const va = (a[key] ?? a.title ?? '').toString();
-        const vb = (b[key] ?? b.title ?? '').toString();
-        return va.localeCompare(vb);
-      });
+    const sorted = [...movies].sort((a, b) => {
+      const key = sortCriteria;
+      const va = (a[key] ?? a.title ?? '').toString();
+      const vb = (b[key] ?? b.title ?? '').toString();
+      return va.localeCompare(vb);
+    });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
@@ -118,7 +121,7 @@ export default function WantedForMyCollectionPage() {
         {sortedMovies.length > 0 ? (
           sortedMovies.map((item) => (
             <Col
-              key={item.id ?? item.row_id}
+              key={item.id ?? item.row_id ?? item.url}
               xs={12}
               sm={6}
               md={4}
@@ -143,7 +146,7 @@ export default function WantedForMyCollectionPage() {
           ))
         ) : (
           <Col>
-            <p className="text-center">No watched wanted movies yet.</p>
+            <p className="text-center">No watched movies yet.</p>
           </Col>
         )}
       </Row>
