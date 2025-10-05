@@ -37,7 +37,7 @@ export async function GET(req, { params }) {
     // ✅ Now get the wanted-for-my-collection movies for that username
     const moviesRes = await sql`
       SELECT title, genre, image_url, url
-      FROM wantedformycollection
+      FROM wantedforcollection
       WHERE username = ${username};
     `;
 
@@ -46,7 +46,7 @@ export async function GET(req, { params }) {
       { status: 200 }
     );
   } catch (err) {
-    console.error('Error in wantedformycollection route:', err);
+    console.error('Error in wantedforcollection route:', err);
     return new Response(
       JSON.stringify({ message: 'Invalid token or server error', error: err.message }),
       { status: 401 }
