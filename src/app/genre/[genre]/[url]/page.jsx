@@ -39,7 +39,7 @@ const toggleOwnIt = async (username, movieData, action) => {
     },
     body:
       action === 'like'
-        ? JSON.stringify(movieData) // send full movie data
+        ? JSON.stringify(movieData)
         : JSON.stringify({ url: movieData.url }),
   });
   if (!res.ok) throw new Error('Own It toggle failed');
@@ -48,7 +48,7 @@ const toggleOwnIt = async (username, movieData, action) => {
 
 const toggleWantIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
-  const endpoint = `/api/auth/profile/${username}/wantedformycollection`;
+  const endpoint = `/api/auth/profile/${username}/wantedformycollection`; // ← fixed
   const res = await fetch(endpoint, {
     method: action === 'add' ? 'POST' : 'DELETE',
     headers: {
@@ -77,9 +77,6 @@ export default function MoviePage({ params }) {
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
 
-  const [userRating, setUserRating] = useState(0);
-  const [averageRating, setAverageRating] = useState(0);
-
   const fetchUserRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -90,8 +87,7 @@ export default function MoviePage({ params }) {
       );
       if (!res.ok) throw new Error('User rating fetch failed');
       const ratingData = await res.json();
-      setUserRating(Number(ratingData.userRating || 0));
-      setAverageRating(Number(ratingData.averageRating || 0));
+      // optional: store ratingData if needed
     } catch (err) {
       console.error('Rating fetch error:', err);
     }
@@ -123,23 +119,25 @@ export default function MoviePage({ params }) {
 
           const token = localStorage.getItem('token');
 
-          // fetch isliked from mycollection
+          // check if movie is in mycollection
           const ownRes = await fetch(
-            `/api/auth/profile/${user.username}/mycollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            `/api/auth/profile/${user.username}/mycollection`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          const ownData = ownRes.ok ? await ownRes.json() : { isliked: false };
-          setIsOwned(!!ownData.isliked);
+          const ownJson = ownRes.ok ? await ownRes.json() : { movies: [] };
+          setIsOwned(
+            ownJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
+          );
 
-          // fetch iswatched from wantedformycollection
+          // check if movie is in wantedforcollection
           const wantRes = await fetch(
-            `/api/auth/profile/${user.username}/wantedformycollection?url=${encodeURIComponent(slugifiedUrl)}`,
+            `/api/auth/profile/${user.username}/wantedformycollection`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          const wantData = wantRes.ok
-            ? await wantRes.json()
-            : { iswatched: false };
-          setIsWanted(!!wantData.iswatched);
+          const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
+          setIsWanted(
+            wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
+          );
 
           await fetchUserRating();
         }
