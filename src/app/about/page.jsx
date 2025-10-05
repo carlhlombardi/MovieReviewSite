@@ -37,34 +37,34 @@ const AboutPage = () => {
             <Card.Body>
             <Card.Header className="text-center" style={{fontSize: '2.25rem'}}>Grading Rubric</Card.Header>
               <Card.Text className="text-center mt-4">
-              <strong>90-100</strong> A true classic of cinema. A practically flawless film which is revered by fans, even if they dislike the genre. These films set the standard for excellence and are often referenced in discussions about the best movies of all time. They are timeless, influential, and leave a lasting impact on viewers.
+              <strong>90–100: The Untouchables</strong> These are the films that define greatness. They’re not just well-made; they’re the reference point for everything else in their genre. Critics and audiences alike revere them, even if they’re not normally fans. Timeless, influential, and endlessly rewatchable, they’ve become part of the cinematic canon.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>80-89</strong> A strong contender to be the type of film which stands out for its exceptional quality. These movies are highly regarded and often receive critical acclaim. They may have minor flaws, but their strengths far outweigh any weaknesses. They are memorable, well-crafted, and often feature outstanding performances or innovative storytelling.
+              <strong>80–89: Heavy Hitters</strong> Strong, memorable, and skillfully crafted, these movies flirt with classic status. They may have tiny flaws, but their ambition and execution far outweigh any missteps. Critics tend to champion them, and they linger in your mind long after the credits roll.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>70-79</strong> These films are solid and enjoyable, with good storytelling and production values. They may not be groundbreaking, but they are well-crafted and worth watching. These movies are entertaining and competently made, often appealing to a wide audience. They may not achieve greatness, but they are certainly commendable.
+              <strong>70–79: Rock-Solid Entries</strong> Competent, entertaining, and well-crafted, these are films worth your time even if they’re not groundbreaking. They tell their story cleanly, feature solid performances, and deliver on what they promise. They’re crowd-pleasers with enough craft to stand out.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>60-69</strong> These movies are decent but may have noticeable flaws that prevent them from being great. They are still watchable and can be appreciated for their artistic elements. These films might suffer from issues like pacing problems, uneven performances, or a lack of originality, but they still offer some enjoyable moments.
+              <strong>60–69: Decent but Uneven</strong> Watchable, with moments of quality but also visible cracks—maybe pacing issues, tonal shifts, or a lack of originality. They’re far from disasters but don’t quite hit their full potential. The kind of movie you might enjoy once, but rarely revisit.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>50-59</strong> This is for films that are average. They may have some redeeming qualities, but they are often forgettable and lack the impact of higher-rated movies. These films are okay for a one-time watch but are unlikely to leave a lasting impression. They often feel formulaic or uninspired, lacking a unique voice.
+              <strong>50–59: Forgettable Mid-Tier</strong> Average to the bone. These movies have redeeming elements but feel uninspired overall. They don’t offend, but they don’t excite either. You’ll probably forget them soon after watching.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>40-49</strong> This is the lower end of mediocre. The type of movie that leans toward being bad, but it moreso was just meh. There is nothing blatantly offensive from films here, but they are rarely a film you will want to watch again. These movies are often plagued by poor execution or lackluster storytelling.
+              <strong>40–49: “Meh” Territory</strong> These aren’t unwatchable—they’re just limp. Execution problems or flat storytelling make them a slog. You’re unlikely to seek them out again, except maybe as background noise.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>30-39</strong> The tier of its so bad, its good. Put simply, these films are trash, but they are trash with value. Think of a movie where the acting was horrible, but you laughed with friends due to the absurdity of what you are watching. There may be flaws, but the experience is somehow enjoyable.
+              <strong>30–39: So Bad It’s Fun</strong> Trash cinema with a pulse. Acting may be wooden and effects cheap, but the absurdity creates its own enjoyment. The kind of film you and friends roast together and weirdly love for its flaws.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>20-29</strong> This is the lower tier of the films where someone would refer to them as so bad, they are good. These films are so bad, they are just bad. True abominations of cinema and filmmaking go lower than this, but the run-of-the-mill boring bad film might find itself here.
+              <strong>20–29: Just Bad</strong> This is the dead zone—films that are too bland or inept to even be fun. They’re not laughably bad, just dull or poorly executed. Not much reason to watch.
               </Card.Text>
               <Card.Text className="text-center">
-              <strong>10-19</strong> A score in this range means that while the plot of the film may be incoherent, at least it was shot in focus. Films here have one glaring flaw, but not multiple flaws. They are barely watchable and often frustrating to sit through. These movies might have a decent idea but fail in execution.
+              <strong>10–19: Barely a Movie</strong> One major idea, no follow-through. The execution is frustrating and the experience feels like a chore. Occasionally a good concept peeks through, but mostly it’s a mess.
               </Card.Text>
               <Card.Text className="text-center mb-4">
-              <strong>0-9</strong> Films in this tier are simply unwatchable due to glaring flaws that sully the entire experience. This is for the films that are truly trash and lack any redeeming qualities. A third grader could make a better film. These movies are often considered the worst of the worst and are best avoided.
+              <strong>0–9: Bottom of the Barrel</strong> Truly unwatchable. Glaring flaws in every department—writing, acting, editing—drag these into the abyss. These are the films that get cited on “Worst Ever” lists and are best left unseen.
               </Card.Text>
             </Card.Body>
           </Card>
