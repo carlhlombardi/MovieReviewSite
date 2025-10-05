@@ -1,60 +1,63 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { useAuth } from '@/app/(auth)/contexts/AuthContext'; // Adjust the path as needed
+import { useAuth } from '@/app/(auth)/contexts/AuthContext';
+
+// base URL in env var for security / flexibility
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setIsLoggedIn } = useAuth(); // Get the setIsLoggedIn function from context
+  const { setIsLoggedIn } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Clear any existing error
-  
+    setError('');
+
     try {
-      // Make POST request to the login endpoint
-      const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        // don’t log credentials anywhere
         body: JSON.stringify({ username, password }),
+        credentials: 'include', // allows secure cookies if backend sets them
       });
-  
-      // Check if the response is okay
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'An error occurred');
+        // show a generic error to avoid leaking info
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Invalid username or password');
       }
-  
-      // Parse the response data
+
       const data = await response.json();
       const { token } = data;
-  
-      // Check if the token is present
+
+      // if backend sets HttpOnly cookie, you don’t need to store token at all
       if (token) {
-        localStorage.setItem('token', token);
-        setIsLoggedIn(true); // Update authentication context
-        router.push(`/profile/${username}`); // Redirect to profile page with username
-      } else {
-        throw new Error('Token not found in response');
+        // prefer sessionStorage over localStorage
+        sessionStorage.setItem('token', token);
       }
+
+      setIsLoggedIn(true);
+      router.push(`/profile/${encodeURIComponent(username)}`);
     } catch (err) {
-      setError(err.message); // Set error message for display
+      setError(err.message || 'Login failed');
     }
   };
-  
+
   return (
     <div className="container mt-5">
       <h2>Login</h2>
       {error && <Alert variant="danger">{error}</Alert>}
-      <Form onSubmit={handleSubmit}>
-        <Form.Group controlId="formUsername">
+      <Form onSubmit={handleSubmit} autoComplete="off">
+        <Form.Group controlId="formUsername" className="mb-3">
           <Form.Label>Username</Form.Label>
           <Form.Control
             type="text"
@@ -64,7 +67,7 @@ export default function LoginPage() {
             required
           />
         </Form.Group>
-        <Form.Group controlId="formPassword">
+        <Form.Group controlId="formPassword" className="mb-3">
           <Form.Label>Password</Form.Label>
           <Form.Control
             type="password"
