@@ -28,24 +28,22 @@ const getCurrentUser = async () => {
 };
 
 // === toggle helpers ===
-// === toggle helpers ===
 export const toggleOwnIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/mycollection`;
 
-  // build the payload explicitly
   const payload =
     action === 'like'
       ? {
-          username,                // even though backend infers from params, harmless to send
+          username,
           url: movieData.url,
-          isliked: movieData.isliked ?? true, // default true
+          isliked: movieData.isliked ?? true,
           likedcount: movieData.likedcount ?? 0,
           title: movieData.title,
           genre: movieData.genre,
           image_url: movieData.image_url,
         }
-      : { url: movieData.url }; // for DELETE only url is needed
+      : { url: movieData.url };
 
   const res = await fetch(endpoint, {
     method: action === 'like' ? 'POST' : 'DELETE',
@@ -62,23 +60,23 @@ export const toggleOwnIt = async (username, movieData, action) => {
   }
   return await res.json();
 };
+
 export const toggleWantIt = async (username, movieData, action) => {
   const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
 
-  // build the payload explicitly
   const payload =
     action === 'add'
       ? {
-          username,                          // optional, backend infers from params
+          username,
           url: movieData.url,
-          title: movieData.title,
+          title: movieData.title,              // ✅ added
           genre: movieData.genre,
-          iswatched: movieData.iswatched ?? true, // default true
+          iswatched: movieData.iswatched ?? true,
           watchcount: movieData.watchcount ?? 0,
           image_url: movieData.image_url,
         }
-      : { url: movieData.url }; // for DELETE only url needed
+      : { url: movieData.url };
 
   const res = await fetch(endpoint, {
     method: action === 'add' ? 'POST' : 'DELETE',
@@ -95,6 +93,7 @@ export const toggleWantIt = async (username, movieData, action) => {
   }
   return await res.json();
 };
+
 
 
 export default function MoviePage({ params }) {
