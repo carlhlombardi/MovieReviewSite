@@ -179,11 +179,7 @@ export default function Home() {
                 <Card onClick={() =>
                     router.push(`/genre/${slugifyGenre(movie.genre)}/${slugify(movie.film, movie.tmdb_id)}`)
                   } style={{cursor:"pointer"}}>
-                  <Card.Img variant="top" src={movie.image_url} alt={movie.film}/>
-                  <Card.Body>
-                    <Card.Title>{movie.film}</Card.Title>
-                    <Card.Text>{movie.year}</Card.Text>
-                  </Card.Body>
+                  <Card.Img variant="top" src={movie.image_url} alt={movie.title}/>
                 </Card>
               </Col>
             ))}
