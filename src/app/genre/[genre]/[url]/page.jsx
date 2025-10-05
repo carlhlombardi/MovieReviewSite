@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Container, Row, Col, Alert, Spinner, Button } from "react-bootstrap";
 import Image from "next/image";
 import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
-import jwtDecode from "jwt-decode";
 
 // === Helper Functions ===
 const slugifyGenre = (genre) =>
