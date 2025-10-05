@@ -99,6 +99,8 @@ const NavbarComponent = () => {
               {isLoggedIn ? (
                 <>
                   <button className={styles.authButtonsButton} onClick={handleProfile}>Profile</button>
+                  <button className={styles.authButtonsButton} onClick={handleCollection}>My Collection</button>
+                  <button className={styles.authButtonsButton} onClick={handleWishlist}>Wanted For Collection</button>
                   <button className={styles.authButtonsButton} onClick={handleLogout}>Logout</button>
                 </>
               ) : (
