@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
-import { HeartFill, TvFill } from 'react-bootstrap-icons';
 import styles from './MyCollectionPage.module.css';
 
 export default function MyCollectionPage() {
@@ -31,13 +30,21 @@ export default function MyCollectionPage() {
         setError(null);
 
         const token = localStorage.getItem('token');
-        if (!token) throw new Error('No auth token found. Please log in.');
+        if (!token) {
+          throw new Error('401'); // no token → auth error
+        }
 
         const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
+        if (res.status === 401) {
+          throw new Error('401');
+        }
+
+        if (!res.ok) {
+          throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
+        }
 
         const json = await res.json();
 
@@ -47,12 +54,13 @@ export default function MyCollectionPage() {
         );
 
         // dedupe by url
-        const deduped = Array.from(new Map(combined.map(m=>[m.url,m])).values());
+        const deduped = Array.from(new Map(combined.map((m) => [m.url, m])).values());
 
         setMovies(deduped);
       } catch (err) {
         console.error('Error fetching mycollection:', err);
-        setError(err.message);
+        // specifically flag 401 to render login page
+        setError(err.message === '401' ? '401' : err.message);
         setMovies([]);
       } finally {
         setLoading(false);
@@ -79,6 +87,23 @@ export default function MyCollectionPage() {
         <p>Loading…</p>
       </Container>
     );
+
+  // show special 401 page
+  if (error === '401') {
+    return (
+      <Container className="py-4 text-center">
+        <div>
+          <h2>401 Error!!</h2>
+          <h3>Please Log In</h3>
+          <Link href="/login">
+            <Button variant="primary" className="mt-3">
+              Go to Login
+            </Button>
+          </Link>
+        </div>
+      </Container>
+    );
+  }
 
   if (error)
     return (
