@@ -80,6 +80,7 @@ export async function POST(req, { params }) {
     return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
     console.error('Error in mycollection POST:', err);
+    console.log('req body', await req.json());
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }

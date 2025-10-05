@@ -76,7 +76,9 @@ export async function POST(req, { params }) {
     return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), { status: 201 });
   } catch (err) {
     console.error('Error in wantedforcollection POST:', err);
+    console.log('req body', await req.json());
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
+    
   }
 }
 
