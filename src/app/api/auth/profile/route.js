@@ -2,14 +2,23 @@ import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
 export async function GET(request) {
-  const authHeader = request.headers.get('Authorization');
-  const token = authHeader?.split(' ')[1]; // Extract token from "Bearer <token>"
+  // Read the raw cookie header
+  const cookieHeader = request.headers.get('cookie') || '';
+
+  // Parse cookies into an object
+  const cookies = Object.fromEntries(
+    cookieHeader.split(';').map(c => {
+      const [name, ...rest] = c.trim().split('=');
+      return [name, decodeURIComponent(rest.join('='))];
+    })
+  );
+
+  const token = cookies.token; // our login endpoint sets "token=..."
 
   if (!token) {
-    return new Response(
-      JSON.stringify({ message: 'Unauthorized' }),
-      { status: 401 }
-    );
+    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+      status: 401,
+    });
   }
 
   try {
@@ -27,22 +36,19 @@ export async function GET(request) {
     const user = result.rows[0];
 
     if (!user) {
-      return new Response(
-        JSON.stringify({ message: 'User not found' }),
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+      });
     }
 
     // Respond with user data
-    return new Response(
-      JSON.stringify(user),
-      { status: 200 }
-    );
+    return new Response(JSON.stringify(user), {
+      status: 200,
+    });
   } catch (error) {
     console.error('Token verification error:', error);
-    return new Response(
-      JSON.stringify({ message: 'Invalid token' }),
-      { status: 401 }
-    );
+    return new Response(JSON.stringify({ message: 'Invalid token' }), {
+      status: 401,
+    });
   }
 }
