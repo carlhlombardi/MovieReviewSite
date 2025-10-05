@@ -36,10 +36,10 @@ export async function GET(req, { params }) {
 
   try {
     const { rows } = await sql`
-      SELECT film, genre, image_url, url, isliked, likedcount
+      SELECT title, genre, image_url, url, isliked, likedcount
       FROM mycollection
       WHERE username = ${username}
-      ORDER BY film;
+      ORDER BY title;
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
