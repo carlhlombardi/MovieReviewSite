@@ -55,14 +55,8 @@ export async function POST(req, { params }) {
   if (verified instanceof Response) return verified;
 
   try {
-    const {
-      title,
-      genre,
-      image_url,
-      url,
-      isliked = true,
-      likedcount = 0,
-    } = await req.json();
+    // accept all fields from client
+    const { title, genre, image_url, url, isliked = true, likedcount = 0 } = await req.json();
 
     if (!title || !genre || !url) {
       return new Response(
@@ -79,16 +73,17 @@ export async function POST(req, { params }) {
         title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
-        isliked = EXCLUDED.isliked,
-        likedcount = EXCLUDED.likedcount;
+        isliked = ${isliked},
+        likedcount = ${likedcount};
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added/updated' }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
     console.error('Error in mycollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
+
 
 /** DELETE /api/auth/profile/[username]/mycollection */
 export async function DELETE(req, { params }) {

@@ -55,21 +55,10 @@ export async function POST(req, { params }) {
   if (verified instanceof Response) return verified;
 
   try {
-    // Accept all fields from the body
-    const {
-      title,
-      genre,
-      image_url,
-      url,
-      iswatched = true,
-      watchcount = 0,
-    } = await req.json();
+    const { title, genre, image_url, url, iswatched = true, watchcount = 0 } = await req.json();
 
     if (!title || !url) {
-      return new Response(
-        JSON.stringify({ message: 'title and url are required' }),
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ message: 'title and url are required' }), { status: 400 });
     }
 
     await sql`
@@ -80,11 +69,11 @@ export async function POST(req, { params }) {
         title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
-        iswatched = EXCLUDED.iswatched,
-        watchcount = EXCLUDED.watchcount;
+        iswatched = ${iswatched},
+        watchcount = ${watchcount};
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added/updated in wanted list' }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), { status: 201 });
   } catch (err) {
     console.error('Error in wantedforcollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
