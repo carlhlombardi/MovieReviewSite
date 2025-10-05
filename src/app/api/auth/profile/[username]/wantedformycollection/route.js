@@ -28,7 +28,7 @@ async function verifyUser(req, username) {
   return user;
 }
 
-/** ✅ GET: fetch wanted-for-my-collection movies including iswatched */
+/** ✅ GET: fetch wanted-for-my-collection movies including iswatched & watchcount */
 export async function GET(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -36,9 +36,10 @@ export async function GET(req, { params }) {
 
   try {
     const { rows } = await sql`
-      SELECT title, genre, image_url, url, iswatched
+      SELECT title, genre, image_url, url, iswatched, watchcount
       FROM wantedforcollection
-      WHERE username = ${username};
+      WHERE username = ${username}
+      ORDER BY title;
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
@@ -47,32 +48,43 @@ export async function GET(req, { params }) {
   }
 }
 
-/** ✅ POST: add or mark as wanted / watched */
+/** ✅ POST: add or update wanted movie with iswatched + watchcount */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
   if (verified instanceof Response) return verified;
 
   try {
-    // Accept iswatched from the body (default true)
-    const { title, genre, image_url, url, iswatched = true } = await req.json();
+    // Accept all fields from the body
+    const {
+      title,
+      genre,
+      image_url,
+      url,
+      iswatched = true,
+      watchcount = 0,
+    } = await req.json();
 
     if (!title || !url) {
-      return new Response(JSON.stringify({ message: 'title and url are required' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: 'title and url are required' }),
+        { status: 400 }
+      );
     }
 
     await sql`
-      INSERT INTO wantedforcollection (username, title, genre, image_url, url, iswatched)
-      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${iswatched})
+      INSERT INTO wantedforcollection (username, title, genre, image_url, url, iswatched, watchcount)
+      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${iswatched}, ${watchcount})
       ON CONFLICT (username, url)
       DO UPDATE SET
         title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
-        iswatched = ${iswatched};
+        iswatched = EXCLUDED.iswatched,
+        watchcount = EXCLUDED.watchcount;
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Movie added/updated in wanted list' }), { status: 201 });
   } catch (err) {
     console.error('Error in wantedforcollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });

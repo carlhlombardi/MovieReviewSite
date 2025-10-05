@@ -36,7 +36,7 @@ export async function GET(req, { params }) {
 
   try {
     const { rows } = await sql`
-      SELECT title, genre, image_url, url, isliked
+      SELECT title, genre, image_url, url, isliked, likedcount
       FROM mycollection
       WHERE username = ${username}
       ORDER BY title;
@@ -55,7 +55,14 @@ export async function POST(req, { params }) {
   if (verified instanceof Response) return verified;
 
   try {
-    const { title, genre, image_url, url } = await req.json();
+    const {
+      title,
+      genre,
+      image_url,
+      url,
+      isliked = true,
+      likedcount = 0,
+    } = await req.json();
 
     if (!title || !genre || !url) {
       return new Response(
@@ -65,17 +72,18 @@ export async function POST(req, { params }) {
     }
 
     await sql`
-      INSERT INTO mycollection (username, title, genre, image_url, url, isliked)
-      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, true)
+      INSERT INTO mycollection (username, title, genre, image_url, url, isliked, likedcount)
+      VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${isliked}, ${likedcount})
       ON CONFLICT (username, url)
       DO UPDATE SET
         title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
-        isliked = true;
+        isliked = EXCLUDED.isliked,
+        likedcount = EXCLUDED.likedcount;
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
+    return new Response(JSON.stringify({ message: 'Movie added/updated' }), { status: 201 });
   } catch (err) {
     console.error('Error in mycollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
