@@ -49,7 +49,7 @@ const toggleOwnIt = async (username, url, action) => {
 
 const toggleWantIt = async (username, url, action) => {
   const token = localStorage.getItem("token");
-  const endpoint = `/api/auth/profile/${username}/wantedforcollection${
+  const endpoint = `/api/auth/profile/${username}/wantedformycollection${
     action === "remove" ? `?url=${encodeURIComponent(url)}` : ""
   }`;
   const res = await fetch(endpoint, {
