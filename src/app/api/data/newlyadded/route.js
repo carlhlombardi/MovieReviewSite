@@ -13,7 +13,7 @@ export async function GET(request) {
 
     // Use parameterized query to prevent SQL injection
     const result = await sql`
-      SELECT id, title, genre, tmdb_id, image_url, year
+      SELECT id, film, genre, tmdb_id, image_url, year
       FROM allmovies
       ORDER BY id DESC
       LIMIT ${limit};

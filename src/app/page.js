@@ -177,7 +177,7 @@ export default function Home() {
             {newlyAdded.map((movie) => (
               <Col key={movie.id} xs={12} md={6} lg={4} className="mb-4">
                 <Card onClick={() =>
-                    router.push(`/genre/${slugifyGenre(movie.genre)}/${slugify(movie.title, movie.tmdb_id)}`)
+                    router.push(`/genre/${slugifyGenre(movie.genre)}/${slugify(movie.film, movie.tmdb_id)}`)
                   } style={{cursor:"pointer"}}>
                   <Card.Img variant="top" src={movie.image_url} alt={movie.title}/>
                   <Card.Body>
