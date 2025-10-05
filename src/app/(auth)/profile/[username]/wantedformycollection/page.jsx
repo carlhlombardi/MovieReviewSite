@@ -18,7 +18,6 @@ export default function WantedForMyCollectionPage() {
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
-  // normalize any possible "truthy" value for iswatched
   const isWatched = (val) =>
     val === true || val === 'true' || val === 't' || val === 1 || val === '1';
 
@@ -31,7 +30,9 @@ export default function WantedForMyCollectionPage() {
         setError(null);
 
         const token = localStorage.getItem('token');
-        if (!token) throw new Error('No auth token found. Please log in.');
+        if (!token) {
+          throw new Error('401'); // signal no token
+        }
 
         const res = await fetch(
           `/api/auth/profile/${username}/wantedforcollection`,
@@ -40,6 +41,9 @@ export default function WantedForMyCollectionPage() {
           }
         );
 
+        if (res.status === 401) {
+          throw new Error('401');
+        }
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
@@ -51,8 +55,9 @@ export default function WantedForMyCollectionPage() {
 
         setMovies(onlyWatched);
       } catch (err) {
-        console.error('Error fetching wantedformycollection:', err);
-        setError(err.message);
+        console.error('Error fetching wantedforcollection:', err);
+        // store just "401" so we know it's an auth error
+        setError(err.message === '401' ? '401' : err.message);
         setMovies([]);
       } finally {
         setLoading(false);
@@ -80,6 +85,24 @@ export default function WantedForMyCollectionPage() {
     );
   }
 
+  // show special 401 page
+  if (error === '401') {
+    return (
+      <Container className="py-4 text-center">
+        <div>
+          <h2>401 Error!!</h2>
+          <h3>Please Log In</h3>
+          <Link href="/login">
+            <Button variant="primary" className="mt-3">
+              Go to Login
+            </Button>
+          </Link>
+        </div>
+      </Container>
+    );
+  }
+
+  // show generic error
   if (error) {
     return (
       <Container className="py-4">
