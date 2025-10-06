@@ -56,6 +56,7 @@ export async function GET(req) {
 }
 
 // PATCH logged-in user (update avatar/bio)
+// PATCH logged-in user (update avatar/bio)
 export async function PATCH(req) {
   const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
@@ -73,13 +74,19 @@ export async function PATCH(req) {
     const userId = decoded.userId;
 
     const body = await req.json();
-    const avatar_url = body.avatar_url ?? null;
-    const bio = body.bio ?? null;
+
+    // Build dynamic update
+    const updates = [];
+    if (body.avatar_url !== undefined) updates.push(sql`avatar_url = ${body.avatar_url}`);
+    if (body.bio !== undefined) updates.push(sql`bio = ${body.bio}`);
+
+    if (updates.length === 0) {
+      return new Response(JSON.stringify({ message: 'No fields to update' }), { status: 400 });
+    }
 
     const { rows } = await sql`
       UPDATE users
-      SET avatar_url = ${avatar_url},
-          bio = ${bio}
+      SET ${sql.join(updates, sql`, `)}
       WHERE id = ${userId}
       RETURNING id, username, firstname, lastname, email,
                 avatar_url, bio, date_joined;
@@ -97,3 +104,4 @@ export async function PATCH(req) {
     );
   }
 }
+
