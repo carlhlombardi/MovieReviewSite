@@ -1,54 +1,52 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
-import { Alert, Spinner, Card, Button, Form } from "react-bootstrap";
+import React, { useEffect, useState, useRef } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
+import { Alert, Spinner, Card, Button, Form } from 'react-bootstrap';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { username: profileUsername } = useParams();
-
   const fileInputRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [bio, setBio] = useState('');
 
+  // fetch profile data
   useEffect(() => {
     const fetchAll = async () => {
       try {
         let profileRes;
 
         if (profileUsername) {
-          profileRes = await fetch(`/api/users/${profileUsername}`, {
-            credentials: "include",
-          });
+          // view someone else's profile
+          profileRes = await fetch(`/api/users/${profileUsername}`);
         } else {
-          profileRes = await fetch("/api/auth/profile", {
-            credentials: "include",
+          // view own profile
+          profileRes = await fetch('/api/auth/profile', {
+            credentials: 'include',
           });
         }
 
         if (profileRes.status === 401) {
-          router.push("/login");
+          router.push('/login');
           return;
         }
 
-        if (!profileRes.ok) {
-          throw new Error("Failed to fetch profile");
-        }
+        if (!profileRes.ok) throw new Error('Failed to fetch profile');
 
         const profileData = await profileRes.json();
         setProfile(profileData);
-        setAvatarUrl(profileData.avatar_url || "");
-        setBio(profileData.bio || "");
+        setAvatarUrl(profileData.avatar_url || '');
+        setBio(profileData.bio || '');
       } catch (err) {
-        console.error("Error in profile fetch:", err);
-        setError(err.message || "Something went wrong");
+        console.error('Error in profile fetch:', err);
+        setError(err.message || 'Something went wrong');
       } finally {
         setIsLoading(false);
       }
@@ -57,24 +55,37 @@ export default function ProfilePage() {
     fetchAll();
   }, [router, profileUsername]);
 
+  // upload to Cloudinary then patch DB
   const handleAvatarUpload = async (file) => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       setSaving(true);
-      const res = await fetch("/api/upload", {
-        method: "POST",
+      setError('');
+      // upload to cloudinary via /api/upload
+      const res = await fetch('/api/upload', {
+        method: 'POST',
         body: formData,
       });
       const data = await res.json();
       if (data.url) {
         setAvatarUrl(data.url);
+        // persist immediately to DB if it's your own profile
+        if (!profileUsername) {
+          await fetch('/api/auth/profile', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ avatar_url: data.url, bio }),
+          });
+        }
       } else {
-        setError(data.error || "Upload failed");
+        setError(data.error || 'Upload failed');
       }
     } catch (err) {
-      setError("Upload failed");
+      console.error(err);
+      setError('Upload failed');
     } finally {
       setSaving(false);
     }
@@ -83,23 +94,22 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      setError("");
-
-      const res = await fetch("/api/auth/profile", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+      setError('');
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: avatarUrl, bio }),
       });
 
-      if (!res.ok) throw new Error("Failed to update profile");
+      if (!res.ok) throw new Error('Failed to update profile');
 
       const updated = await res.json();
       setProfile(updated);
-      setAvatarUrl(updated.avatar_url || "");
-      setBio(updated.bio || "");
+      setAvatarUrl(updated.avatar_url || '');
+      setBio(updated.bio || '');
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || 'Something went wrong');
     } finally {
       setSaving(false);
     }
@@ -130,14 +140,13 @@ export default function ProfilePage() {
     );
   }
 
-  // detect if current profile belongs to logged-in user
   const isSelf = !profileUsername || profile.username === profileUsername;
 
   return (
     <div className="container mt-5">
       <h2>
         {isSelf
-          ? `Welcome back, ${profile.firstname}!`
+          ? `Welcome back, ${profile.firstname || profile.username}!`
           : `Profile of ${profileUsername}`}
       </h2>
 
@@ -148,15 +157,15 @@ export default function ProfilePage() {
             style={{
               width: 120,
               height: 120,
-              margin: "0 auto",
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: "2px solid #ccc",
-              cursor: isSelf ? "pointer" : "default",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#f0f0f0",
+              margin: '0 auto',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              border: '2px solid #ccc',
+              cursor: isSelf ? 'pointer' : 'default',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#f0f0f0',
             }}
             onClick={() => {
               if (isSelf && fileInputRef.current) fileInputRef.current.click();
@@ -168,20 +177,19 @@ export default function ProfilePage() {
                 alt={`${profile.username}'s avatar`}
                 width={120}
                 height={120}
-                style={{ objectFit: "cover" }}
+                style={{ objectFit: 'cover' }}
               />
             ) : (
               isSelf && <span>Click to add avatar</span>
             )}
           </div>
 
-          {/* Hidden file input — only render for self */}
           {isSelf && (
             <input
               type="file"
               accept="image/*"
               ref={fileInputRef}
-              style={{ display: "none" }}
+              style={{ display: 'none' }}
               onChange={(e) => {
                 const file = e.target.files[0];
                 if (file) handleAvatarUpload(file);
@@ -194,7 +202,7 @@ export default function ProfilePage() {
             <strong>Username:</strong> {profile.username}
           </p>
           <p>
-            <strong>Date Joined:</strong>{" "}
+            <strong>Date Joined:</strong>{' '}
             {new Date(profile.date_joined).toLocaleDateString()}
           </p>
 
@@ -211,11 +219,10 @@ export default function ProfilePage() {
             </Form.Group>
           ) : (
             <p className="mt-3">
-              <strong>Bio:</strong> {profile.bio || "No bio yet."}
+              <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
             </p>
           )}
 
-          {/* Save button */}
           {isSelf && (
             <Button
               className="mt-3"
@@ -223,13 +230,13 @@ export default function ProfilePage() {
               disabled={saving}
               variant="primary"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           )}
         </Card.Body>
       </Card>
 
-      {/* Movies owned & wanted sections (always viewable) */}
+      {/* Movies Owned */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
@@ -241,6 +248,7 @@ export default function ProfilePage() {
         </Card.Header>
       </Card>
 
+      {/* Movies Wanted */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
