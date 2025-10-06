@@ -3,28 +3,29 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Spinner } from 'react-bootstrap';
-import { useAuth } from '@/app/(auth)/contexts/AuthContext';
 
 export default function LogoutPage() {
   const router = useRouter();
-  const { setIsLoggedIn } = useAuth();
 
   useEffect(() => {
     const logout = async () => {
       try {
+        // Include credentials so the cookie is sent and can be cleared
         await fetch('https://movie-review-site-seven.vercel.app/api/auth/logout', {
           method: 'POST',
-          credentials: 'include', // send cookie so backend can clear it
+          credentials: 'include'
         });
-        // No localStorage anymore
-        setIsLoggedIn(false); // update context
-        router.push('/login'); // relative route
+
+        // If you store other state in a context (like isLoggedIn), reset it here if needed
+        // setIsLoggedIn(false); // if you use context
+
+        router.push('/login'); // Redirect after logout
       } catch (error) {
         console.error('Logout error:', error);
       }
     };
     logout();
-  }, [router, setIsLoggedIn]);
+  }, [router]);
 
   return (
     <div className="container mt-5">
