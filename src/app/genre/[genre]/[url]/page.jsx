@@ -154,8 +154,6 @@ export default function MoviePage({ params }) {
           setIsWanted(
             wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
           );
-
-          await fetchUserRating();
         }
       } catch (err) {
         console.error(err);
