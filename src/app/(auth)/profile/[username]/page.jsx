@@ -160,7 +160,7 @@ export default function ProfilePage() {
     <div className="container mt-5">
       <h2>
         {isSelf
-          ? `Welcome back, ${profile.firstname || profile.username}&apos;s Profile`
+          ? `Welcome back, ${profile.firstname || profile.username}'s Profile`
           : `Profile of ${profile.username}`}
       </h2>
 
@@ -242,7 +242,7 @@ export default function ProfilePage() {
               disabled={saving}
               variant="primary"
             >
-              {saving ? 'Saving&hellip;' : 'Save Changes'}
+              {saving ? 'Saving' : 'Save Changes'}
             </Button>
           )}
         </Card.Body>
