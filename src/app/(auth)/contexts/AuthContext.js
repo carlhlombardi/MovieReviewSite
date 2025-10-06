@@ -7,13 +7,13 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
+  // check login once on mount
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        // No token in localStorage anymore.
-        // Browser automatically sends the HttpOnly cookie with this request.
+        // browser sends HttpOnly cookie automatically
         const response = await fetch("/api/auth/me", {
-          credentials: "include", // ensure cookies are sent
+          credentials: "include",
         });
 
         if (response.ok) {
@@ -34,8 +34,27 @@ export const AuthProvider = ({ children }) => {
     checkLoginStatus();
   }, []);
 
+  // 🔹 add a logout function to clear context immediately
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUser(null);
+  };
+
+  // you can also add a login function if you want
+  const login = (userData) => {
+    setIsLoggedIn(true);
+    setUser(userData);
+  };
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, user }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        login,
+        logout, // expose logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

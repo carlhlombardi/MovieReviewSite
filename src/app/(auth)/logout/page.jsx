@@ -1,31 +1,28 @@
 "use client";
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Spinner } from 'react-bootstrap';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Spinner } from "react-bootstrap";
+import { useAuth } from "@/app/(auth)/contexts/AuthContext";
 
 export default function LogoutPage() {
   const router = useRouter();
+  const { logout } = useAuth(); // 👈 get logout from context
 
   useEffect(() => {
-    const logout = async () => {
+    const doLogout = async () => {
       try {
-        // Include credentials so the cookie is sent and can be cleared
-        await fetch('https://movie-review-site-seven.vercel.app/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include'
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
         });
-
-        // If you store other state in a context (like isLoggedIn), reset it here if needed
-        // setIsLoggedIn(false); // if you use context
-
-        router.push('/login'); // Redirect after logout
-      } catch (error) {
-        console.error('Logout error:', error);
+        logout(); // 👈 immediately clear context
+        router.push("/login");
+      } catch (err) {
+        console.error("Logout error", err);
       }
     };
-    logout();
-  }, [router]);
+    doLogout();
+  }, [router, logout]);
 
   return (
     <div className="container mt-5">
