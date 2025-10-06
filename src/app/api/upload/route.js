@@ -8,30 +8,44 @@ cloudinary.config({
 
 export async function POST(req) {
   try {
+    // Parse multipart form data
     const formData = await req.formData();
     const file = formData.get('file');
     if (!file) {
-      return new Response(JSON.stringify({ error: 'No file uploaded' }), { status: 400 });
+      return new Response(JSON.stringify({ error: 'No file uploaded' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Convert the file to a base64 string
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64String = `data:${file.type};base64,${buffer.toString('base64')}`;
+    // Convert Blob to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Turn into base64 data URI
+    const base64String = buffer.toString('base64');
+    const dataUri = `data:${file.type};base64,${base64String}`;
 
     // Upload to Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(base64String, {
-      folder: 'avatars', // optional folder name
-      public_id: `${Date.now()}-${file.name}`,
+    const uploadResponse = await cloudinary.uploader.upload(dataUri, {
+      folder: 'avatars', // optional folder
+      // If you want to ensure unique filenames:
+      public_id: `avatar-${Date.now()}`,
       overwrite: true,
     });
 
-    return new Response(JSON.stringify({ url: uploadResponse.secure_url }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ url: uploadResponse.secure_url }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   } catch (err) {
-    console.error('Upload error:', err);
-    return new Response(JSON.stringify({ error: 'Upload failed' }), { status: 500 });
+    console.error('Cloudinary upload error:', err);
+    return new Response(
+      JSON.stringify({ error: 'Upload failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
