@@ -1,4 +1,6 @@
-import { v2 as cloudinary } from 'cloudinary';
+export const runtime = "nodejs";  // ✅ force Node runtime
+
+import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,28 +10,23 @@ cloudinary.config({
 
 export async function POST(req) {
   try {
-    // Parse multipart form data
     const formData = await req.formData();
-    const file = formData.get('file');
+    const file = formData.get("file");
+
     if (!file) {
-      return new Response(JSON.stringify({ error: 'No file uploaded' }), {
+      return new Response(JSON.stringify({ error: "No file uploaded" }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Turn into base64 data URI
-    const base64String = buffer.toString('base64');
-    const dataUri = `data:${file.type};base64,${base64String}`;
+    const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // Upload to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(dataUri, {
-      folder: 'avatars', // optional folder
-      // If you want to ensure unique filenames:
+      folder: "avatars",
       public_id: `avatar-${Date.now()}`,
       overwrite: true,
     });
@@ -38,14 +35,14 @@ export async function POST(req) {
       JSON.stringify({ url: uploadResponse.secure_url }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (err) {
-    console.error('Cloudinary upload error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Upload failed' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    console.error("Cloudinary upload error:", err);
+    return new Response(JSON.stringify({ error: "Upload failed" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
