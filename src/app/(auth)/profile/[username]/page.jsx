@@ -160,7 +160,7 @@ export default function ProfilePage() {
     <div className="container mt-5">
       <h2>
         {isSelf
-          ? `Welcome back, ${profile.firstname || profile.username}'s Profile`
+          ? `Welcome back, ${profile.firstname || profile.username}`
           : `Profile of ${profile.username}`}
       </h2>
 
