@@ -1,13 +1,16 @@
-import { v2 as cloudinary } from "cloudinary";
-import jwt from "jsonwebtoken";
-import { sql } from "@vercel/postgres"; // or your pool
+export const runtime = 'nodejs'; // ✅ needed for Buffer
+
+import { Buffer } from 'buffer';
+import { v2 as cloudinary } from 'cloudinary';
+import jwt from 'jsonwebtoken';
+import { sql } from '@vercel/postgres';
 
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [name, ...rest] = c.trim().split("=");
-      return [name, decodeURIComponent(rest.join("="))];
+    cookieHeader.split(';').map((c) => {
+      const [name, ...rest] = c.trim().split('=');
+      return [name, decodeURIComponent(rest.join('='))];
     })
   );
 }
@@ -19,14 +22,14 @@ cloudinary.config({
 });
 
 export async function POST(req) {
-  const cookieHeader = req.headers.get("cookie");
+  const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
   const token = cookies.token;
 
   if (!token) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -35,51 +38,54 @@ export async function POST(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     userId = decoded.userId;
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid token" }), {
+    return new Response(JSON.stringify({ error: 'Invalid token' }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file");
+    const file = formData.get('file');
     if (!file) {
-      return new Response(JSON.stringify({ error: "No file uploaded" }), {
+      return new Response(JSON.stringify({ error: 'No file uploaded' }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     // Convert Blob to base64 data URI
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
 
     // Upload to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(dataUri, {
-      folder: "avatars",
-      public_id: `avatar-${Date.now()}`,
+      folder: 'avatars',
+      public_id: `avatar-${userId}-${Date.now()}`,
       overwrite: true,
     });
 
-    // ✅ Save the URL to the user’s avatar_url column:
-    const { rows } = await sql`
+    // Save the URL to DB
+    await sql`
       UPDATE users
       SET avatar_url = ${uploadResponse.secure_url}
-      WHERE id = ${userId}
-      RETURNING id, username, avatar_url;
+      WHERE id = ${userId};
     `;
 
-    return new Response(JSON.stringify(rows[0]), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("Cloudinary upload error:", err);
+    // Return url for front-end
     return new Response(
-      JSON.stringify({ error: "Upload failed" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ url: uploadResponse.secure_url }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    return new Response(
+      JSON.stringify({ error: 'Upload failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
