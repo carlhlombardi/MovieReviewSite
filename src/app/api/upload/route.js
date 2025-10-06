@@ -73,9 +73,9 @@ export async function POST(req) {
       WHERE id = ${userId};
     `;
 
-    // Return url for front-end
+    // ✅ Return avatar_url for front-end
     return new Response(
-      JSON.stringify({ url: uploadResponse.secure_url }),
+      JSON.stringify({ avatar_url: uploadResponse.secure_url }),
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
