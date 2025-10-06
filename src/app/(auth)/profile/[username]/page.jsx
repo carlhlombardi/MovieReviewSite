@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Alert, Spinner, Card, Button, Form } from 'react-bootstrap';
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -248,27 +249,39 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
-      <Card className="mb-4">
-        <Card.Header as="h5">
-          <a
-            href={`/profile/${profile.username}/mycollection`}
-            className="text-decoration-none"
-          >
-            Movies Owned — View My Collection
-          </a>
-        </Card.Header>
-      </Card>
+     <Card className="mb-4">
+  <Card.Header as="h5">
+    <Link
+      href={
+        user?.username === profile.username
+          ? `/profile/${profile.username}/mycollection`
+          : `/profile/${profile.username}/collection`
+      }
+      className="text-decoration-none"
+    >
+      {user?.username === profile.username
+        ? "Movies Owned — View Your Collection"
+        : `Movies Owned — View ${profile.username}'s Collection`}
+    </Link>
+  </Card.Header>
+</Card>
 
-      <Card className="mb-4">
-        <Card.Header as="h5">
-          <a
-            href={`/profile/${profile.username}/wantedformycollection`}
-            className="text-decoration-none"
-          >
-            Movies Wanted — View My Wish List
-          </a>
-        </Card.Header>
-      </Card>
+<Card className="mb-4">
+  <Card.Header as="h5">
+    <Link
+      href={
+        user?.username === profile.username
+          ? `/profile/${profile.username}/wantedformycollection`
+          : `/profile/${profile.username}/wanted`
+      }
+      className="text-decoration-none"
+    >
+      {user?.username === profile.username
+        ? "Movies Wanted — View Your Wish List"
+        : `Movies Wanted — View ${profile.username}'s Wish List`}
+    </Link>
+  </Card.Header>
+</Card>
     </div>
   );
 }
