@@ -83,13 +83,15 @@ export default function ProfilePage() {
         body: formData,
       });
       const data = await res.json();
-      if (data.url) {
-        setAvatarUrl(data.url);
+      // backend returns { id, username, avatar_url } (adjust if needed)
+      const newUrl = data.avatar_url || data.url;
+      if (newUrl) {
+        setAvatarUrl(newUrl);
         await fetch('/api/auth/profile', {
           method: 'PATCH',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar_url: data.url, bio }),
+          body: JSON.stringify({ avatar_url: newUrl, bio }),
         });
       } else {
         setError(data.error || 'Upload failed');
@@ -215,9 +217,14 @@ export default function ProfilePage() {
             {new Date(profile.date_joined).toLocaleDateString()}
           </p>
 
-          {isSelf ? (
-            <Form.Group className="mt-3">
-              <Form.Label>Bio</Form.Label>
+          {/* show bio like Username / Date Joined */}
+          <p className="mt-3">
+            <strong>Bio:</strong> {bio || 'No bio yet.'}
+          </p>
+
+          {isSelf && (
+            <Form.Group className="mt-2">
+              <Form.Label>Edit Bio</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -225,10 +232,6 @@ export default function ProfilePage() {
                 onChange={(e) => setBio(e.target.value)}
               />
             </Form.Group>
-          ) : (
-            <p className="mt-3">
-              <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
-            </p>
           )}
 
           {isSelf && (
