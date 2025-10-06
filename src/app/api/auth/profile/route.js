@@ -1,25 +1,26 @@
 // app/api/auth/profile/route.js
-import jwt from "jsonwebtoken";
-import { sql } from "@vercel/postgres"; // or your pool if you use pg directly
+import jwt from 'jsonwebtoken';
+import { sql } from '@vercel/postgres';
 
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
   return Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [name, ...rest] = c.trim().split("=");
-      return [name, decodeURIComponent(rest.join("="))];
+    cookieHeader.split(';').map((c) => {
+      const [name, ...rest] = c.trim().split('=');
+      return [name, decodeURIComponent(rest.join('='))];
     })
   );
 }
 
 export async function GET(req) {
-  const cookieHeader = req.headers.get("cookie");
+  const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
   const token = cookies.token;
 
   if (!token) {
-    return new Response(JSON.stringify({ message: "Unauthorized" }), {
+    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
       status: 401,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -35,29 +36,34 @@ export async function GET(req) {
     `;
 
     if (rows.length === 0) {
-      return new Response("Not found", { status: 404 });
+      return new Response(JSON.stringify({ message: 'Not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify(rows[0]), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error("GET profile error", err);
-    return new Response(JSON.stringify({ message: "Invalid token" }), {
+    console.error('GET profile error', err);
+    return new Response(JSON.stringify({ message: 'Invalid token' }), {
       status: 401,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
 
 export async function PATCH(req) {
-  const cookieHeader = req.headers.get("cookie");
+  const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
   const token = cookies.token;
 
   if (!token) {
-    return new Response(JSON.stringify({ message: "Unauthorized" }), {
+    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
       status: 401,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -69,10 +75,11 @@ export async function PATCH(req) {
     const avatar_url = body.avatar_url ?? null;
     const bio = body.bio ?? null;
 
-    // Only update the logged-in user:
+    // Update both avatar_url and bio
     const { rows } = await sql`
       UPDATE users
-      SET avatar_url = ${avatar_url}, bio = ${bio}
+      SET avatar_url = ${avatar_url},
+          bio = ${bio}
       WHERE id = ${userId}
       RETURNING id, username, firstname, lastname, email,
                 avatar_url, bio, date_joined;
@@ -80,12 +87,13 @@ export async function PATCH(req) {
 
     return new Response(JSON.stringify(rows[0]), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error("PATCH profile error", err);
-    return new Response(JSON.stringify({ message: "Invalid token or update error" }), {
-      status: 401,
-    });
+    console.error('PATCH profile error', err);
+    return new Response(
+      JSON.stringify({ message: 'Invalid token or update error' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }
