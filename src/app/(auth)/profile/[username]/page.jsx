@@ -255,7 +255,7 @@ export default function ProfilePage() {
       href={
         loggedInUser?.username === profile.username
           ? `/profile/${profile.username}/mycollection`
-          : `/profile/${profile.username}/collection`
+          : `/profile/${profile.username}/mycollection`
       }
       className="text-decoration-none"
     >
@@ -272,7 +272,7 @@ export default function ProfilePage() {
       href={
         loggedInUser?.username === profile.username
           ? `/profile/${profile.username}/wantedformycollection`
-          : `/profile/${profile.username}/wanted`
+          : `/profile/${profile.username}/wantedformycollection`
       }
       className="text-decoration-none"
     >
