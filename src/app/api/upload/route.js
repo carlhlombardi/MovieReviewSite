@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
+import { sql } from "@vercel/postgres"; // or your pool
 
 function parseCookies(cookieHeader) {
   if (!cookieHeader) return {};
@@ -29,9 +30,10 @@ export async function POST(req) {
     });
   }
 
+  let userId;
   try {
-    // verify token
-    jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    userId = decoded.userId;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid token" }), {
       status: 401,
@@ -52,31 +54,32 @@ export async function POST(req) {
     // Convert Blob to base64 data URI
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const base64String = buffer.toString("base64");
-    const dataUri = `data:${file.type};base64,${base64String}`;
+    const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
 
     // Upload to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(dataUri, {
       folder: "avatars",
-      public_id: `avatar-${Date.now()}`, // unique
+      public_id: `avatar-${Date.now()}`,
       overwrite: true,
     });
 
-    return new Response(
-      JSON.stringify({ url: uploadResponse.secure_url }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    // ✅ Save the URL to the user’s avatar_url column:
+    const { rows } = await sql`
+      UPDATE users
+      SET avatar_url = ${uploadResponse.secure_url}
+      WHERE id = ${userId}
+      RETURNING id, username, avatar_url;
+    `;
+
+    return new Response(JSON.stringify(rows[0]), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("Cloudinary upload error:", err);
     return new Response(
       JSON.stringify({ error: "Upload failed" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
