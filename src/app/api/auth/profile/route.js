@@ -55,7 +55,6 @@ export async function GET(req) {
   }
 }
 
-// PATCH logged-in user (update avatar/bio)
 export async function PATCH(req) {
   const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
@@ -68,40 +67,34 @@ export async function PATCH(req) {
     });
   }
 
-  let userId;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    userId = decoded.userId;
-  } catch (err) {
-    console.error('JWT verification failed:', err);
-    return new Response(JSON.stringify({ message: 'Invalid token' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  try {
+    const userId = decoded.userId;
     const body = await req.json();
 
-    // Validate input
-    if (body.avatar_url === undefined && body.bio === undefined) {
+    // Build fields manually instead of using sql.join()
+    let avatar_url = null;
+    let bio = null;
+
+    if (body.avatar_url !== undefined) avatar_url = body.avatar_url;
+    if (body.bio !== undefined) bio = body.bio;
+
+    // If neither field is provided, reject
+    if (avatar_url === null && bio === null) {
       return new Response(JSON.stringify({ message: 'No fields to update' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Build dynamic SQL update list
-    const updates = [];
-    if (body.avatar_url !== undefined) updates.push(sql`avatar_url = ${body.avatar_url}`);
-    if (body.bio !== undefined) updates.push(sql`bio = ${body.bio}`);
-
+    // Perform one update using COALESCE so unspecified fields remain unchanged
     const { rows } = await sql`
       UPDATE users
-      SET ${sql.join(updates, sql`, `)}
+      SET 
+        avatar_url = COALESCE(${avatar_url}, avatar_url),
+        bio = COALESCE(${bio}, bio)
       WHERE id = ${userId}
-      RETURNING id, username, firstname, lastname, email,
-                avatar_url, bio, date_joined;
+      RETURNING id, username, firstname, lastname, email, avatar_url, bio, date_joined;
     `;
 
     if (rows.length === 0) {
@@ -116,10 +109,10 @@ export async function PATCH(req) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('PATCH profile DB update error:', err);
+    console.error('PATCH profile error', err);
     return new Response(
-      JSON.stringify({ message: 'Update failed', details: err.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: 'Invalid token or update error', details: err.message }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
