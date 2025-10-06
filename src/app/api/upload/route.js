@@ -60,14 +60,15 @@ export async function POST(req) {
     const buffer = Buffer.from(arrayBuffer);
     const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary with the same public_id for each user
     const uploadResponse = await cloudinary.uploader.upload(dataUri, {
       folder: 'avatars',
-      public_id: `avatar-${userId}-${Date.now()}`,
-      overwrite: true,
+      public_id: `avatar-${userId}`, // same file each time
+      overwrite: true,               // replace old file
+      invalidate: true,              // purge CDN cache
     });
 
-    // Save the URL to DB
+    // Save the URL to DB (it stays the same)
     await sql`
       UPDATE users
       SET avatar_url = ${uploadResponse.secure_url}
