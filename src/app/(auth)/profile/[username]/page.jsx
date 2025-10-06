@@ -175,7 +175,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Hidden file input */}
+          {/* Hidden file input — only render for self */}
           {isSelf && (
             <input
               type="file"
@@ -210,8 +210,8 @@ export default function ProfilePage() {
               />
             </Form.Group>
           ) : (
-            <p>
-              <strong>Bio:</strong> {profile.bio}
+            <p className="mt-3">
+              <strong>Bio:</strong> {profile.bio || "No bio yet."}
             </p>
           )}
 
@@ -229,7 +229,7 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
-      {/* Other sections */}
+      {/* Movies owned & wanted sections (always viewable) */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
