@@ -10,7 +10,7 @@ export default function ProfilePage() {
   const { username: profileUsername } = useParams();
   const fileInputRef = useRef(null);
 
-  const [loggedInUser, setLoggedInUser] = useState(undefined);
+  const [loggedInUser, setLoggedInUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,48 +18,27 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // 1️⃣ fetch logged-in user once
-  useEffect(() => {
-    (async () => {
-      try {
-        const authRes = await fetch('/api/auth/profile', {
-          credentials: 'include',
-        });
-        if (authRes.ok) {
-          const authUser = await authRes.json();
-          setLoggedInUser(authUser);
-        } else {
-          setLoggedInUser(null);
-        }
-      } catch (err) {
-        console.error(err);
+  // always get fresh data
+  const fetchProfile = useCallback(async () => {
+    try {
+      // who is logged in
+      const authRes = await fetch('/api/auth/profile', { credentials: 'include' });
+      if (authRes.ok) {
+        const authUser = await authRes.json();
+        setLoggedInUser(authUser);
+      } else {
         setLoggedInUser(null);
       }
-    })();
-  }, []);
 
-  // 2️⃣ fetch the actual profile depending on loggedInUser/profileUsername
-  const fetchProfile = useCallback(async () => {
-    setIsLoading(true);
-    try {
+      // which profile to show
       let profileRes;
-
-      // no username in URL = viewing own profile
-      if (!profileUsername) {
-        profileRes = await fetch('/api/auth/profile', {
-          credentials: 'include',
-        });
-      } else if (
-        loggedInUser &&
-        loggedInUser.username === profileUsername
-      ) {
-        // viewing your own profile even with /profile/[username] URL
-        profileRes = await fetch('/api/auth/profile', {
-          credentials: 'include',
-        });
+      if (profileUsername) {
+        profileRes = await fetch(`/api/users/${profileUsername}`, { cache: 'no-store' });
       } else {
-        // viewing someone else’s profile
-        profileRes = await fetch(`/api/users/${profileUsername}`);
+        profileRes = await fetch('/api/auth/profile', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
       }
 
       if (profileRes.status === 401 && !profileUsername) {
@@ -73,24 +52,19 @@ export default function ProfilePage() {
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
     } catch (err) {
-      console.error(err);
+      console.error('Error in profile fetch:', err);
       setError(err.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
-  }, [loggedInUser, profileUsername, router]);
+  }, [router, profileUsername]);
 
-  // refetch profile once we know loggedInUser
   useEffect(() => {
-    if (loggedInUser !== undefined) {
-      fetchProfile();
-    }
-  }, [loggedInUser, fetchProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const isSelf =
-    loggedInUser &&
-    profile &&
-    loggedInUser.username === profile.username;
+    loggedInUser && profile && loggedInUser.username === profile.username;
 
   const handleAvatarUpload = async (file) => {
     if (!isSelf) return;
@@ -116,7 +90,7 @@ export default function ProfilePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatar_url: newUrl, bio }),
         });
-        // refresh profile from DB
+        // re-fetch to get fresh profile
         await fetchProfile();
       } else {
         setError(data.error || 'Upload failed');
@@ -142,7 +116,7 @@ export default function ProfilePage() {
       });
       if (!res.ok) throw new Error('Failed to update profile');
       await res.json();
-      // refresh profile from DB
+      // refresh DB version
       await fetchProfile();
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -186,7 +160,8 @@ export default function ProfilePage() {
 
       <Card className="mb-4 p-3">
         <Card.Body className="text-center">
-          <div
+          {/* avatar clickable area */}
+          <label
             style={{
               width: 120,
               height: 120,
@@ -200,13 +175,10 @@ export default function ProfilePage() {
               justifyContent: 'center',
               backgroundColor: '#f0f0f0',
             }}
-            onClick={() => {
-              if (isSelf && fileInputRef.current) fileInputRef.current.click();
-            }}
           >
             {avatarUrl ? (
               <Image
-                key={avatarUrl} // force re-render on URL change
+                key={avatarUrl}
                 src={avatarUrl}
                 alt={`${profile.username}'s avatar`}
                 width={120}
@@ -216,20 +188,19 @@ export default function ProfilePage() {
             ) : (
               isSelf && <span>Click to add avatar</span>
             )}
-          </div>
-
-          {isSelf && (
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) handleAvatarUpload(file);
-              }}
-            />
-          )}
+            {isSelf && (
+              <input
+                type="file"
+                accept="image/*;capture=camera"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) handleAvatarUpload(file);
+                }}
+              />
+            )}
+          </label>
 
           <p className="mt-3">
             <strong>Username:</strong> {profile.username}
