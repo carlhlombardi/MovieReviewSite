@@ -1,4 +1,5 @@
-export const runtime = 'nodejs'; // ✅ needed for Buffer
+// app/api/upload/route.js
+export const runtime = 'nodejs';
 
 import { Buffer } from 'buffer';
 import { v2 as cloudinary } from 'cloudinary';
@@ -73,18 +74,14 @@ export async function POST(req) {
       WHERE id = ${userId};
     `;
 
-    // ✅ Return avatar_url for front-end
-    return new Response(
-      JSON.stringify({ avatar_url: uploadResponse.secure_url }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ avatar_url: uploadResponse.secure_url }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (err) {
-    console.error('Cloudinary upload error:', err);
+    console.error('Cloudinary upload error:', err, err?.response?.body);
     return new Response(
-      JSON.stringify({ error: 'Upload failed' }),
+      JSON.stringify({ error: 'Upload failed', details: err.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
