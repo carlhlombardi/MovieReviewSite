@@ -55,34 +55,50 @@ export async function POST(req) {
       });
     }
 
-    // Convert Blob to base64 data URI
+    // ✅ SAFARI FIX — fallback MIME type if iOS doesn't provide one
+    const mimeType = file.type || 'image/jpeg';
+
+    // ✅ Prevent oversized images (Vercel 4.5 MB limit)
+    if (file.size > 4_000_000) {
+      return new Response(
+        JSON.stringify({ error: 'File too large. Please choose a smaller image.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Convert Blob to base64 safely
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+    const dataUri = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
-    // Upload to Cloudinary with the same public_id for each user
+    // ✅ Upload to Cloudinary (overwrite same avatar)
     const uploadResponse = await cloudinary.uploader.upload(dataUri, {
       folder: 'avatars',
-      public_id: `avatar-${userId}`, // same file each time
-      overwrite: true,               // replace old file
-      invalidate: true,              // purge CDN cache
+      public_id: `avatar-${userId}`,
+      overwrite: true,
+      invalidate: true, // clears CDN cache
+      resource_type: 'image',
     });
 
-    // Save the URL to DB (it stays the same)
+    // ✅ Update DB
     await sql`
       UPDATE users
       SET avatar_url = ${uploadResponse.secure_url}
       WHERE id = ${userId};
     `;
 
+    // ✅ Response
     return new Response(JSON.stringify({ avatar_url: uploadResponse.secure_url }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('Cloudinary upload error:', err, err?.response?.body);
+    console.error('Cloudinary upload error:', err);
     return new Response(
-      JSON.stringify({ error: 'Upload failed', details: err.message }),
+      JSON.stringify({
+        error: 'Upload failed',
+        details: err.message || 'Unexpected error',
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
