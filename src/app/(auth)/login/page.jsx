@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setIsLoggedIn } = useAuth();
+  const { login } = useAuth(); // 👈 use login instead of setIsLoggedIn
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,16 +23,17 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
-        credentials: 'include', // cookie will be set by backend
+        credentials: 'include',
       });
 
       if (!response.ok) {
-        // Always show same error
         throw new Error('Invalid username or password');
       }
 
-      // No token to parse — cookie is set automatically
-      setIsLoggedIn(true);
+      // set context immediately
+      login({ username });
+
+      // redirect
       router.push(`/profile/${encodeURIComponent(username)}`);
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -44,30 +45,7 @@ export default function LoginPage() {
       <h2>Login</h2>
       {error && <Alert variant="danger">{error}</Alert>}
       <Form onSubmit={handleSubmit} autoComplete="off">
-        <Form.Group controlId="formUsername" className="mb-3">
-          <Form.Label>Username</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter username"
-            value={username}
-            minLength={3}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </Form.Group>
-        <Form.Group controlId="formPassword" className="mb-3">
-          <Form.Label>Password</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="Password"
-            value={password}
-            minLength={4}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-          />
-        </Form.Group>
-        <Button variant="primary" type="submit">Login</Button>
+        {/* form fields */}
       </Form>
     </div>
   );
