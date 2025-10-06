@@ -249,17 +249,17 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
-     <Card className="mb-4">
+  <Card className="mb-4">
   <Card.Header as="h5">
     <Link
       href={
-        user?.username === profile.username
+        loggedInUser?.username === profile.username
           ? `/profile/${profile.username}/mycollection`
           : `/profile/${profile.username}/collection`
       }
       className="text-decoration-none"
     >
-      {user?.username === profile.username
+      {loggedInUser?.username === profile.username
         ? "Movies Owned — View Your Collection"
         : `Movies Owned — View ${profile.username}'s Collection`}
     </Link>
@@ -270,13 +270,13 @@ export default function ProfilePage() {
   <Card.Header as="h5">
     <Link
       href={
-        user?.username === profile.username
+        loggedInUser?.username === profile.username
           ? `/profile/${profile.username}/wantedformycollection`
           : `/profile/${profile.username}/wanted`
       }
       className="text-decoration-none"
     >
-      {user?.username === profile.username
+      {loggedInUser?.username === profile.username
         ? "Movies Wanted — View Your Wish List"
         : `Movies Wanted — View ${profile.username}'s Wish List`}
     </Link>
