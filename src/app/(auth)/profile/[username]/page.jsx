@@ -33,12 +33,12 @@ export default function ProfilePage() {
       // which profile to show
       let profileRes;
       if (profileUsername) {
-        profileRes = await fetch(`/api/users/${profileUsername}`, { cache: 'no-store' });
-      } else {
-        profileRes = await fetch('/api/auth/profile', {
+       profileRes = await fetch('/api/auth/profile', {
           credentials: 'include',
           cache: 'no-store',
         });
+      } else {
+         profileRes = await fetch(`/api/users/${profileUsername}`, { cache: 'no-store' });
       }
 
       if (profileRes.status === 401 && !profileUsername) {
