@@ -1,39 +1,28 @@
-'use client';
-
-import React, { useEffect, useState, useCallback } from 'react';
-import { Container, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
-import Image from 'next/image';
-import { Heart, HeartFill, Tv, TvFill } from 'react-bootstrap-icons';
+"use client";
+import React, { useEffect, useState } from "react";
+import { Container, Row, Col, Alert, Spinner, Button } from "react-bootstrap";
+import Image from "next/image";
+import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
+import { useAuth } from "@/app/(auth)/contexts/AuthContext";
 
 // === Helper Functions ===
 const slugifyGenre = (genre) =>
-  genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
+  genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
 const fetchData = async (genre, url) => {
   const genreSlug = slugifyGenre(genre);
   const genreTable = `${genreSlug}movies`;
   const res = await fetch(`/api/data/${genreTable}?url=${encodeURIComponent(url)}`);
-  if (!res.ok) throw new Error('Failed to fetch movie data');
+  if (!res.ok) throw new Error("Failed to fetch movie data");
   return await res.json();
-};
-
-const getCurrentUser = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-  const res = await fetch('/api/auth/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return null;
-  return await res.json(); // { username: '...' }
 };
 
 // === toggle helpers ===
 export const toggleOwnIt = async (username, movieData, action) => {
-  const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/mycollection`;
 
   const payload =
-    action === 'like'
+    action === "like"
       ? {
           username,
           url: movieData.url,
@@ -46,10 +35,10 @@ export const toggleOwnIt = async (username, movieData, action) => {
       : { url: movieData.url };
 
   const res = await fetch(endpoint, {
-    method: action === 'like' ? 'POST' : 'DELETE',
+    method: action === "like" ? "POST" : "DELETE",
+    credentials: "include", // 👈 send cookie automatically
     headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
@@ -62,15 +51,14 @@ export const toggleOwnIt = async (username, movieData, action) => {
 };
 
 export const toggleWantIt = async (username, movieData, action) => {
-  const token = localStorage.getItem('token');
   const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
 
   const payload =
-    action === 'add'
+    action === "add"
       ? {
           username,
           url: movieData.url,
-          title: movieData.film,              // ✅ added
+          title: movieData.film,
           genre: movieData.genre,
           iswatched: movieData.iswatched ?? true,
           watchcount: movieData.watchcount ?? 0,
@@ -79,10 +67,10 @@ export const toggleWantIt = async (username, movieData, action) => {
       : { url: movieData.url };
 
   const res = await fetch(endpoint, {
-    method: action === 'add' ? 'POST' : 'DELETE',
+    method: action === "add" ? "POST" : "DELETE",
+    credentials: "include", // 👈 send cookie automatically
     headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
@@ -94,31 +82,28 @@ export const toggleWantIt = async (username, movieData, action) => {
   return await res.json();
 };
 
-
-
 export default function MoviePage({ params }) {
   const { genre, url } = params;
   const slugifiedUrl = url;
 
-  const [username, setUsername] = useState(null);
+  const { isLoggedIn, user } = useAuth(); // 👈 use our AuthContext
+
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [error, setError] = useState("");
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
 
   const handleOwnIt = async () => {
-    const action = isOwned ? 'unlike' : 'like';
-    const result = await toggleOwnIt(username, data, action);
-    if (result) setIsOwned(action === 'like');
+    const action = isOwned ? "unlike" : "like";
+    const result = await toggleOwnIt(user.username, data, action);
+    if (result) setIsOwned(action === "like");
   };
 
   const handleWantIt = async () => {
-    const action = isWanted ? 'remove' : 'add';
-    const result = await toggleWantIt(username, data, action);
-    if (result) setIsWanted(action === 'add');
+    const action = isWanted ? "remove" : "add";
+    const result = await toggleWantIt(user.username, data, action);
+    if (result) setIsWanted(action === "add");
   };
 
   useEffect(() => {
@@ -128,17 +113,11 @@ export default function MoviePage({ params }) {
         const movieData = await fetchData(genre, slugifiedUrl);
         setData(movieData);
 
-        const user = await getCurrentUser();
-        if (user && user.username) {
-          setIsLoggedIn(true);
-          setUsername(user.username);
-
-          const token = localStorage.getItem('token');
-
+        if (isLoggedIn && user?.username) {
           // check if movie is in mycollection
           const ownRes = await fetch(
             `/api/auth/profile/${user.username}/mycollection`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { credentials: "include" }
           );
           const ownJson = ownRes.ok ? await ownRes.json() : { movies: [] };
           setIsOwned(
@@ -148,23 +127,26 @@ export default function MoviePage({ params }) {
           // check if movie is in wantedforcollection
           const wantRes = await fetch(
             `/api/auth/profile/${user.username}/wantedforcollection`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { credentials: "include" }
           );
           const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
           setIsWanted(
             wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
           );
+        } else {
+          setIsOwned(false);
+          setIsWanted(false);
         }
       } catch (err) {
         console.error(err);
-        setError(err.message || 'Failed to load movie');
+        setError(err.message || "Failed to load movie");
       } finally {
         setIsLoading(false);
       }
     };
 
     init();
-  }, [genre, slugifiedUrl]);
+  }, [genre, slugifiedUrl, isLoggedIn, user?.username]);
 
   if (isLoading)
     return (
@@ -213,7 +195,7 @@ export default function MoviePage({ params }) {
           {isLoggedIn && (
             <div className="my-3">
               <Button
-                variant={isOwned ? 'danger' : 'outline-danger'}
+                variant={isOwned ? "danger" : "outline-danger"}
                 onClick={handleOwnIt}
                 className="me-2"
               >
@@ -221,7 +203,7 @@ export default function MoviePage({ params }) {
               </Button>
 
               <Button
-                variant={isWanted ? 'primary' : 'outline-primary'}
+                variant={isWanted ? "primary" : "outline-primary"}
                 onClick={handleWantIt}
               >
                 {isWanted ? <TvFill /> : <Tv />} Want It
