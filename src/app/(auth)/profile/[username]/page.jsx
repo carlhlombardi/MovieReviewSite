@@ -18,25 +18,28 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // decide endpoint and always no-cache
+  // one stable fetchProfile
   const fetchProfile = useCallback(async () => {
     try {
-      // get logged in user first
+      // always start fresh
+      setIsLoading(true);
+
+      // who is logged in
+      let authUser = null;
       const authRes = await fetch('/api/auth/profile', {
         credentials: 'include',
         cache: 'no-store',
       });
       if (authRes.ok) {
-        const authUser = await authRes.json();
+        authUser = await authRes.json();
         setLoggedInUser(authUser);
       } else {
         setLoggedInUser(null);
       }
 
-      // if you are logged in and you are looking at yourself → auth/profile
-      // otherwise look at /api/users/:username
+      // which endpoint to call
       let profileRes;
-      if (loggedInUser && profileUsername === loggedInUser.username) {
+      if (authUser && profileUsername === authUser.username) {
         profileRes = await fetch('/api/auth/profile', {
           credentials: 'include',
           cache: 'no-store',
@@ -63,7 +66,7 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router, profileUsername, loggedInUser]);
+  }, [router, profileUsername]); // no loggedInUser here
 
   useEffect(() => {
     fetchProfile();
@@ -88,11 +91,9 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
       const newUrl = data.avatar_url || data.url;
-      // bust cache
       const withTs = `${newUrl}?t=${Date.now()}`;
       setAvatarUrl(withTs);
 
-      // update DB with avatar and current bio
       await fetch('/api/auth/profile', {
         method: 'PATCH',
         credentials: 'include',
