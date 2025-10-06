@@ -68,32 +68,59 @@ export async function PATCH(req) {
     });
   }
 
+  let userId;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    userId = decoded.userId;
+  } catch (err) {
+    console.error('JWT verification failed:', err);
+    return new Response(JSON.stringify({ message: 'Invalid token' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
+  try {
     const body = await req.json();
-    const avatar_url = body.avatar_url ?? null;
-    const bio = body.bio ?? null;
+
+    // Validate input
+    if (body.avatar_url === undefined && body.bio === undefined) {
+      return new Response(JSON.stringify({ message: 'No fields to update' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Build dynamic SQL update list
+    const updates = [];
+    if (body.avatar_url !== undefined) updates.push(sql`avatar_url = ${body.avatar_url}`);
+    if (body.bio !== undefined) updates.push(sql`bio = ${body.bio}`);
 
     const { rows } = await sql`
       UPDATE users
-      SET avatar_url = ${avatar_url},
-          bio = ${bio}
+      SET ${sql.join(updates, sql`, `)}
       WHERE id = ${userId}
       RETURNING id, username, firstname, lastname, email,
                 avatar_url, bio, date_joined;
     `;
+
+    if (rows.length === 0) {
+      return new Response(JSON.stringify({ message: 'User not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(JSON.stringify(rows[0]), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('PATCH profile error', err);
+    console.error('PATCH profile DB update error:', err);
     return new Response(
-      JSON.stringify({ message: 'Invalid token or update error' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: 'Update failed', details: err.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }
+
