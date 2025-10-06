@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Alert, Spinner, Card } from "react-bootstrap";
+import { Alert, Spinner, Card, Button } from "react-bootstrap";
+import Image from "next/image"; // ✅ Import Next.js Image
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -71,11 +72,45 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5">
-      <h2>
+      <h2 className="mb-4 d-flex justify-content-between align-items-center">
         {isSelf
           ? `Welcome back, ${profile.firstname}!`
           : `Profile of ${profileUsername}`}
+        {isSelf && (
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={() => router.push("/profile/edit")}
+          >
+            Edit Profile
+          </Button>
+        )}
       </h2>
+
+      <Card className="mb-4 p-3 text-center">
+        {/* ✅ Avatar */}
+        {profile.avatar_url ? (
+          <Image
+            src={profile.avatar_url}
+            alt={`${profile.username}'s avatar`}
+            width={120}
+            height={120}
+            style={{ objectFit: "cover", borderRadius: "50%" }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              backgroundColor: "#ddd",
+              display: "inline-block",
+            }}
+          ></div>
+        )}
+        <h4 className="mt-3">{profile.username}</h4>
+        {profile.bio && <p className="mt-2">{profile.bio}</p>}
+      </Card>
 
       <Card className="mb-4">
         <Card.Header as="h5">Profile Details</Card.Header>
