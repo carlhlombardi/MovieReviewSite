@@ -10,30 +10,40 @@ export default function ProfilePage() {
   const { username: profileUsername } = useParams();
   const fileInputRef = useRef(null);
 
-  const [profile, setProfile] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(null); // logged-in user info
+  const [profile, setProfile] = useState(null);           // profile being viewed
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // fetch profile data
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        let profileRes;
+        // fetch logged-in user
+        const authRes = await fetch('/api/auth/profile', {
+          credentials: 'include'
+        });
+        if (authRes.ok) {
+          const authUser = await authRes.json();
+          setLoggedInUser(authUser);
+        } else {
+          setLoggedInUser(null);
+        }
 
+        // fetch the profile to display
+        let profileRes;
         if (profileUsername) {
-          // view someone else's profile
           profileRes = await fetch(`/api/users/${profileUsername}`);
         } else {
-          // view own profile
           profileRes = await fetch('/api/auth/profile', {
-            credentials: 'include',
+            credentials: 'include'
           });
         }
 
-        if (profileRes.status === 401) {
+        if (profileRes.status === 401 && !profileUsername) {
+          // trying to view own profile without login
           router.push('/login');
           return;
         }
@@ -55,15 +65,19 @@ export default function ProfilePage() {
     fetchAll();
   }, [router, profileUsername]);
 
-  // upload to Cloudinary then patch DB
+  // only true if logged-in user is the same as the profile being viewed
+  const isSelf =
+    loggedInUser &&
+    profile &&
+    loggedInUser.username === profile.username;
+
   const handleAvatarUpload = async (file) => {
+    if (!isSelf) return; // block others
     const formData = new FormData();
     formData.append('file', file);
-
     try {
       setSaving(true);
       setError('');
-      // upload to cloudinary via /api/upload
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -71,15 +85,12 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.url) {
         setAvatarUrl(data.url);
-        // persist immediately to DB if it's your own profile
-        if (!profileUsername) {
-          await fetch('/api/auth/profile', {
-            method: 'PATCH',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ avatar_url: data.url, bio }),
-          });
-        }
+        await fetch('/api/auth/profile', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatar_url: data.url, bio }),
+        });
       } else {
         setError(data.error || 'Upload failed');
       }
@@ -92,6 +103,7 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!isSelf) return;
     try {
       setSaving(true);
       setError('');
@@ -140,14 +152,12 @@ export default function ProfilePage() {
     );
   }
 
-  const isSelf = !profileUsername || profile.username === profileUsername;
-
   return (
     <div className="container mt-5">
       <h2>
         {isSelf
           ? `Welcome back, ${profile.firstname || profile.username}!`
-          : `Profile of ${profileUsername}`}
+          : `Profile of ${profile.username}`}
       </h2>
 
       <Card className="mb-4 p-3">
@@ -197,7 +207,6 @@ export default function ProfilePage() {
             />
           )}
 
-          {/* Username and Date Joined */}
           <p className="mt-3">
             <strong>Username:</strong> {profile.username}
           </p>
@@ -206,7 +215,6 @@ export default function ProfilePage() {
             {new Date(profile.date_joined).toLocaleDateString()}
           </p>
 
-          {/* Bio */}
           {isSelf ? (
             <Form.Group className="mt-3">
               <Form.Label>Bio</Form.Label>
