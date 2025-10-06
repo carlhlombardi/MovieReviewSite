@@ -251,35 +251,28 @@ export default function ProfilePage() {
 
   <Card className="mb-4">
   <Card.Header as="h5">
-    <Link
-      href={
-        loggedInUser?.username === profile.username
-          ? `/profile/${profile.username}/mycollection`
-          : `/profile/${profile.username}/mycollection`
-      }
-      className="text-decoration-none"
-    >
-      {loggedInUser?.username === profile.username
-        ? "Movies Owned — View Your Collection"
-        : `Movies Owned — View ${profile.username}'s Collection`}
-    </Link>
+<Link
+  href={`/profile/${profile.username}/mycollection`}
+  className="text-decoration-none"
+>
+  {loggedInUser?.username === profile.username
+    ? "Movies Owned — View Your Collection"
+    : `Movies Owned — View ${profile.username}'s Collection`}
+</Link>
+
   </Card.Header>
 </Card>
 
 <Card className="mb-4">
   <Card.Header as="h5">
-    <Link
-      href={
-        loggedInUser?.username === profile.username
-          ? `/profile/${profile.username}/wantedformycollection`
-          : `/profile/${profile.username}/wantedformycollection`
-      }
-      className="text-decoration-none"
-    >
-      {loggedInUser?.username === profile.username
-        ? "Movies Wanted — View Your Wish List"
-        : `Movies Wanted — View ${profile.username}'s Wish List`}
-    </Link>
+<Link
+  href={`/profile/${profile.username}/wantedformycollection`}
+  className="text-decoration-none"
+>
+  {loggedInUser?.username === profile.username
+    ? "Movies Wanted — View Your Wish List"
+    : `Movies Wanted — View ${profile.username}'s Wish List`}
+</Link>
   </Card.Header>
 </Card>
     </div>

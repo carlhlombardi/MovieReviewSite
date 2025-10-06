@@ -32,7 +32,9 @@ export async function middleware(req) {
 // Optional: limit to only certain paths so middleware doesn’t run on every asset
 export const config = {
   matcher: [
-    '/profile/:path*',        // protect profile pages
-    '/api/protected/:path*',  // protect API routes under /api/protected
+    '/profile/:path*/edit', // protected
+    '/api/:path*',          // protected
   ],
 };
+
+
