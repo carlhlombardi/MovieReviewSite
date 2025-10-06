@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { Alert, Spinner, Card, Button, Form } from "react-bootstrap";
@@ -8,6 +8,8 @@ import { Alert, Spinner, Card, Button, Form } from "react-bootstrap";
 export default function ProfilePage() {
   const router = useRouter();
   const { username: profileUsername } = useParams();
+
+  const fileInputRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,13 +23,11 @@ export default function ProfilePage() {
       try {
         let profileRes;
 
-        // when on someone else's page
         if (profileUsername) {
           profileRes = await fetch(`/api/users/${profileUsername}`, {
             credentials: "include",
           });
         } else {
-          // fallback to own profile
           profileRes = await fetch("/api/auth/profile", {
             credentials: "include",
           });
@@ -130,8 +130,8 @@ export default function ProfilePage() {
     );
   }
 
-  // true if we are looking at our own profile
-  const isSelf = profile.username === profileUsername;
+  // detect if current profile belongs to logged-in user
+  const isSelf = !profileUsername || profile.username === profileUsername;
 
   return (
     <div className="container mt-5">
@@ -143,35 +143,53 @@ export default function ProfilePage() {
 
       <Card className="mb-4 p-3">
         <Card.Body className="text-center">
-          {avatarUrl && (
-            <div style={{ width: 120, height: 120, margin: "0 auto" }}>
+          {/* Avatar */}
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              margin: "0 auto",
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "2px solid #ccc",
+              cursor: isSelf ? "pointer" : "default",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f0f0f0",
+            }}
+            onClick={() => {
+              if (isSelf && fileInputRef.current) fileInputRef.current.click();
+            }}
+          >
+            {avatarUrl ? (
               <Image
                 src={avatarUrl}
                 alt={`${profile.username}'s avatar`}
                 width={120}
                 height={120}
-                style={{
-                  objectFit: "cover",
-                  borderRadius: "50%",
-                }}
+                style={{ objectFit: "cover" }}
               />
-            </div>
-          )}
+            ) : (
+              isSelf && <span>Click to add avatar</span>
+            )}
+          </div>
 
+          {/* Hidden file input */}
           {isSelf && (
-            <Form.Group className="mt-3">
-              <Form.Label>Change Avatar</Form.Label>
-              <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) handleAvatarUpload(file);
-                }}
-              />
-            </Form.Group>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) handleAvatarUpload(file);
+              }}
+            />
           )}
 
+          {/* Username and Date Joined */}
           <p className="mt-3">
             <strong>Username:</strong> {profile.username}
           </p>
@@ -180,6 +198,7 @@ export default function ProfilePage() {
             {new Date(profile.date_joined).toLocaleDateString()}
           </p>
 
+          {/* Bio */}
           {isSelf ? (
             <Form.Group className="mt-3">
               <Form.Label>Bio</Form.Label>
@@ -196,6 +215,7 @@ export default function ProfilePage() {
             </p>
           )}
 
+          {/* Save button */}
           {isSelf && (
             <Button
               className="mt-3"
@@ -209,6 +229,7 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
+      {/* Other sections */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <a
