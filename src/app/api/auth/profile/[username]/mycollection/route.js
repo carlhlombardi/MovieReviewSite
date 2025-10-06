@@ -1,9 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
-/** ✅ Verify that the token in cookies matches the username */
+/** 🔐 Verify user for write operations */
 async function verifyUser(req, username) {
-  // Grab cookies from the request
   const cookieHeader = req.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
     cookieHeader.split(';').map((c) => {
@@ -11,44 +10,25 @@ async function verifyUser(req, username) {
       return [name, decodeURIComponent(rest.join('='))];
     })
   );
-  const token = cookies.token; // our login endpoint sets "token=..."
+  const token = cookies.token;
 
-  if (!token) {
-    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
-      status: 401,
-    });
-  }
+  if (!token) return null;
 
-  let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
+    const user = userRes.rows[0];
+    if (!user) return null;
+    if (user.id !== decoded.userId) return null;
+    return user;
   } catch {
-    return new Response(JSON.stringify({ message: 'Invalid token' }), {
-      status: 401,
-    });
+    return null;
   }
-
-  const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
-  const user = userRes.rows[0];
-  if (!user) {
-    return new Response(JSON.stringify({ message: 'User not found' }), {
-      status: 404,
-    });
-  }
-  if (user.id !== decoded.userId) {
-    return new Response(JSON.stringify({ message: 'Forbidden' }), {
-      status: 403,
-    });
-  }
-
-  return user;
 }
 
-/** ✅ GET /api/auth/profile/[username]/mycollection */
+/** ✅ GET: Public read (no auth required) */
 export async function GET(req, { params }) {
   const { username } = params;
-  const verified = await verifyUser(req, username);
-  if (verified instanceof Response) return verified;
 
   try {
     const { rows } = await sql`
@@ -60,22 +40,19 @@ export async function GET(req, { params }) {
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('Error in mycollection GET:', err);
-    return new Response(JSON.stringify({ message: err.message }), {
-      status: 500,
-    });
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
-/** ✅ POST /api/auth/profile/[username]/mycollection */
+/** ✅ POST: Protected */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (verified instanceof Response) return verified;
+  if (!verified)
+    return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
 
   try {
     const body = await req.json();
-    console.log('📩 mycollection POST body:', body);
-
     const { title, genre, image_url, url, isliked = true, likedcount = 0 } = body;
 
     if (!title || !genre || !url) {
@@ -97,22 +74,19 @@ export async function POST(req, { params }) {
         likedcount = ${likedcount};
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added' }), {
-      status: 201,
-    });
+    return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
     console.error('Error in mycollection POST:', err);
-    return new Response(JSON.stringify({ message: err.message }), {
-      status: 500,
-    });
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
-/** ✅ DELETE /api/auth/profile/[username]/mycollection */
+/** ✅ DELETE: Protected */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (verified instanceof Response) return verified;
+  if (!verified)
+    return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
 
   try {
     const { url } = await req.json();
@@ -127,13 +101,9 @@ export async function DELETE(req, { params }) {
       WHERE username = ${username} AND url = ${url};
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie removed' }), {
-      status: 200,
-    });
+    return new Response(JSON.stringify({ message: 'Movie removed' }), { status: 200 });
   } catch (err) {
     console.error('Error in mycollection DELETE:', err);
-    return new Response(JSON.stringify({ message: err.message }), {
-      status: 500,
-    });
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
