@@ -1,23 +1,27 @@
 "use client";
 
-import { useState } from 'react';
-import axios from 'axios';
-import { Form, Button, Alert } from 'react-bootstrap';
+import { useState } from "react";
+import axios from "axios";
+import { Form, Button, Alert, Spinner } from "react-bootstrap";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
+    setLoading(true);
     try {
-      await axios.post('https://movie-review-site-seven.vercel.app/api/auth/forgot-password', { email });
-      setMessage('Password reset instructions have been sent to your email.');
+      await axios.post("/api/auth/forgot-password", { email });
+      setMessage("If an account exists for that email, a reset link has been sent.");
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred');
+      setError(err.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +41,9 @@ export default function ForgotPasswordPage() {
             required
           />
         </Form.Group>
-        <Button variant="primary" type="submit">Send Reset Link</Button>
+        <Button variant="primary" type="submit" disabled={loading}>
+          {loading ? <Spinner size="sm" animation="border" /> : "Send Reset Link"}
+        </Button>
       </Form>
     </div>
   );

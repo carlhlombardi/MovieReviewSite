@@ -1,35 +1,33 @@
 "use client";
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null); // Add state for user
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await fetch('https://movie-review-site-seven.vercel.app/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const userData = await response.json();
-            setIsLoggedIn(true);
-            setUser(userData); // Store user data
-          } else {
-            setIsLoggedIn(false);
-            setUser(null); // Clear user data if not logged in
-          }
-        } catch {
+      try {
+        // No token in localStorage anymore.
+        // Browser automatically sends the HttpOnly cookie with this request.
+        const response = await fetch("/api/auth/me", {
+          credentials: "include", // ensure cookies are sent
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setIsLoggedIn(true);
+          setUser(userData);
+        } else {
           setIsLoggedIn(false);
-          setUser(null); // Clear user data on error
+          setUser(null);
         }
-      } else {
+      } catch (err) {
+        console.error("Auth check failed", err);
         setIsLoggedIn(false);
-        setUser(null); // Clear user data if no token
+        setUser(null);
       }
     };
 
