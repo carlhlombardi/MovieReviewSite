@@ -18,29 +18,14 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // Converts HEIC/HEIF to JPEG for Cloudinary
-  async function normalizeImageFile(file) {
-    if (!file.type || file.type === 'image/heic' || file.type === 'image/heif') {
-      const img = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      return new Promise((resolve) =>
-        canvas.toBlob((blob) => {
-          const jpegFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-          resolve(jpegFile);
-        }, 'image/jpeg', 0.9)
-      );
-    }
-    return file;
-  }
-
+  // decide endpoint and always no-cache
   const fetchProfile = useCallback(async () => {
     try {
-      // logged-in user
-      const authRes = await fetch('/api/auth/profile', { credentials: 'include', cache: 'no-store' });
+      // get logged in user first
+      const authRes = await fetch('/api/auth/profile', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       if (authRes.ok) {
         const authUser = await authRes.json();
         setLoggedInUser(authUser);
@@ -48,15 +33,18 @@ export default function ProfilePage() {
         setLoggedInUser(null);
       }
 
-      // which profile to show
+      // if you are logged in and you are looking at yourself → auth/profile
+      // otherwise look at /api/users/:username
       let profileRes;
-      if (!profileUsername) {
+      if (loggedInUser && profileUsername === loggedInUser.username) {
         profileRes = await fetch('/api/auth/profile', {
           credentials: 'include',
           cache: 'no-store',
         });
       } else {
-        profileRes = await fetch(`/api/users/${profileUsername}`, { cache: 'no-store' });
+        profileRes = await fetch(`/api/users/${profileUsername}`, {
+          cache: 'no-store',
+        });
       }
 
       if (profileRes.status === 401 && !profileUsername) {
@@ -75,16 +63,14 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router, profileUsername]);
+  }, [router, profileUsername, loggedInUser]);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
   const isSelf =
-    loggedInUser &&
-    profile &&
-    loggedInUser.username === profile.username;
+    loggedInUser && profile && loggedInUser.username === profile.username;
 
   const handleAvatarUpload = async (file) => {
     if (!isSelf) return;
@@ -95,29 +81,29 @@ export default function ProfilePage() {
       setError('');
       const res = await fetch('/api/upload', {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+
       const newUrl = data.avatar_url || data.url;
-      if (newUrl) {
-        // bust cache
-        const withTs = `${newUrl}?t=${Date.now()}`;
-        setAvatarUrl(withTs);
-        // update DB
-        await fetch('/api/auth/profile', {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatar_url: newUrl, bio }),
-        });
-        // re-fetch fresh profile from DB
-        await fetchProfile();
-      } else {
-        setError(data.error || 'Upload failed');
-      }
+      // bust cache
+      const withTs = `${newUrl}?t=${Date.now()}`;
+      setAvatarUrl(withTs);
+
+      // update DB with avatar and current bio
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: newUrl, bio }),
+      });
+
+      await fetchProfile();
     } catch (err) {
       console.error(err);
-      setError('Upload failed');
+      setError(err.message || 'Upload failed');
     } finally {
       setSaving(false);
     }
@@ -148,7 +134,7 @@ export default function ProfilePage() {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
-        <p>Loading profile...</p>
+        <p>Loading profile&hellip;</p>
       </div>
     );
   }
@@ -173,7 +159,7 @@ export default function ProfilePage() {
     <div className="container mt-5">
       <h2>
         {isSelf
-          ? `Welcome back, ${profile.firstname || profile.username}!`
+          ? `Welcome back, ${profile.firstname || profile.username}&apos;s Profile`
           : `Profile of ${profile.username}`}
       </h2>
 
@@ -201,7 +187,7 @@ export default function ProfilePage() {
               <Image
                 key={avatarUrl}
                 src={avatarUrl}
-                alt={`${profile.username}'s avatar`}
+                alt={`${profile.username}&apos;s avatar`}
                 width={120}
                 height={120}
                 style={{ objectFit: 'cover' }}
@@ -217,12 +203,9 @@ export default function ProfilePage() {
               accept="image/*"
               ref={fileInputRef}
               style={{ display: 'none' }}
-              onChange={async (e) => {
+              onChange={(e) => {
                 const file = e.target.files[0];
-                if (file) {
-                  const normalized = await normalizeImageFile(file);
-                  handleAvatarUpload(normalized);
-                }
+                if (file) handleAvatarUpload(file);
               }}
             />
           )}
@@ -258,7 +241,7 @@ export default function ProfilePage() {
               disabled={saving}
               variant="primary"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving&hellip;' : 'Save Changes'}
             </Button>
           )}
         </Card.Body>
