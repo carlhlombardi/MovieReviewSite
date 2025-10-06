@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Alert, Spinner, Card, Button, Form } from 'react-bootstrap';
@@ -15,15 +15,14 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-
-  // editable fields
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  const fetchProfile = async () => {
+  // reusable fetchProfile, stable via useCallback
+  const fetchProfile = useCallback(async () => {
     try {
       const authRes = await fetch('/api/auth/profile', {
-        credentials: 'include',
+        credentials: 'include'
       });
       if (authRes.ok) {
         const authUser = await authRes.json();
@@ -32,13 +31,12 @@ export default function ProfilePage() {
         setLoggedInUser(null);
       }
 
-      // which profile to view
       let profileRes;
       if (profileUsername) {
         profileRes = await fetch(`/api/users/${profileUsername}`);
       } else {
         profileRes = await fetch('/api/auth/profile', {
-          credentials: 'include',
+          credentials: 'include'
         });
       }
 
@@ -59,11 +57,11 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router, profileUsername]);
 
   useEffect(() => {
     fetchProfile();
-  }, [router, profileUsername]);
+  }, [fetchProfile]);
 
   const isSelf =
     loggedInUser &&
@@ -84,20 +82,18 @@ export default function ProfilePage() {
       const data = await res.json();
       const newUrl = data.avatar_url || data.url;
       if (newUrl) {
-        setAvatarUrl(newUrl);
-        // also update DB
-        const patch = await fetch('/api/auth/profile', {
+        // bust cache with timestamp
+        const withTs = `${newUrl}?t=${Date.now()}`;
+        setAvatarUrl(withTs);
+        // update DB
+        await fetch('/api/auth/profile', {
           method: 'PATCH',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatar_url: newUrl, bio }),
         });
-        if (patch.ok) {
-          const updated = await patch.json();
-          setProfile(updated); // update whole profile
-          setAvatarUrl(updated.avatar_url || '');
-          setBio(updated.bio || '');
-        }
+        // re-fetch fresh profile from DB
+        await fetchProfile();
       } else {
         setError(data.error || 'Upload failed');
       }
@@ -123,10 +119,9 @@ export default function ProfilePage() {
 
       if (!res.ok) throw new Error('Failed to update profile');
 
-      const updated = await res.json();
-      setProfile(updated);
-      setAvatarUrl(updated.avatar_url || '');
-      setBio(updated.bio || '');
+      await res.json();
+      // immediately refresh from DB so new bio shows after reload / nav
+      await fetchProfile();
     } catch (err) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -169,7 +164,6 @@ export default function ProfilePage() {
 
       <Card className="mb-4 p-3">
         <Card.Body className="text-center">
-          {/* Avatar */}
           <div
             style={{
               width: 120,
@@ -178,14 +172,19 @@ export default function ProfilePage() {
               borderRadius: '50%',
               overflow: 'hidden',
               border: '2px solid #ccc',
+              cursor: isSelf ? 'pointer' : 'default',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: '#f0f0f0',
             }}
+            onClick={() => {
+              if (isSelf && fileInputRef.current) fileInputRef.current.click();
+            }}
           >
             {avatarUrl ? (
               <Image
+                key={avatarUrl} // force re-render on URL change
                 src={avatarUrl}
                 alt={`${profile.username}'s avatar`}
                 width={120}
@@ -193,31 +192,21 @@ export default function ProfilePage() {
                 style={{ objectFit: 'cover' }}
               />
             ) : (
-              isSelf && <span>No avatar yet</span>
+              isSelf && <span>Click to add avatar</span>
             )}
           </div>
 
-          {/* Show a visible upload button for mobile */}
           {isSelf && (
-            <>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) handleAvatarUpload(file);
-                }}
-              />
-              <Button
-                className="mt-2"
-                variant="secondary"
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              >
-                Change Avatar
-              </Button>
-            </>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) handleAvatarUpload(file);
+              }}
+            />
           )}
 
           <p className="mt-3">
@@ -229,7 +218,7 @@ export default function ProfilePage() {
           </p>
 
           <p className="mt-3">
-            <strong>Bio:</strong> {bio || 'No bio yet.'}
+            <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
           </p>
 
           {isSelf && (
@@ -240,7 +229,6 @@ export default function ProfilePage() {
                 rows={3}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                onBlur={handleSave} // auto save on blur
               />
             </Form.Group>
           )}
