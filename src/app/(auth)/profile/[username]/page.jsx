@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Alert, Spinner, Card, Button } from "react-bootstrap";
-import Image from "next/image"; // ✅ Import Next.js Image
+import Image from "next/image";                    // ✅ import Next.js Image
+import { Alert, Spinner, Card, Button, Form } from "react-bootstrap";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -12,13 +12,15 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [bio, setBio] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        // Profile – cookie is automatically sent
         const profileRes = await fetch("/api/auth/profile", {
-          credentials: "include", // <--- important for cookies
+          credentials: "include",
         });
 
         if (profileRes.status === 401) {
@@ -32,6 +34,8 @@ export default function ProfilePage() {
 
         const profileData = await profileRes.json();
         setProfile(profileData);
+        setAvatarUrl(profileData.avatar_url || "");
+        setBio(profileData.bio || "");
       } catch (err) {
         console.error("Error in profile fetch:", err);
         setError(err.message || "Something went wrong");
@@ -42,6 +46,55 @@ export default function ProfilePage() {
 
     fetchAll();
   }, [router]);
+
+  const handleAvatarUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setSaving(true);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setAvatarUrl(data.url);
+      } else {
+        setError(data.error || "Upload failed");
+      }
+    } catch (err) {
+      setError("Upload failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError("");
+
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar_url: avatarUrl, bio }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update profile");
+
+      // refresh the page data
+      const updated = await res.json();
+      setProfile(updated);
+      setAvatarUrl(updated.avatar_url || "");
+      setBio(updated.bio || "");
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -72,56 +125,77 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5">
-      <h2 className="mb-4 d-flex justify-content-between align-items-center">
+      <h2>
         {isSelf
           ? `Welcome back, ${profile.firstname}!`
           : `Profile of ${profileUsername}`}
-        {isSelf && (
-          <Button
-            variant="outline-primary"
-            size="sm"
-            onClick={() => router.push("/profile/edit")}
-          >
-            Edit Profile
-          </Button>
-        )}
       </h2>
 
-      <Card className="mb-4 p-3 text-center">
-        {/* ✅ Avatar */}
-        {profile.avatar_url ? (
-          <Image
-            src={profile.avatar_url}
-            alt={`${profile.username}'s avatar`}
-            width={120}
-            height={120}
-            style={{ objectFit: "cover", borderRadius: "50%" }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              backgroundColor: "#ddd",
-              display: "inline-block",
-            }}
-          ></div>
-        )}
-        <h4 className="mt-3">{profile.username}</h4>
-        {profile.bio && <p className="mt-2">{profile.bio}</p>}
-      </Card>
+      <Card className="mb-4 p-3">
+        <Card.Body className="text-center">
+          {avatarUrl && (
+            <div style={{ width: 120, height: 120, margin: "0 auto" }}>
+              <Image
+                src={avatarUrl}
+                alt={`${profile.username}'s avatar`}
+                width={120}
+                height={120}
+                style={{
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                }}
+              />
+            </div>
+          )}
 
-      <Card className="mb-4">
-        <Card.Header as="h5">Profile Details</Card.Header>
-        <Card.Body>
-          <p>
+          {isSelf && (
+            <Form.Group className="mt-3">
+              <Form.Label>Change Avatar</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) handleAvatarUpload(file);
+                }}
+              />
+            </Form.Group>
+          )}
+
+          <p className="mt-3">
             <strong>Username:</strong> {profile.username}
           </p>
           <p>
             <strong>Date Joined:</strong>{" "}
             {new Date(profile.date_joined).toLocaleDateString()}
           </p>
+
+          {isSelf ? (
+            <Form.Group className="mt-3">
+              <Form.Label>Bio</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+              />
+            </Form.Group>
+          ) : (
+            <p>
+              <strong>Bio:</strong> {profile.bio}
+            </p>
+          )}
+
+          {isSelf && (
+            <Button
+              className="mt-3"
+              onClick={handleSave}
+              disabled={saving}
+              variant="primary"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
         </Card.Body>
       </Card>
 
