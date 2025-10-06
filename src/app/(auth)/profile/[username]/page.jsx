@@ -18,38 +18,51 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
+  // Converts HEIC/HEIF to JPEG for Cloudinary
+  async function normalizeImageFile(file) {
+    if (!file.type || file.type === 'image/heic' || file.type === 'image/heif') {
+      const img = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      return new Promise((resolve) =>
+        canvas.toBlob((blob) => {
+          const jpegFile = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+          resolve(jpegFile);
+        }, 'image/jpeg', 0.9)
+      );
+    }
+    return file;
+  }
+
   const fetchProfile = useCallback(async () => {
     try {
-      // check who is logged in
-      const authRes = await fetch('/api/auth/profile', { credentials: 'include' });
-      let authUser = null;
+      // logged-in user
+      const authRes = await fetch('/api/auth/profile', { credentials: 'include', cache: 'no-store' });
       if (authRes.ok) {
-        authUser = await authRes.json();
+        const authUser = await authRes.json();
         setLoggedInUser(authUser);
       } else {
         setLoggedInUser(null);
       }
 
-      // decide which API to call
+      // which profile to show
       let profileRes;
-      if (!profileUsername || (authUser && authUser.username === profileUsername)) {
-        // own profile
+      if (!profileUsername) {
         profileRes = await fetch('/api/auth/profile', {
           credentials: 'include',
           cache: 'no-store',
         });
       } else {
-        // someone else's profile
-        profileRes = await fetch(`/api/users/${profileUsername}`, {
-          cache: 'no-store',
-        });
+        profileRes = await fetch(`/api/users/${profileUsername}`, { cache: 'no-store' });
       }
 
       if (profileRes.status === 401 && !profileUsername) {
         router.push('/login');
         return;
       }
-
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
 
       const profileData = await profileRes.json();
@@ -80,33 +93,31 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       setError('');
-      // upload to /api/upload
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
-        credentials: 'include',
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-
-      const newUrl = data.avatar_url;
-      // bust cache for <Image>
-      const withTs = `${newUrl}?t=${Date.now()}`;
-      setAvatarUrl(withTs);
-
-      // also update DB bio at same time
-      await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: newUrl, bio }),
-      });
-
-      // re-fetch fresh profile from DB
-      await fetchProfile();
+      const newUrl = data.avatar_url || data.url;
+      if (newUrl) {
+        // bust cache
+        const withTs = `${newUrl}?t=${Date.now()}`;
+        setAvatarUrl(withTs);
+        // update DB
+        await fetch('/api/auth/profile', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatar_url: newUrl, bio }),
+        });
+        // re-fetch fresh profile from DB
+        await fetchProfile();
+      } else {
+        setError(data.error || 'Upload failed');
+      }
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Upload failed');
+      setError('Upload failed');
     } finally {
       setSaving(false);
     }
@@ -121,13 +132,10 @@ export default function ProfilePage() {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: avatarUrl.replace(/\?t=\d+$/, ''), bio }),
+        body: JSON.stringify({ avatar_url: avatarUrl, bio }),
       });
-
       if (!res.ok) throw new Error('Failed to update profile');
-
       await res.json();
-      // refresh from DB so new bio shows
       await fetchProfile();
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -191,7 +199,7 @@ export default function ProfilePage() {
           >
             {avatarUrl ? (
               <Image
-                key={avatarUrl} // force re-render on URL change
+                key={avatarUrl}
                 src={avatarUrl}
                 alt={`${profile.username}'s avatar`}
                 width={120}
@@ -209,9 +217,12 @@ export default function ProfilePage() {
               accept="image/*"
               ref={fileInputRef}
               style={{ display: 'none' }}
-              onChange={(e) => {
+              onChange={async (e) => {
                 const file = e.target.files[0];
-                if (file) handleAvatarUpload(file);
+                if (file) {
+                  const normalized = await normalizeImageFile(file);
+                  handleAvatarUpload(normalized);
+                }
               }}
             />
           )}
