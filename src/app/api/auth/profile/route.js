@@ -1,25 +1,25 @@
 // app/api/auth/profile/route.js
-import jwt from 'jsonwebtoken';
-import { sql } from '@vercel/postgres';
+import jwt from "jsonwebtoken";
+import { sql } from "@vercel/postgres"; // or your pool if you use pg directly
 
-// GET current logged-in user's profile
-export async function GET(request) {
-  const cookieHeader = request.headers.get('cookie') || '';
-
-  // Parse cookies
-  const cookies = Object.fromEntries(
-    cookieHeader.split(';').map((c) => {
-      const [name, ...rest] = c.trim().split('=');
-      return [name, decodeURIComponent(rest.join('='))];
+function parseCookies(cookieHeader) {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split(";").map((c) => {
+      const [name, ...rest] = c.trim().split("=");
+      return [name, decodeURIComponent(rest.join("="))];
     })
   );
+}
 
+export async function GET(req) {
+  const cookieHeader = req.headers.get("cookie");
+  const cookies = parseCookies(cookieHeader);
   const token = cookies.token;
 
   if (!token) {
-    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ message: "Unauthorized" }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -27,52 +27,37 @@ export async function GET(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    // Fetch user
-    const result = await sql`
-      SELECT id, username, email, firstname, lastname, date_joined, avatar_url, bio
+    const { rows } = await sql`
+      SELECT id, username, firstname, lastname, email,
+             avatar_url, bio, date_joined
       FROM users
       WHERE id = ${userId};
     `;
-    const user = result.rows[0];
 
-    if (!user) {
-      return new Response(JSON.stringify({ message: 'User not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (rows.length === 0) {
+      return new Response("Not found", { status: 404 });
     }
 
-    // Add isSelf flag if you want to check from front end
-    const isSelf = decoded.username === user.username;
-
-    return new Response(JSON.stringify({ ...user, isSelf }), {
+    return new Response(JSON.stringify(rows[0]), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return new Response(JSON.stringify({ message: 'Invalid token' }), {
+  } catch (err) {
+    console.error("GET profile error", err);
+    return new Response(JSON.stringify({ message: "Invalid token" }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
 
-// PATCH to update avatar_url and bio
-export async function PATCH(request) {
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookies = Object.fromEntries(
-    cookieHeader.split(';').map((c) => {
-      const [name, ...rest] = c.trim().split('=');
-      return [name, decodeURIComponent(rest.join('='))];
-    })
-  );
-
+export async function PATCH(req) {
+  const cookieHeader = req.headers.get("cookie");
+  const cookies = parseCookies(cookieHeader);
   const token = cookies.token;
+
   if (!token) {
-    return new Response(JSON.stringify({ message: 'Unauthorized' }), {
+    return new Response(JSON.stringify({ message: "Unauthorized" }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 
@@ -80,24 +65,27 @@ export async function PATCH(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.userId;
 
-    // Grab JSON body
-    const { avatar_url, bio } = await request.json();
+    const body = await req.json();
+    const avatar_url = body.avatar_url ?? null;
+    const bio = body.bio ?? null;
 
-    await sql`
+    // Only update the logged-in user:
+    const { rows } = await sql`
       UPDATE users
       SET avatar_url = ${avatar_url}, bio = ${bio}
-      WHERE id = ${userId};
+      WHERE id = ${userId}
+      RETURNING id, username, firstname, lastname, email,
+                avatar_url, bio, date_joined;
     `;
 
-    return new Response(JSON.stringify({ message: 'Profile updated' }), {
+    return new Response(JSON.stringify(rows[0]), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error('Profile update error:', err);
-    return new Response(JSON.stringify({ message: 'Error updating profile' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    console.error("PATCH profile error", err);
+    return new Response(JSON.stringify({ message: "Invalid token or update error" }), {
+      status: 401,
     });
   }
 }
