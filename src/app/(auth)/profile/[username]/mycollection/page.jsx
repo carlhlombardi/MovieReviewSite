@@ -99,7 +99,7 @@ export default function MyCollectionPage() {
   return (
     <Container className="py-4">
       <div className={styles.hero}>
-        <h1 className={styles.heroTitle}>My Collection</h1>
+        <h1 className={styles.heroTitle}>{$username} Collection</h1>
       </div>
 
       <Row className="mt-3 mb-4 text-center">
