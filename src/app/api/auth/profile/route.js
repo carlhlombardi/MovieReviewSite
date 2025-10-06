@@ -1,4 +1,3 @@
-// app/api/auth/profile/route.js
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
@@ -12,6 +11,7 @@ function parseCookies(cookieHeader) {
   );
 }
 
+// GET logged-in user
 export async function GET(req) {
   const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
@@ -55,6 +55,7 @@ export async function GET(req) {
   }
 }
 
+// PATCH logged-in user (update avatar/bio)
 export async function PATCH(req) {
   const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
@@ -75,7 +76,6 @@ export async function PATCH(req) {
     const avatar_url = body.avatar_url ?? null;
     const bio = body.bio ?? null;
 
-    // Update both avatar_url and bio
     const { rows } = await sql`
       UPDATE users
       SET avatar_url = ${avatar_url},
