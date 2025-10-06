@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";                    // ✅ import Next.js Image
+import Image from "next/image";
 import { Alert, Spinner, Card, Button, Form } from "react-bootstrap";
 
 export default function ProfilePage() {
@@ -19,9 +19,19 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const profileRes = await fetch("/api/auth/profile", {
-          credentials: "include",
-        });
+        let profileRes;
+
+        // when on someone else's page
+        if (profileUsername) {
+          profileRes = await fetch(`/api/users/${profileUsername}`, {
+            credentials: "include",
+          });
+        } else {
+          // fallback to own profile
+          profileRes = await fetch("/api/auth/profile", {
+            credentials: "include",
+          });
+        }
 
         if (profileRes.status === 401) {
           router.push("/login");
@@ -45,7 +55,7 @@ export default function ProfilePage() {
     };
 
     fetchAll();
-  }, [router]);
+  }, [router, profileUsername]);
 
   const handleAvatarUpload = async (file) => {
     const formData = new FormData();
@@ -84,7 +94,6 @@ export default function ProfilePage() {
 
       if (!res.ok) throw new Error("Failed to update profile");
 
-      // refresh the page data
       const updated = await res.json();
       setProfile(updated);
       setAvatarUrl(updated.avatar_url || "");
@@ -121,6 +130,7 @@ export default function ProfilePage() {
     );
   }
 
+  // true if we are looking at our own profile
   const isSelf = profile.username === profileUsername;
 
   return (
