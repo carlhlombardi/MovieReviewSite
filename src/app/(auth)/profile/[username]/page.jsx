@@ -10,7 +10,7 @@ export default function ProfilePage() {
   const { username: profileUsername } = useParams();
   const fileInputRef = useRef(null);
 
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,33 +18,54 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // reusable fetchProfile, stable via useCallback
-  const fetchProfile = useCallback(async () => {
-    try {
-      const authRes = await fetch('/api/auth/profile', {
-        credentials: 'include'
-      });
-      if (authRes.ok) {
-        const authUser = await authRes.json();
-        setLoggedInUser(authUser);
-      } else {
+  // 1️⃣ fetch logged-in user once
+  useEffect(() => {
+    (async () => {
+      try {
+        const authRes = await fetch('/api/auth/profile', {
+          credentials: 'include',
+        });
+        if (authRes.ok) {
+          const authUser = await authRes.json();
+          setLoggedInUser(authUser);
+        } else {
+          setLoggedInUser(null);
+        }
+      } catch (err) {
+        console.error(err);
         setLoggedInUser(null);
       }
+    })();
+  }, []);
 
+  // 2️⃣ fetch the actual profile depending on loggedInUser/profileUsername
+  const fetchProfile = useCallback(async () => {
+    setIsLoading(true);
+    try {
       let profileRes;
-      if (profileUsername) {
-        profileRes = await fetch(`/api/users/${profileUsername}`);
-      } else {
+
+      // no username in URL = viewing own profile
+      if (!profileUsername) {
         profileRes = await fetch('/api/auth/profile', {
-          credentials: 'include'
+          credentials: 'include',
         });
+      } else if (
+        loggedInUser &&
+        loggedInUser.username === profileUsername
+      ) {
+        // viewing your own profile even with /profile/[username] URL
+        profileRes = await fetch('/api/auth/profile', {
+          credentials: 'include',
+        });
+      } else {
+        // viewing someone else’s profile
+        profileRes = await fetch(`/api/users/${profileUsername}`);
       }
 
       if (profileRes.status === 401 && !profileUsername) {
         router.push('/login');
         return;
       }
-
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
 
       const profileData = await profileRes.json();
@@ -52,16 +73,19 @@ export default function ProfilePage() {
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
     } catch (err) {
-      console.error('Error in profile fetch:', err);
+      console.error(err);
       setError(err.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
-  }, [router, profileUsername]);
+  }, [loggedInUser, profileUsername, router]);
 
+  // refetch profile once we know loggedInUser
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (loggedInUser !== undefined) {
+      fetchProfile();
+    }
+  }, [loggedInUser, fetchProfile]);
 
   const isSelf =
     loggedInUser &&
@@ -82,7 +106,7 @@ export default function ProfilePage() {
       const data = await res.json();
       const newUrl = data.avatar_url || data.url;
       if (newUrl) {
-        // bust cache with timestamp
+        // bust cache
         const withTs = `${newUrl}?t=${Date.now()}`;
         setAvatarUrl(withTs);
         // update DB
@@ -92,7 +116,7 @@ export default function ProfilePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ avatar_url: newUrl, bio }),
         });
-        // re-fetch fresh profile from DB
+        // refresh profile from DB
         await fetchProfile();
       } else {
         setError(data.error || 'Upload failed');
@@ -116,11 +140,9 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: avatarUrl, bio }),
       });
-
       if (!res.ok) throw new Error('Failed to update profile');
-
       await res.json();
-      // immediately refresh from DB so new bio shows after reload / nav
+      // refresh profile from DB
       await fetchProfile();
     } catch (err) {
       setError(err.message || 'Something went wrong');
