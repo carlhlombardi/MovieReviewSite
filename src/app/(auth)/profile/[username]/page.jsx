@@ -160,7 +160,8 @@ export default function ProfilePage() {
         method,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followingId: profile.id }),
+        body: JSON.stringify({ followingUsername: profile.username }),
+
       });
 
       if (!res.ok) {
