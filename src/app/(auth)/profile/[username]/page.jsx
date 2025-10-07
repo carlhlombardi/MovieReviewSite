@@ -18,30 +18,26 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
-
-  // ✅ NEW: Follow state
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followCount, setFollowCount] = useState(0);
 
-  /** ✅ Unified profile fetcher */
+  // ─────────────────────────────────────────────
+  // Fetch current profile + logged-in user
+  // ─────────────────────────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError('');
 
-      // Who is logged in
-      let authUser = null;
+      // 1️⃣ who is logged in
       const authRes = await fetch('/api/auth/profile', {
         credentials: 'include',
         cache: 'no-store',
       });
-      if (authRes.ok) {
-        authUser = await authRes.json();
-        setLoggedInUser(authUser);
-      } else {
-        setLoggedInUser(null);
-      }
+      let authUser = null;
+      if (authRes.ok) authUser = await authRes.json();
+      setLoggedInUser(authUser);
 
-      // Which profile are we viewing
+      // 2️⃣ which profile to display
       let profileRes;
       if (authUser && profileUsername === authUser.username) {
         profileRes = await fetch('/api/auth/profile', {
@@ -59,28 +55,21 @@ export default function ProfilePage() {
         return;
       }
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
-
       const profileData = await profileRes.json();
+
       setProfile(profileData);
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
-      // ✅ Fetch follow info if not self
-      if (authUser && profileUsername !== authUser.username) {
-        const followRes = await fetch(`/api/users/${profileUsername}/follow-status`, {
-          credentials: 'include',
-        });
-        if (followRes.ok) {
-          const { following, followersCount } = await followRes.json();
+      // 3️⃣ check follow status (if logged in & viewing someone else)
+      if (authUser && profileData && authUser.id !== profileData.id) {
+        const followCheck = await fetch(
+          `/api/follow/status?followingId=${profileData.id}`,
+          { credentials: 'include' }
+        );
+        if (followCheck.ok) {
+          const { following } = await followCheck.json();
           setIsFollowing(following);
-          setFollowCount(followersCount);
-        }
-      } else {
-        // your own follower count
-        const countRes = await fetch(`/api/users/${profileUsername}/follow-count`);
-        if (countRes.ok) {
-          const { followersCount } = await countRes.json();
-          setFollowCount(followersCount);
         }
       }
     } catch (err) {
@@ -98,6 +87,9 @@ export default function ProfilePage() {
   const isSelf =
     loggedInUser && profile && loggedInUser.username === profile.username;
 
+  // ─────────────────────────────────────────────
+  // Avatar upload (only self)
+  // ─────────────────────────────────────────────
   const handleAvatarUpload = async (file) => {
     if (!isSelf) return;
     const formData = new FormData();
@@ -133,6 +125,9 @@ export default function ProfilePage() {
     }
   };
 
+  // ─────────────────────────────────────────────
+  // Save profile changes (bio/avatar)
+  // ─────────────────────────────────────────────
   const handleSave = async () => {
     if (!isSelf) return;
     try {
@@ -145,7 +140,6 @@ export default function ProfilePage() {
         body: JSON.stringify({ avatar_url: avatarUrl, bio }),
       });
       if (!res.ok) throw new Error('Failed to update profile');
-      await res.json();
       await fetchProfile();
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -154,30 +148,60 @@ export default function ProfilePage() {
     }
   };
 
-  if (isLoading) {
+  // ─────────────────────────────────────────────
+  // Follow / Unfollow logic
+  // ─────────────────────────────────────────────
+  const handleFollowToggle = async () => {
+    if (!loggedInUser || !profile) return;
+    const method = isFollowing ? 'DELETE' : 'POST';
+
+    try {
+      const res = await fetch('/api/follow', {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followingId: profile.id }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setIsFollowing(!isFollowing);
+      }
+    } catch (err) {
+      console.error('Follow/unfollow failed:', err);
+      setError('Follow/unfollow failed');
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // UI
+  // ─────────────────────────────────────────────
+  if (isLoading)
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
         <p>Loading profile&hellip;</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <Alert variant="danger" className="mt-5">
         {error}
       </Alert>
     );
-  }
 
-  if (!profile) {
+  if (!profile)
     return (
       <Alert variant="warning" className="mt-5">
         Profile not found.
       </Alert>
     );
-  }
 
   return (
     <div className="container mt-5">
@@ -246,40 +270,6 @@ export default function ProfilePage() {
             <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
           </p>
 
-          {/* ✅ Follow / Unfollow button */}
-          {!isSelf && (
-            <div className="mt-3">
-              <Button
-                variant={isFollowing ? 'outline-danger' : 'primary'}
-                onClick={async () => {
-                  try {
-                    const method = isFollowing ? 'DELETE' : 'POST';
-                    const res = await fetch('/api/follow', {
-                      method,
-                      credentials: 'include',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ followingId: profile.id }),
-                    });
-                    if (res.ok) {
-                      setIsFollowing(!isFollowing);
-                      setFollowCount((prev) => prev + (isFollowing ? -1 : 1));
-                    } else {
-                      const data = await res.json();
-                      alert(data.error || 'Failed to update follow status');
-                    }
-                  } catch (err) {
-                    console.error('Follow/unfollow failed:', err);
-                  }
-                }}
-              >
-                {isFollowing ? 'Unfollow' : 'Follow'}
-              </Button>
-              <p className="mt-2 text-muted">
-                {followCount} follower{followCount !== 1 ? 's' : ''}
-              </p>
-            </div>
-          )}
-
           {isSelf && (
             <>
               <Form.Group className="mt-2">
@@ -298,14 +288,23 @@ export default function ProfilePage() {
                 disabled={saving}
                 variant="primary"
               >
-                {saving ? 'Saving' : 'Save Changes'}
+                {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </>
+          )}
+
+          {!isSelf && loggedInUser && (
+            <Button
+              className="mt-3"
+              onClick={handleFollowToggle}
+              variant={isFollowing ? 'secondary' : 'primary'}
+            >
+              {isFollowing ? 'Unfollow' : 'Follow'}
+            </Button>
           )}
         </Card.Body>
       </Card>
 
-      {/* ✅ Collection Links */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <Link
