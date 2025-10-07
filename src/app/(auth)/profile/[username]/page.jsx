@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Alert, Spinner, Card, Button, Form } from 'react-bootstrap';
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,13 +19,16 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
 
-  // one stable fetchProfile
+  // ✅ NEW: Follow state
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followCount, setFollowCount] = useState(0);
+
+  /** ✅ Unified profile fetcher */
   const fetchProfile = useCallback(async () => {
     try {
-      // always start fresh
       setIsLoading(true);
 
-      // who is logged in
+      // Who is logged in
       let authUser = null;
       const authRes = await fetch('/api/auth/profile', {
         credentials: 'include',
@@ -38,7 +41,7 @@ export default function ProfilePage() {
         setLoggedInUser(null);
       }
 
-      // which endpoint to call
+      // Which profile are we viewing
       let profileRes;
       if (authUser && profileUsername === authUser.username) {
         profileRes = await fetch('/api/auth/profile', {
@@ -61,13 +64,32 @@ export default function ProfilePage() {
       setProfile(profileData);
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
+
+      // ✅ Fetch follow info if not self
+      if (authUser && profileUsername !== authUser.username) {
+        const followRes = await fetch(`/api/users/${profileUsername}/follow-status`, {
+          credentials: 'include',
+        });
+        if (followRes.ok) {
+          const { following, followersCount } = await followRes.json();
+          setIsFollowing(following);
+          setFollowCount(followersCount);
+        }
+      } else {
+        // your own follower count
+        const countRes = await fetch(`/api/users/${profileUsername}/follow-count`);
+        if (countRes.ok) {
+          const { followersCount } = await countRes.json();
+          setFollowCount(followersCount);
+        }
+      }
     } catch (err) {
       console.error('Error in profile fetch:', err);
       setError(err.message || 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
-  }, [router, profileUsername]); // no loggedInUser here
+  }, [router, profileUsername]);
 
   useEffect(() => {
     fetchProfile();
@@ -189,7 +211,7 @@ export default function ProfilePage() {
               <Image
                 key={avatarUrl}
                 src={avatarUrl}
-                alt={`${profile.username}&apos;s avatar`}
+                alt={`${profile.username}'s avatar`}
                 width={120}
                 height={120}
                 style={{ objectFit: 'cover' }}
@@ -224,57 +246,91 @@ export default function ProfilePage() {
             <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
           </p>
 
-          {isSelf && (
-            <Form.Group className="mt-2">
-              <Form.Label>Edit Bio</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-              />
-            </Form.Group>
+          {/* ✅ Follow / Unfollow button */}
+          {!isSelf && (
+            <div className="mt-3">
+              <Button
+                variant={isFollowing ? 'outline-danger' : 'primary'}
+                onClick={async () => {
+                  try {
+                    const method = isFollowing ? 'DELETE' : 'POST';
+                    const res = await fetch('/api/follow', {
+                      method,
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ followingId: profile.id }),
+                    });
+                    if (res.ok) {
+                      setIsFollowing(!isFollowing);
+                      setFollowCount((prev) => prev + (isFollowing ? -1 : 1));
+                    } else {
+                      const data = await res.json();
+                      alert(data.error || 'Failed to update follow status');
+                    }
+                  } catch (err) {
+                    console.error('Follow/unfollow failed:', err);
+                  }
+                }}
+              >
+                {isFollowing ? 'Unfollow' : 'Follow'}
+              </Button>
+              <p className="mt-2 text-muted">
+                {followCount} follower{followCount !== 1 ? 's' : ''}
+              </p>
+            </div>
           )}
 
           {isSelf && (
-            <Button
-              className="mt-3"
-              onClick={handleSave}
-              disabled={saving}
-              variant="primary"
-            >
-              {saving ? 'Saving' : 'Save Changes'}
-            </Button>
+            <>
+              <Form.Group className="mt-2">
+                <Form.Label>Edit Bio</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
+              </Form.Group>
+
+              <Button
+                className="mt-3"
+                onClick={handleSave}
+                disabled={saving}
+                variant="primary"
+              >
+                {saving ? 'Saving' : 'Save Changes'}
+              </Button>
+            </>
           )}
         </Card.Body>
       </Card>
 
- <Card className="mb-4">
-  <Card.Header as="h5">
-    <Link
-      href={`/profile/${profile.username}/mycollection`}
-      className="text-decoration-none"
-    >
-      {isSelf
-        ? "Movies Owned — View Your Collection"
-        : `Movies Owned — View ${profile.username}'s Collection`}
-    </Link>
-  </Card.Header>
-</Card>
+      {/* ✅ Collection Links */}
+      <Card className="mb-4">
+        <Card.Header as="h5">
+          <Link
+            href={`/profile/${profile.username}/mycollection`}
+            className="text-decoration-none"
+          >
+            {isSelf
+              ? 'Movies Owned — View Your Collection'
+              : `Movies Owned — View ${profile.username}'s Collection`}
+          </Link>
+        </Card.Header>
+      </Card>
 
-<Card className="mb-4">
-  <Card.Header as="h5">
-    <Link
-      href={`/profile/${profile.username}/wantedformycollection`}
-      className="text-decoration-none"
-    >
-      {isSelf
-        ? "Movies Wanted — View Your Wish List"
-        : `Movies Wanted — View ${profile.username}'s Wish List`}
-    </Link>
-  </Card.Header>
-</Card>
-
+      <Card className="mb-4">
+        <Card.Header as="h5">
+          <Link
+            href={`/profile/${profile.username}/wantedformycollection`}
+            className="text-decoration-none"
+          >
+            {isSelf
+              ? 'Movies Wanted — View Your Wish List'
+              : `Movies Wanted — View ${profile.username}'s Wish List`}
+          </Link>
+        </Card.Header>
+      </Card>
     </div>
   );
 }
