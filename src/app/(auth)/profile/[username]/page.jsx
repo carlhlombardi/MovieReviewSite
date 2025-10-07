@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Alert, Spinner, Card, Button, Form } from 'react-bootstrap';
+import { Alert, Spinner, Card, Button, Form, Tabs, Tab } from 'react-bootstrap';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -19,6 +19,10 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
+
+  // Followers / Following lists
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
 
   // ─────────────────────────────────────────────
   // Fetch current profile + logged-in user
@@ -62,9 +66,9 @@ export default function ProfilePage() {
       setBio(profileData.bio || '');
 
       // 3️⃣ check follow status (if logged in & viewing someone else)
-      if (authUser && profileData && authUser.id !== profileData.id) {
+      if (authUser && profileData && authUser.username !== profileData.username) {
         const followCheck = await fetch(
-          `/api/follow/status?followingId=${profileData.id}`,
+          `/api/follow/status?followingUsername=${profileData.username}`,
           { credentials: 'include' }
         );
         if (followCheck.ok) {
@@ -72,6 +76,9 @@ export default function ProfilePage() {
           setIsFollowing(following);
         }
       }
+
+      // 4️⃣ fetch followers and following lists
+      await fetchFollowLists(profileData.username);
     } catch (err) {
       console.error('Error in profile fetch:', err);
       setError(err.message || 'Something went wrong');
@@ -79,6 +86,26 @@ export default function ProfilePage() {
       setIsLoading(false);
     }
   }, [router, profileUsername]);
+
+  // ─────────────────────────────────────────────
+  // Fetch followers/following lists
+  // ─────────────────────────────────────────────
+  const fetchFollowLists = async (username) => {
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+       fetch(`/api/user/followers?username=${username}`),
+       fetch(`/api/user/following?username=${username}`),
+      ]);
+
+      const followersData = await followersRes.json();
+      const followingData = await followingRes.json();
+
+      setFollowers(followersData.users || []);
+      setFollowing(followingData.users || []);
+    } catch (err) {
+      console.error('Error fetching follow lists:', err);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -161,7 +188,6 @@ export default function ProfilePage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ followingUsername: profile.username }),
-
       });
 
       if (!res.ok) {
@@ -172,6 +198,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.success) {
         setIsFollowing(!isFollowing);
+        await fetchFollowLists(profile.username); // refresh lists
       }
     } catch (err) {
       console.error('Follow/unfollow failed:', err);
@@ -306,6 +333,64 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
+      {/* ─────────── Tabs for Followers / Following ─────────── */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Tabs defaultActiveKey="followers" id="profile-tabs" className="mb-3">
+            <Tab eventKey="followers" title={`Followers (${followers.length})`}>
+              <div className="d-flex flex-wrap gap-3">
+                {followers.length > 0 ? (
+                  followers.map((user) => (
+                    <Link
+                      href={`/profile/${user.username}`}
+                      key={user.username}
+                      className="text-center text-decoration-none"
+                    >
+                      <Image
+                        src={user.avatar_url || '/images/default-avatar.png'}
+                        alt={user.username}
+                        width={60}
+                        height={60}
+                        className="rounded-circle border"
+                      />
+                      <p className="small mt-1">{user.username}</p>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-muted">No followers yet.</p>
+                )}
+              </div>
+            </Tab>
+
+            <Tab eventKey="following" title={`Following (${following.length})`}>
+              <div className="d-flex flex-wrap gap-3">
+                {following.length > 0 ? (
+                  following.map((user) => (
+                    <Link
+                      href={`/profile/${user.username}`}
+                      key={user.username}
+                      className="text-center text-decoration-none"
+                    >
+                      <Image
+                        src={user.avatar_url || '/images/default-avatar.png'}
+                        alt={user.username}
+                        width={60}
+                        height={60}
+                        className="rounded-circle border"
+                      />
+                      <p className="small mt-1">{user.username}</p>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-muted">Not following anyone yet.</p>
+                )}
+              </div>
+            </Tab>
+          </Tabs>
+        </Card.Body>
+      </Card>
+
+      {/* ─────────── Movie links ─────────── */}
       <Card className="mb-4">
         <Card.Header as="h5">
           <Link
