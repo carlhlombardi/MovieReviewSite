@@ -1,61 +1,73 @@
+/* === Navbar Toggler (Hamburger Menu) === */
 .navbartoggler {
-    border: none;
-    background: transparent;
-    padding: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 .navbartogglericon {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 30px;
-    height: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 20px;
 }
 
 .bar {
-    width: 30px;
-    height: 2px;
-    background-color: white;
-    transition: all 0.3s;
+  width: 30px;
+  height: 2px;
+  background-color: white;
+  transition: all 0.3s;
 }
 
+/* === Close Button for Offcanvas === */
 .closebtn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 2rem;
-    cursor: pointer;
-    margin-left: auto;
-    font-weight: 500;
-    margin-right: .5rem; /* Move the button to the right */
-    padding: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  margin-left: auto;
+  font-weight: 500;
+  margin-right: 0.5rem;
+  padding: 0;
 }
 
+/* === Auth Buttons (Login / Register / Dropdown Toggle) === */
 .authButtonsWrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .authButtons {
-    display: flex;
-    flex-direction: row;
-    gap: 10px; /* Adjust the gap as needed */
-    margin: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.authButtonsButton {
+  color: white;
+  background-color: var(--bg);
+  font-size: 1.2rem;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  border: 2px solid white;
+  transition: all 0.2s ease;
+}
+
+.authButtonsButton:hover,
+.authButtonsButton:focus {
+  background-color: white;
+  color: var(--bg);
+  outline: none;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 992px) {
+  .authButtonsWrapper {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
   }
 
   .authButtonsButton {
-    color: white;
-    background-color: var(--bg);
-    font-size: 1.3rem;
-    border-radius: 5px;
-    padding: .5rem;
-    border: 2px solid white;
+    width: 100%;
+    text-align: center;
   }
-  
-  @media (max-width: 992px) {
-    .authButtons {
-      flex-direction: column;
-      align-items: center;
-    }
-  }
+}
