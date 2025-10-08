@@ -128,8 +128,8 @@ export default function ProfilePage() {
 
       const ownedData = await ownedRes.json();
       const wantedData = await wantedRes.json();
-setOwnedMovies((ownedData.movies || []).slice(0, 5));
-setWantedMovies((wantedData.movies || []).slice(0, 5));
+setOwnedMovies((ownedData.movies || []).slice(0, 6));
+setWantedMovies((wantedData.movies || []).slice(0, 6));
 
 setOwnedCount(ownedData.movies?.length || 0);
 setWantedCount(wantedData.movies?.length || 0);
