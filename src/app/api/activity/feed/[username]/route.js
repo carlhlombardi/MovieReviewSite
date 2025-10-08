@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-/** 🛡️ Verify user (optional, can make this public) */
+/** 🛡️ Optional auth check */
 async function verifyUser(req, username) {
   const cookieHeader = req.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
@@ -26,7 +26,7 @@ async function verifyUser(req, username) {
   }
 }
 
-/** 📰 GET: Unified activity feed */
+/** 📰 GET — Activity feed for a specific user */
 export async function GET(req, { params }) {
   const { username } = params;
 
@@ -45,19 +45,22 @@ export async function GET(req, { params }) {
       LIMIT 50;
     `;
 
-    // Optional formatting for clean messages
     const formatted = rows.map((item) => {
       let text = '';
       if (item.source === 'mycollection') {
-        if (item.action === 'add') text = `added "${item.movie_title}" to My Collection`;
-        if (item.action === 'remove') text = `removed "${item.movie_title}" from My Collection`;
+        text = item.action === 'add'
+          ? `added "${item.movie_title}" to My Collection`
+          : `removed "${item.movie_title}" from My Collection`;
       } else if (item.source === 'wantedforcollection') {
-        if (item.action === 'want') text = `added "${item.movie_title}" to Wanted List`;
-        if (item.action === 'remove') text = `removed "${item.movie_title}" from Wanted List`;
+        text = item.action === 'want'
+          ? `added "${item.movie_title}" to Wanted List`
+          : `removed "${item.movie_title}" from Wanted List`;
       } else if (item.source === 'seenit') {
-        if (item.action === 'seen') text = `marked "${item.movie_title}" as Seen`;
-        if (item.action === 'remove') text = `removed "${item.movie_title}" from Seen List`;
+        text = item.action === 'seen'
+          ? `marked "${item.movie_title}" as Seen`
+          : `removed "${item.movie_title}" from Seen List`;
       }
+
       return {
         movie_title: item.movie_title,
         action: item.action,

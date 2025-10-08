@@ -77,10 +77,10 @@ export async function POST(req, { params }) {
         seenit = EXCLUDED.seenit;
     `;
 
-    // 🟢 Log activity: user marked movie as seen
+    // 🟢 Log activity with source
     await sql`
-      INSERT INTO activity (user_id, movie_title, action)
-      VALUES (${verified.id}, ${title}, 'seen');
+      INSERT INTO activity (user_id, movie_title, action, source)
+      VALUES (${verified.id}, ${title}, 'seen', 'seenit');
     `;
 
     return new Response(
@@ -122,10 +122,10 @@ export async function DELETE(req, { params }) {
     `;
 
     if (movie) {
-      // 🟡 Log activity: user removed a seen movie
+      // 🟡 Log activity with source
       await sql`
-        INSERT INTO activity (user_id, movie_title, action)
-        VALUES (${verified.id}, ${movie.title}, 'remove');
+        INSERT INTO activity (user_id, movie_title, action, source)
+        VALUES (${verified.id}, ${movie.title}, 'remove', 'seenit');
       `;
     }
 

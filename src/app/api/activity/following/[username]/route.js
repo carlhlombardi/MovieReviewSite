@@ -4,21 +4,25 @@ export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    // get id of user
+    // 1. Get ID of the user making the request
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
-    if (userRes.rows.length === 0)
+    if (userRes.rows.length === 0) {
       return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
+    }
     const userId = userRes.rows[0].id;
 
-    // get IDs of users this user follows
+    // 2. Get IDs of users this user follows
     const followingRes = await sql`
       SELECT following_id FROM follows WHERE follower_id = ${userId};
     `;
     const followingIds = followingRes.rows.map((row) => row.following_id);
-    if (followingIds.length === 0)
-      return new Response(JSON.stringify({ feed: [] }), { status: 200 });
 
-    // get activity of followed users
+    // if they follow no one, return empty feed
+    if (followingIds.length === 0) {
+      return new Response(JSON.stringify({ feed: [] }), { status: 200 });
+    }
+
+    // 3. Get activity of followed users
     const activityRes = await sql`
       SELECT a.movie_title, a.action, a.source, a.created_at, u.username
       FROM activity a
@@ -28,7 +32,34 @@ export async function GET(req, { params }) {
       LIMIT 50;
     `;
 
-    return new Response(JSON.stringify({ feed: activityRes.rows }), { status: 200 });
+    // 4. Format feed messages
+    const formatted = activityRes.rows.map((item) => {
+      let text = '';
+      if (item.source === 'mycollection') {
+        text = item.action === 'add'
+          ? `added "${item.movie_title}" to My Collection`
+          : `removed "${item.movie_title}" from My Collection`;
+      } else if (item.source === 'wantedforcollection') {
+        text = item.action === 'want'
+          ? `added "${item.movie_title}" to Wanted List`
+          : `removed "${item.movie_title}" from Wanted List`;
+      } else if (item.source === 'seenit') {
+        text = item.action === 'seen'
+          ? `marked "${item.movie_title}" as Seen`
+          : `removed "${item.movie_title}" from Seen List`;
+      }
+
+      return {
+        username: item.username,
+        movie_title: item.movie_title,
+        action: item.action,
+        source: item.source,
+        message: `${item.username} ${text}`,
+        created_at: item.created_at,
+      };
+    });
+
+    return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in following activity GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });

@@ -70,14 +70,14 @@ export async function POST(req, { params }) {
         title = EXCLUDED.title,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
-        iswatched = ${iswatched},
-        watchcount = ${watchcount};
+        iswatched = EXCLUDED.iswatched,
+        watchcount = EXCLUDED.watchcount;
     `;
 
-    // 🟢 Log activity
+    // 🟢 Log activity with source
     await sql`
-      INSERT INTO activity (user_id, movie_title, action)
-      VALUES (${verified.id}, ${title}, 'want');
+      INSERT INTO activity (user_id, movie_title, action, source)
+      VALUES (${verified.id}, ${title}, 'want', 'wantedforcollection');
     `;
 
     return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), {
@@ -118,9 +118,10 @@ export async function DELETE(req, { params }) {
     `;
 
     if (movie) {
+      // 🟡 Log activity with source
       await sql`
-        INSERT INTO activity (user_id, movie_title, action)
-        VALUES (${verified.id}, ${movie.title}, 'remove');
+        INSERT INTO activity (user_id, movie_title, action, source)
+        VALUES (${verified.id}, ${movie.title}, 'remove', 'wantedforcollection');
       `;
     }
 

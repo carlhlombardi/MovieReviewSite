@@ -39,7 +39,7 @@ export async function GET(req, { params }) {
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
-    console.error('Error in mycollection GET:', err);
+    console.error('❌ Error in mycollection GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
@@ -74,15 +74,15 @@ export async function POST(req, { params }) {
         likedcount = ${likedcount};
     `;
 
-    // 🟢 Log activity: user added a movie
+    // 🟢 Log activity with source
     await sql`
-      INSERT INTO activity (user_id, movie_title, action)
-      VALUES (${verified.id}, ${title}, 'add');
+      INSERT INTO activity (user_id, movie_title, action, source)
+      VALUES (${verified.id}, ${title}, 'add', 'mycollection');
     `;
 
     return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
-    console.error('Error in mycollection POST:', err);
+    console.error('❌ Error in mycollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
@@ -102,7 +102,7 @@ export async function DELETE(req, { params }) {
       });
     }
 
-    // 📝 Fetch movie title before deleting, so we can log it
+    // 📝 Get movie title for activity log
     const { rows } = await sql`
       SELECT title FROM mycollection
       WHERE username = ${username} AND url = ${url}
@@ -118,14 +118,14 @@ export async function DELETE(req, { params }) {
     // 🟡 Log activity only if movie existed
     if (movie) {
       await sql`
-        INSERT INTO activity (user_id, movie_title, action)
-        VALUES (${verified.id}, ${movie.title}, 'remove');
+        INSERT INTO activity (user_id, movie_title, action, source)
+        VALUES (${verified.id}, ${movie.title}, 'remove', 'mycollection');
       `;
     }
 
     return new Response(JSON.stringify({ message: 'Movie removed' }), { status: 200 });
   } catch (err) {
-    console.error('Error in mycollection DELETE:', err);
+    console.error('❌ Error in mycollection DELETE:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
