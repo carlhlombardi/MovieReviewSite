@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Alert, Spinner, Card, Button, Form, Tabs, Tab } from 'react-bootstrap';
@@ -36,13 +36,20 @@ export default function ProfilePage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [followingActivity, setFollowingActivity] = useState([]);
 
+  const isSelf = loggedInUser && profile && loggedInUser.username === profile.username;
+
   // ───────────────────────────
   // Fetch profile
   // ───────────────────────────
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = async () => {
     try {
       setIsLoading(true);
       setError('');
+
+      if (!profileUsername) {
+        router.replace('/login');
+        return;
+      }
 
       // who is logged in
       const authRes = await fetch('/api/auth/profile', {
@@ -66,8 +73,8 @@ export default function ProfilePage() {
         });
       }
 
-      if (profileRes.status === 401 && !profileUsername) {
-        router.push('/login');
+      if (profileRes.status === 401) {
+        router.replace('/login');
         return;
       }
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
@@ -89,7 +96,6 @@ export default function ProfilePage() {
         }
       }
 
-      // fetch lists
       await Promise.all([
         fetchFollowLists(profileData.username),
         fetchMovieLists(profileData.username),
@@ -101,7 +107,7 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router, profileUsername]);
+  };
 
   // ───────────────────────────
   // Fetch followers/following
@@ -153,31 +159,27 @@ export default function ProfilePage() {
   // ───────────────────────────
   // Fetch activity feed
   // ───────────────────────────
-const fetchActivityFeed = async (username) => {
-  try {
-    const [recentRes, followingRes] = await Promise.all([
-      fetch(`/api/activity/feed/${username}`),
-      fetch(`/api/activity/following/${username}`),
-    ]);
+  const fetchActivityFeed = async (username) => {
+    try {
+      const [recentRes, followingRes] = await Promise.all([
+        fetch(`/api/activity/feed/${username}`),
+        fetch(`/api/activity/following/${username}`),
+      ]);
 
-    if (!recentRes.ok || !followingRes.ok) {
-      console.error('Error fetching activity feed');
-      return;
+      if (!recentRes.ok || !followingRes.ok) {
+        console.error('Error fetching activity feed');
+        return;
+      }
+
+      const recentData = await recentRes.json();
+      const followingData = await followingRes.json();
+
+      setRecentActivity(recentData.feed || []);
+      setFollowingActivity(followingData.feed || []);
+    } catch (err) {
+      console.error('❌ Error fetching activity feed:', err);
     }
-
-    const recentData = await recentRes.json();
-    const followingData = await followingRes.json();
-
-    setRecentActivity(recentData.feed || []);
-    setFollowingActivity(followingData.feed || []);
-  } catch (err) {
-    console.error('❌ Error fetching activity feed:', err);
-  }
-};
-
-
-  const isSelf =
-    loggedInUser && profile && loggedInUser.username === profile.username;
+  };
 
   // ───────────────────────────
   // Avatar upload
@@ -270,6 +272,13 @@ const fetchActivityFeed = async (username) => {
       setError('Follow/unfollow failed');
     }
   };
+
+  // ───────────────────────────
+  // Initial load
+  // ───────────────────────────
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   // ───────────────────────────
   // UI
@@ -532,7 +541,7 @@ const fetchActivityFeed = async (username) => {
               )}
             </Tab>
 
-                    {/* WANTED */}
+            {/* WANTED */}
             <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
               {wantedMovies.length > 0 ? (
                 <>
@@ -563,7 +572,7 @@ const fetchActivityFeed = async (username) => {
               )}
             </Tab>
 
-            {/* SEEN IT */}
+            {/* SEEN */}
             <Tab eventKey="seen" title={`Seen (${seenCount})`}>
               {seenMovies.length > 0 ? (
                 <>
@@ -590,7 +599,7 @@ const fetchActivityFeed = async (username) => {
                   </div>
                 </>
               ) : (
-                <p className="text-muted">No movies in Seen It yet.</p>
+                <p className="text-muted">No movies seen yet.</p>
               )}
             </Tab>
           </Tabs>
