@@ -72,6 +72,7 @@ export async function POST(req, { params }) {
       );
     }
 
+    // ✅ Add or update in wantedforcollection
     await sql`
       INSERT INTO wantedforcollection (username, url, title, genre, iswatched, watchcount, image_url)
       VALUES (${username}, ${url}, ${title}, ${genre}, ${iswatched}, ${watchcount}, ${image_url})
@@ -84,10 +85,10 @@ export async function POST(req, { params }) {
         watchcount = EXCLUDED.watchcount;
     `;
 
-    // 📝 Log activity
+    // 📝 Log activity (now includes username)
     await sql`
-      INSERT INTO activity (user_id, movie_title, action, source)
-      VALUES (${verified.id}, ${title}, 'want', 'wantedforcollection');
+      INSERT INTO activity (user_id, username, movie_title, action, source)
+      VALUES (${verified.id}, ${username}, ${title}, 'wants', 'wantedforcollection');
     `;
 
     return new Response(
@@ -121,15 +122,17 @@ export async function DELETE(req, { params }) {
     `;
     const movie = rows[0];
 
+    // ✅ Delete from wantedforcollection
     await sql`
       DELETE FROM wantedforcollection
       WHERE username = ${username} AND url = ${url};
     `;
 
+    // 📝 Log removal if movie was found
     if (movie) {
       await sql`
-        INSERT INTO activity (user_id, movie_title, action, source)
-        VALUES (${verified.id}, ${movie.title}, 'remove', 'wantedforcollection');
+        INSERT INTO activity (user_id, username, movie_title, action, source)
+        VALUES (${verified.id}, ${username}, ${movie.title}, 'doesnt want', 'wantedforcollection');
       `;
     }
 

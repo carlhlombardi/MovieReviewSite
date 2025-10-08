@@ -74,6 +74,7 @@ export async function POST(req, { params }) {
       );
     }
 
+    // ✅ Add or update seen movie
     await sql`
       INSERT INTO seenit (username, url, title, genre, seenit, image_url)
       VALUES (${username}, ${url}, ${title}, ${genre}, ${seenit}, ${image_url})
@@ -85,10 +86,10 @@ export async function POST(req, { params }) {
         seenit = EXCLUDED.seenit;
     `;
 
-    // 📝 Log activity
+    // 📝 Log activity (now includes username)
     await sql`
-      INSERT INTO activity (user_id, movie_title, action, source)
-      VALUES (${verified.id}, ${title}, 'seen', 'seenit');
+      INSERT INTO activity (user_id, username, movie_title, action, source)
+      VALUES (${verified.id}, ${username}, ${title}, 'has seen', 'seenit');
     `;
 
     return new Response(
@@ -122,15 +123,17 @@ export async function DELETE(req, { params }) {
     `;
     const movie = rows[0];
 
+    // ✅ Delete from seenit
     await sql`
       DELETE FROM seenit
       WHERE username = ${username} AND url = ${url};
     `;
 
+    // 📝 Log activity (includes username)
     if (movie) {
       await sql`
-        INSERT INTO activity (user_id, movie_title, action, source)
-        VALUES (${verified.id}, ${movie.title}, 'remove', 'seenit');
+        INSERT INTO activity (user_id, username, movie_title, action, source)
+        VALUES (${verified.id}, ${username}, ${movie.title}, 'hasnt seen', 'seenit');
       `;
     }
 

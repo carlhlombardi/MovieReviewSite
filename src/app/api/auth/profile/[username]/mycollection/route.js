@@ -17,10 +17,10 @@ async function verifyUser(req, username) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
-    if (!user) return null;
-    if (user.id !== decoded.userId) return null;
+    if (!user || user.id !== decoded.userId) return null;
     return user;
-  } catch {
+  } catch (err) {
+    console.error('❌ Token verification failed:', err);
     return null;
   }
 }
@@ -40,7 +40,10 @@ export async function GET(req, { params }) {
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in mycollection GET:', err);
-    return new Response(JSON.stringify({ message: 'Failed to fetch collection' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ message: 'Failed to fetch collection' }),
+      { status: 500 }
+    );
   }
 }
 
@@ -48,16 +51,18 @@ export async function GET(req, { params }) {
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (!verified) {
+  if (!verified)
     return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
-  }
 
   try {
     const body = await req.json();
     const { title, genre, image_url, url, isliked = true, likedcount = 0 } = body;
 
     if (!title || !genre || !url) {
-      return new Response(JSON.stringify({ message: 'title, genre and url are required' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: 'title, genre and url are required' }),
+        { status: 400 }
+      );
     }
 
     // 📝 Upsert movie in collection
@@ -73,16 +78,22 @@ export async function POST(req, { params }) {
         likedcount = EXCLUDED.likedcount;
     `;
 
-    // 🟢 Log activity
+    // 🟢 Log activity (now includes username)
     await sql`
-      INSERT INTO activity (user_id, movie_title, action, source)
-      VALUES (${verified.id}, ${title}, 'add', 'mycollection');
+      INSERT INTO activity (user_id, username, movie_title, action, source)
+      VALUES (${verified.id}, ${username}, ${title}, 'has', 'mycollection');
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added to collection' }), { status: 201 });
+    return new Response(
+      JSON.stringify({ message: 'Movie added to collection' }),
+      { status: 201 }
+    );
   } catch (err) {
     console.error('❌ Error in mycollection POST:', err);
-    return new Response(JSON.stringify({ message: 'Failed to add movie' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ message: 'Failed to add movie' }),
+      { status: 500 }
+    );
   }
 }
 
@@ -90,14 +101,16 @@ export async function POST(req, { params }) {
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (!verified) {
+  if (!verified)
     return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
-  }
 
   try {
     const { url } = await req.json();
     if (!url) {
-      return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: 'url is required' }),
+        { status: 400 }
+      );
     }
 
     // 📝 Get title for activity log before delete
@@ -108,21 +121,29 @@ export async function DELETE(req, { params }) {
     `;
     const movie = rows[0];
 
+    // ❌ Remove from collection
     await sql`
       DELETE FROM mycollection
       WHERE username = ${username} AND url = ${url};
     `;
 
+    // 📝 Log removal (includes username)
     if (movie) {
       await sql`
-        INSERT INTO activity (user_id, movie_title, action, source)
-        VALUES (${verified.id}, ${movie.title}, 'remove', 'mycollection');
+        INSERT INTO activity (user_id, username, movie_title, action, source)
+        VALUES (${verified.id}, ${username}, ${movie.title}, 'doesnt have', 'mycollection');
       `;
     }
 
-    return new Response(JSON.stringify({ message: 'Movie removed from collection' }), { status: 200 });
+    return new Response(
+      JSON.stringify({ message: 'Movie removed from collection' }),
+      { status: 200 }
+    );
   } catch (err) {
     console.error('❌ Error in mycollection DELETE:', err);
-    return new Response(JSON.stringify({ message: 'Failed to remove movie' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ message: 'Failed to remove movie' }),
+      { status: 500 }
+    );
   }
 }

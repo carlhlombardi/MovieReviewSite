@@ -466,51 +466,56 @@ useEffect(() => {
       </Card>
 
       {/* ─────────── Activity Feed Tabs ─────────── */}
-      <Card className="mb-4">
-        <Card.Body>
-          <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
-            <Tab eventKey="recent" title="Recent Activity">
-              {recentActivity.length > 0 ? (
-                <ul className="list-unstyled">
-                  {recentActivity.map((act, idx) => (
-                    <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.user_id}</strong> {act.action}
-                      {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
-                      <span className="text-muted small">
-                        {act.created_at && !isNaN(new Date(act.created_at))
-                          ? new Date(act.created_at).toLocaleString()
-                          : ''}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted">No recent activity.</p>
-              )}
-            </Tab>
+<Card className="mb-4">
+  <Card.Body>
+    <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
+      {/* ─────────────── Recent Activity ─────────────── */}
+      <Tab eventKey="recent" title="Recent Activity">
+        {recentActivity.length > 0 ? (
+          <ul className="list-unstyled">
+            {recentActivity.map((act, idx) => (
+              <li key={idx} className="mb-2 border-bottom pb-2">
+                <strong>{act.username || `User #${act.user_id}`}</strong>{' '}
+                {act.action}
+                {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
+                <span className="text-muted small">
+                  {act.created_at && !isNaN(new Date(act.created_at))
+                    ? new Date(act.created_at).toLocaleString()
+                    : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">No recent activity.</p>
+        )}
+      </Tab>
 
-            <Tab eventKey="followingactivity" title="Following Activity">
-              {followingActivity.length > 0 ? (
-                <ul className="list-unstyled">
-                  {followingActivity.map((act, idx) => (
-                    <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.user_id}</strong> {act.action}
-                      {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
-                      <span className="text-muted small">
-                        {act.created_at && !isNaN(new Date(act.created_at))
-                          ? new Date(act.created_at).toLocaleString()
-                          : ''}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted">No activity from following users.</p>
-              )}
-            </Tab>
-          </Tabs>
-        </Card.Body>
-      </Card>
+      {/* ─────────────── Following Activity ─────────────── */}
+      <Tab eventKey="followingactivity" title="Following Activity">
+        {followingActivity.length > 0 ? (
+          <ul className="list-unstyled">
+            {followingActivity.map((act, idx) => (
+              <li key={idx} className="mb-2 border-bottom pb-2">
+                <strong>{act.username || `User #${act.user_id}`}</strong>{' '}
+                {act.action}
+                {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
+                <span className="text-muted small">
+                  {act.created_at && !isNaN(new Date(act.created_at))
+                    ? new Date(act.created_at).toLocaleString()
+                    : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">No activity from following users.</p>
+        )}
+      </Tab>
+    </Tabs>
+  </Card.Body>
+</Card>
+
 
       {/* ─────────── Movies Owned / Wanted / Seen ─────────── */}
       <Card className="mb-4">
