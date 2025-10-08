@@ -23,7 +23,7 @@ export async function GET(req, { params }) {
       SELECT a.movie_title, a.action, a.source, a.created_at, u.username
       FROM activity a
       JOIN users u ON a.user_id = u.id
-      WHERE u.username = ANY(${sql.array(followingUsernames, 'text')})
+      WHERE u.username = ANY(${followingUsernames})
       ORDER BY a.created_at DESC
       LIMIT 50;
     `;
