@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams, useRouter } from 'next/navigation';
-import styles from './SeenItPage.module.css';
+import styles from './SeenIt.module.css';
 
 export default function SeenItPage() {
   const { username } = useParams();
