@@ -1,9 +1,7 @@
-/* === Navbar Toggler (Hamburger Menu) === */
 .navbartoggler {
   border: none;
   background: transparent;
   padding: 0;
-  cursor: pointer;
 }
 
 .navbartogglericon {
@@ -21,7 +19,6 @@
   transition: all 0.3s;
 }
 
-/* === Close Button for Offcanvas === */
 .closebtn {
   background: none;
   border: none;
@@ -34,69 +31,69 @@
   padding: 0;
 }
 
-/* === Avatar Styles === */
+/* Avatar Styles */
 .avatarToggle {
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
 }
 
 .avatarImage {
   border-radius: 50%;
   object-fit: cover;
-  width: 40px;
-  height: 40px;
-  border: 2px solid white;
 }
 
 .avatarFallback {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: white;
-  color: var(--bg);
+  background-color: #666;
+  color: #fff;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 1.2rem;
-  border: 2px solid white;
+  border-radius: 50%;
 }
 
-/* === Auth Buttons === */
-.authButtonsWrapper {
+/* Auth Buttons (Login/Register) */
+.authButtons {
   display: flex;
-  justify-content: center;
-  align-items: center;
   gap: 10px;
 }
 
-.authButtonsButton {
+.authButtons button {
   color: white;
   background-color: var(--bg);
-  font-size: 1.2rem;
+  font-size: 1rem;
   border-radius: 5px;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border: 2px solid white;
-  transition: all 0.2s ease;
 }
 
-.authButtonsButton:hover,
-.authButtonsButton:focus {
+.authButtons button:hover {
   background-color: white;
   color: var(--bg);
-  outline: none;
 }
 
-@media (max-width: 992px) {
-  .authButtonsWrapper {
-    flex-direction: column;
-    width: 100%;
-  }
+/* Mobile Auth Section */
+.mobileAuth {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1rem;
+}
 
-  .authButtonsButton {
-    width: 100%;
-    text-align: center;
-  }
+.mobileAuth button {
+  color: white;
+  background-color: var(--bg);
+  font-size: 1rem;
+  border-radius: 5px;
+  padding: 0.5rem;
+  border: 2px solid white;
+}
+
+.mobileAuth button:hover {
+  background-color: white;
+  color: var(--bg);
 }

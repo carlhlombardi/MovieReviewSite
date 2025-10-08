@@ -13,10 +13,7 @@ const NavbarComponent = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       logout();
       window.location.href = "/";
     } catch (err) {
@@ -25,7 +22,7 @@ const NavbarComponent = () => {
   };
 
   const goTo = (path) => {
-    if (user && user.username) {
+    if (user?.username) {
       window.location.href = `/profile/${user.username}${path}`;
     }
   };
@@ -42,7 +39,6 @@ const NavbarComponent = () => {
         />
       );
     }
-    // fallback to first letter of username
     return (
       <div className={styles.avatarFallback}>
         {user?.username?.charAt(0).toUpperCase()}
@@ -50,9 +46,28 @@ const NavbarComponent = () => {
     );
   };
 
+  const AuthDropdown = () => (
+    <Dropdown align="end">
+      <Dropdown.Toggle as="div" className={styles.avatarToggle}>
+        {renderAvatar()}
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        <Dropdown.Item onClick={() => goTo("")}>Profile</Dropdown.Item>
+        <Dropdown.Item onClick={() => goTo("/mycollection")}>My Collection</Dropdown.Item>
+        <Dropdown.Item onClick={() => goTo("/wantedformycollection")}>
+          Wanted for Collection
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => goTo("/seenit")}>Seen It</Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
+        {/* Logo */}
         <Navbar.Brand href="/">
           <Image
             src="/images/logo/logo.png"
@@ -63,68 +78,30 @@ const NavbarComponent = () => {
           />
         </Navbar.Brand>
 
-        {/* Mobile toggler */}
-        <div className="d-lg-none">
-          <button
-            className={styles.navbartoggler}
-            type="button"
-            onClick={() => setShow(true)}
-          >
-            <span className={styles.navbartogglericon}>
-              <span className={styles.bar}></span>
-              <span className={styles.bar}></span>
-              <span className={styles.bar}></span>
-            </span>
-          </button>
-        </div>
+        {/* Mobile Toggler */}
+        <button
+          className={styles.navbartoggler}
+          type="button"
+          onClick={() => setShow(true)}
+        >
+          <span className={styles.navbartogglericon}>
+            <span className={styles.bar}></span>
+            <span className={styles.bar}></span>
+            <span className={styles.bar}></span>
+          </span>
+        </button>
 
-        {/* Desktop Links & Auth */}
-        <div className="d-none d-lg-flex align-items-center">
+        {/* Desktop Nav */}
+        <div className="d-none d-lg-flex align-items-center gap-3">
           <Links handleClose={() => setShow(false)} />
-
-          <div className={styles.authButtonsWrapper}>
-            {isLoggedIn ? (
-              <Dropdown align="end">
-                <Dropdown.Toggle
-                  as="div"
-                  className={styles.avatarToggle}
-                  id="user-avatar-dropdown"
-                >
-                  {renderAvatar()}
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => goTo("")}>Profile</Dropdown.Item>
-                  <Dropdown.Item onClick={() => goTo("/mycollection")}>
-                    My Collection
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => goTo("/wantedformycollection")}>
-                    Wanted for Collection
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => goTo("/seenit")}>
-                    Seen It
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            ) : (
-              <>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  Login
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => (window.location.href = "/register")}
-                >
-                  Register
-                </button>
-              </>
-            )}
-          </div>
+          {isLoggedIn ? (
+            <AuthDropdown />
+          ) : (
+            <div className={styles.authButtons}>
+              <button onClick={() => (window.location.href = "/login")}>Login</button>
+              <button onClick={() => (window.location.href = "/register")}>Register</button>
+            </div>
+          )}
         </div>
       </Container>
 
@@ -136,64 +113,19 @@ const NavbarComponent = () => {
         className="custom-offcanvas"
       >
         <Offcanvas.Header>
-          <button
-            className={styles.closebtn}
-            type="button"
-            onClick={() => setShow(false)}
-          >
+          <button className={styles.closebtn} type="button" onClick={() => setShow(false)}>
             X
           </button>
         </Offcanvas.Header>
         <Offcanvas.Body>
           <Links handleClose={() => setShow(false)} />
-          <div className={styles.authButtonsWrapper}>
+          <div className={styles.mobileAuth}>
             {isLoggedIn ? (
-              <>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => goTo("")}
-                >
-                  Profile
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => goTo("/mycollection")}
-                >
-                  My Collection
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => goTo("/wantedformycollection")}
-                >
-                  Wanted for Collection
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => goTo("/seenit")}
-                >
-                  Seen It
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </>
+              <AuthDropdown />
             ) : (
               <>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  Login
-                </button>
-                <button
-                  className={styles.authButtonsButton}
-                  onClick={() => (window.location.href = "/register")}
-                >
-                  Register
-                </button>
+                <button onClick={() => (window.location.href = "/login")}>Login</button>
+                <button onClick={() => (window.location.href = "/register")}>Register</button>
               </>
             )}
           </div>
