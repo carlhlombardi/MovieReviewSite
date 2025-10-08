@@ -13,32 +13,42 @@ export async function GET(request) {
   const token = cookies.token;
 
   if (!token) {
-    return new Response(JSON.stringify({ message: 'Unauthorized: no token cookie' }), { status: 401 });
+    return new Response(
+      JSON.stringify({ message: 'Unauthorized: no token cookie' }),
+      { status: 401 }
+    );
   }
 
   try {
-    // explicitly specify algorithms
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const userId = decoded.userId;
 
+    // ✅ Fetch avatar_url as well
     const result = await sql`
-      SELECT username, email
+      SELECT username, email, avatar_url
       FROM users
       WHERE id = ${userId};
     `;
 
     const user = result.rows[0];
     if (!user) {
-      return new Response(JSON.stringify({ message: 'User not found' }), { status: 404 });
+      return new Response(
+        JSON.stringify({ message: 'User not found' }),
+        { status: 404 }
+      );
     }
 
-    return new Response(JSON.stringify(user), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ user }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
   } catch (err) {
     console.error('Token verification error:', err);
     const msg = err.name === 'TokenExpiredError' ? 'Token expired' : 'Invalid token';
-    return new Response(JSON.stringify({ message: msg }), { status: 401 });
+    return new Response(
+      JSON.stringify({ message: msg }),
+      { status: 401 }
+    );
   }
 }
