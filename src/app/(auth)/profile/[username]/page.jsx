@@ -122,8 +122,8 @@ export default function ProfilePage() {
   const fetchMovieLists = async (username) => {
     try {
       const [ownedRes, wantedRes] = await Promise.all([
-        fetch(`/api/auth/profile/${username}/mycollection&limit=5`),
-        fetch(`/api/auth/profile/${username}/wantedforcollection&limit=5`),
+        fetch(`/api/auth/profile/${username}/mycollection?limit=5`),
+        fetch(`/api/auth/profile/${username}/wantedforcollection?limit=5`),
       ]);
 
       const ownedData = await ownedRes.json();
