@@ -11,7 +11,6 @@ const NavbarComponent = () => {
   const [show, setShow] = useState(false);
   const { isLoggedIn, user, logout } = useAuth();
 
-  // 🔐 Auth Actions
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", {
@@ -25,19 +24,35 @@ const NavbarComponent = () => {
     }
   };
 
-  const handleLogin = () => (window.location.href = "/login");
-  const handleRegister = () => (window.location.href = "/register");
+  const goTo = (path) => {
+    if (user && user.username) {
+      window.location.href = `/profile/${user.username}${path}`;
+    }
+  };
 
-  // 📂 Navigation
-  const handleProfile = () => window.location.href = `/profile/${user.username}`;
-  const handleCollection = () => window.location.href = `/profile/${user.username}/mycollection`;
-  const handleWishlist = () => window.location.href = `/profile/${user.username}/wantedformycollection`;
-  const handleSeenIt = () => window.location.href = `/profile/${user.username}/seenit`;
+  const renderAvatar = () => {
+    if (user?.avatar_url) {
+      return (
+        <Image
+          src={user.avatar_url}
+          alt="User Avatar"
+          width={40}
+          height={40}
+          className={styles.avatarImage}
+        />
+      );
+    }
+    // fallback to first letter of username
+    return (
+      <div className={styles.avatarFallback}>
+        {user?.username?.charAt(0).toUpperCase()}
+      </div>
+    );
+  };
 
   return (
     <Navbar expand="lg" className="navbar-dark">
       <Container>
-        {/* LOGO */}
         <Navbar.Brand href="/">
           <Image
             src="/images/logo/logo.png"
@@ -63,34 +78,48 @@ const NavbarComponent = () => {
           </button>
         </div>
 
-        {/* Desktop Nav */}
+        {/* Desktop Links & Auth */}
         <div className="d-none d-lg-flex align-items-center">
           <Links handleClose={() => setShow(false)} />
 
           <div className={styles.authButtonsWrapper}>
             {isLoggedIn ? (
-              <>
-                <Dropdown align="end">
-                  <Dropdown.Toggle className={styles.authButtonsButton}>
-                    {user?.username || "Profile"}
-                  </Dropdown.Toggle>
+              <Dropdown align="end">
+                <Dropdown.Toggle
+                  as="div"
+                  className={styles.avatarToggle}
+                  id="user-avatar-dropdown"
+                >
+                  {renderAvatar()}
+                </Dropdown.Toggle>
 
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={handleProfile}>Profile</Dropdown.Item>
-                    <Dropdown.Item onClick={handleCollection}>My Collection</Dropdown.Item>
-                    <Dropdown.Item onClick={handleWishlist}>Wanted for Collection</Dropdown.Item>
-                    <Dropdown.Item onClick={handleSeenIt}>Seen It</Dropdown.Item>
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => goTo("")}>Profile</Dropdown.Item>
+                  <Dropdown.Item onClick={() => goTo("/mycollection")}>
+                    My Collection
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => goTo("/wantedformycollection")}>
+                    Wanted for Collection
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => goTo("/seenit")}>
+                    Seen It
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             ) : (
               <>
-                <button className={styles.authButtonsButton} onClick={handleLogin}>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => (window.location.href = "/login")}
+                >
                   Login
                 </button>
-                <button className={styles.authButtonsButton} onClick={handleRegister}>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => (window.location.href = "/register")}
+                >
                   Register
                 </button>
               </>
@@ -99,7 +128,7 @@ const NavbarComponent = () => {
         </div>
       </Container>
 
-      {/* Mobile Offcanvas Menu */}
+      {/* Mobile Offcanvas */}
       <Offcanvas
         show={show}
         onHide={() => setShow(false)}
@@ -120,26 +149,49 @@ const NavbarComponent = () => {
           <div className={styles.authButtonsWrapper}>
             {isLoggedIn ? (
               <>
-                <Dropdown align="start" className="w-100">
-                  <Dropdown.Toggle className={`${styles.authButtonsButton} w-100`}>
-                    {user?.username || "Profile"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu className="w-100">
-                    <Dropdown.Item onClick={handleProfile}>Profile</Dropdown.Item>
-                    <Dropdown.Item onClick={handleCollection}>My Collection</Dropdown.Item>
-                    <Dropdown.Item onClick={handleWishlist}>Wanted for Collection</Dropdown.Item>
-                    <Dropdown.Item onClick={handleSeenIt}>Seen It</Dropdown.Item>
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => goTo("")}
+                >
+                  Profile
+                </button>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => goTo("/mycollection")}
+                >
+                  My Collection
+                </button>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => goTo("/wantedformycollection")}
+                >
+                  Wanted for Collection
+                </button>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => goTo("/seenit")}
+                >
+                  Seen It
+                </button>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
               </>
             ) : (
               <>
-                <button className={styles.authButtonsButton} onClick={handleLogin}>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => (window.location.href = "/login")}
+                >
                   Login
                 </button>
-                <button className={styles.authButtonsButton} onClick={handleRegister}>
+                <button
+                  className={styles.authButtonsButton}
+                  onClick={() => (window.location.href = "/register")}
+                >
                   Register
                 </button>
               </>

@@ -34,11 +34,42 @@
   padding: 0;
 }
 
-/* === Auth Buttons (Login / Register / Dropdown Toggle) === */
+/* === Avatar Styles === */
+.avatarToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.avatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+  width: 40px;
+  height: 40px;
+  border: 2px solid white;
+}
+
+.avatarFallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  border: 2px solid white;
+}
+
+/* === Auth Buttons === */
 .authButtonsWrapper {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 10px;
 }
 
 .authButtonsButton {
@@ -58,11 +89,9 @@
   outline: none;
 }
 
-/* === Responsive Adjustments === */
 @media (max-width: 992px) {
   .authButtonsWrapper {
     flex-direction: column;
-    gap: 10px;
     width: 100%;
   }
 
