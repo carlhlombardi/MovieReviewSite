@@ -9,7 +9,7 @@ import styles from "./navbar.module.css";
 
 const NavbarComponent = () => {
   const [show, setShow] = useState(false);
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, logout, loading } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -26,6 +26,18 @@ const NavbarComponent = () => {
       window.location.href = `/profile/${user.username}${path}`;
     }
   };
+
+  if (loading) {
+  return (
+    <Navbar className="navbar-dark">
+      <Container>
+        <Navbar.Brand href="/">
+          <Image src="/images/logo/logo.png" alt="Logo" width={160} height={80} />
+        </Navbar.Brand>
+      </Container>
+    </Navbar>
+  );
+}
 
   const renderAvatar = () => {
     if (user?.avatar_url) {

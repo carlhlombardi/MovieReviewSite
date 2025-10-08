@@ -6,44 +6,44 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // prevent flicker during initial load
 
-  // check login once on mount
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        // browser sends HttpOnly cookie automatically
         const response = await fetch("/api/auth/me", {
           credentials: "include",
         });
 
         if (response.ok) {
-          const userData = await response.json();
+          const data = await response.json();
+          // ✅ set the actual user object (not the wrapper)
+          setUser(data.user);
           setIsLoggedIn(true);
-          setUser(userData);
         } else {
-          setIsLoggedIn(false);
           setUser(null);
+          setIsLoggedIn(false);
         }
       } catch (err) {
-        console.error("Auth check failed", err);
-        setIsLoggedIn(false);
+        console.error("Auth check failed:", err);
         setUser(null);
+        setIsLoggedIn(false);
+      } finally {
+        setLoading(false);
       }
     };
 
     checkLoginStatus();
   }, []);
 
-  // 🔹 add a logout function to clear context immediately
   const logout = () => {
-    setIsLoggedIn(false);
     setUser(null);
+    setIsLoggedIn(false);
   };
 
-  // you can also add a login function if you want
   const login = (userData) => {
-    setIsLoggedIn(true);
     setUser(userData);
+    setIsLoggedIn(true);
   };
 
   return (
@@ -52,7 +52,8 @@ export const AuthProvider = ({ children }) => {
         isLoggedIn,
         user,
         login,
-        logout, // expose logout
+        logout,
+        loading, // expose loading so Navbar can show skeleton/spinner
       }}
     >
       {children}
