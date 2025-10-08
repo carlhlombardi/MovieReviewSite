@@ -434,7 +434,6 @@ setWantedCount(wantedData.movies?.length || 0);
                           height={120}
                           className="border rounded"
                         />
-                        <p className="small mt-1">{movie.title}</p>
                       </div>
                     ))}
                   </div>
@@ -466,7 +465,6 @@ setWantedCount(wantedData.movies?.length || 0);
                           height={120}
                           className="border rounded"
                         />
-                        <p className="small mt-1">{movie.title}</p>
                       </div>
                     ))}
                   </div>
