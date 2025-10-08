@@ -276,10 +276,10 @@ export default function ProfilePage() {
   // ───────────────────────────
   // Initial load
   // ───────────────────────────
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
+useEffect(() => {
+  fetchProfile();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [profileUsername]);
   // ───────────────────────────
   // UI
   // ───────────────────────────
