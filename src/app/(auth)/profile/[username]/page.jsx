@@ -564,7 +564,7 @@ const fetchActivityFeed = async (username) => {
             </Tab>
 
             {/* SEEN IT */}
-            <Tab eventKey="seen" title={`Seen It (${seenCount})`}>
+            <Tab eventKey="seen" title={`Seen (${seenCount})`}>
               {seenMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
