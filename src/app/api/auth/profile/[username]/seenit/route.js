@@ -47,7 +47,7 @@ export async function GET(req, { params }) {
   }
 }
 
-/** ✅ POST: Protected (mark movie as seen) */
+/** ✅ POST: Protected (mark movie as seen) + log activity */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -65,7 +65,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    // Upsert behavior to prevent duplicates
+    // ✅ Upsert behavior to prevent duplicates
     await sql`
       INSERT INTO seenit (username, url, title, genre, seenit, image_url)
       VALUES (${username}, ${url}, ${title}, ${genre}, ${seenit}, ${image_url})
@@ -75,6 +75,12 @@ export async function POST(req, { params }) {
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
         seenit = EXCLUDED.seenit;
+    `;
+
+    // 🟢 Log activity: user marked movie as seen
+    await sql`
+      INSERT INTO activity (user_id, movie_title, action)
+      VALUES (${verified.id}, ${title}, 'seen');
     `;
 
     return new Response(
@@ -87,7 +93,7 @@ export async function POST(req, { params }) {
   }
 }
 
-/** ✅ DELETE: Protected (unmark or remove movie) */
+/** ✅ DELETE: Protected (unmark or remove movie) + log activity */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -102,10 +108,26 @@ export async function DELETE(req, { params }) {
       });
     }
 
+    // 📝 Get movie title before deleting (for activity log)
+    const { rows } = await sql`
+      SELECT title FROM seenit
+      WHERE username = ${username} AND url = ${url}
+      LIMIT 1;
+    `;
+    const movie = rows[0];
+
     await sql`
       DELETE FROM seenit
       WHERE username = ${username} AND url = ${url};
     `;
+
+    if (movie) {
+      // 🟡 Log activity: user removed a seen movie
+      await sql`
+        INSERT INTO activity (user_id, movie_title, action)
+        VALUES (${verified.id}, ${movie.title}, 'remove');
+      `;
+    }
 
     return new Response(
       JSON.stringify({ message: 'Movie removed from seen list' }),

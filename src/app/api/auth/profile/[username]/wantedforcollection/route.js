@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { sql } from '@vercel/postgres';
 
+/** 🛡️ Verify the authenticated user */
 async function verifyUser(req, username) {
   const cookieHeader = req.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
@@ -38,12 +39,12 @@ export async function GET(req, { params }) {
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
-    console.error('Error in wantedforcollection GET:', err);
+    console.error('❌ Error in wantedforcollection GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
-/** ✅ POST: Protected */
+/** ✅ POST: Protected + Log activity */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -73,6 +74,12 @@ export async function POST(req, { params }) {
         watchcount = ${watchcount};
     `;
 
+    // 🟢 Log activity
+    await sql`
+      INSERT INTO activity (user_id, movie_title, action)
+      VALUES (${verified.id}, ${title}, 'want');
+    `;
+
     return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), {
       status: 201,
     });
@@ -82,7 +89,7 @@ export async function POST(req, { params }) {
   }
 }
 
-/** ✅ DELETE: Protected */
+/** ✅ DELETE: Protected + Log activity */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -97,16 +104,32 @@ export async function DELETE(req, { params }) {
       });
     }
 
+    // 📝 Get movie title before deleting (for activity log)
+    const { rows } = await sql`
+      SELECT title FROM wantedforcollection
+      WHERE username = ${username} AND url = ${url}
+      LIMIT 1;
+    `;
+    const movie = rows[0];
+
     await sql`
       DELETE FROM wantedforcollection
       WHERE username = ${username} AND url = ${url};
     `;
+
+    if (movie) {
+      await sql`
+        INSERT INTO activity (user_id, movie_title, action)
+        VALUES (${verified.id}, ${movie.title}, 'remove');
+      `;
+    }
+
     return new Response(
       JSON.stringify({ message: 'Movie removed from wanted list' }),
       { status: 200 }
     );
   } catch (err) {
-    console.error('Error in wantedforcollection DELETE:', err);
+    console.error('❌ Error in wantedforcollection DELETE:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }

@@ -44,7 +44,7 @@ export async function GET(req, { params }) {
   }
 }
 
-/** ✅ POST: Protected */
+/** ✅ POST: Protected + log activity */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -74,6 +74,12 @@ export async function POST(req, { params }) {
         likedcount = ${likedcount};
     `;
 
+    // 🟢 Log activity: user added a movie
+    await sql`
+      INSERT INTO activity (user_id, movie_title, action)
+      VALUES (${verified.id}, ${title}, 'add');
+    `;
+
     return new Response(JSON.stringify({ message: 'Movie added' }), { status: 201 });
   } catch (err) {
     console.error('Error in mycollection POST:', err);
@@ -81,7 +87,7 @@ export async function POST(req, { params }) {
   }
 }
 
-/** ✅ DELETE: Protected */
+/** ✅ DELETE: Protected + log activity */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -96,10 +102,26 @@ export async function DELETE(req, { params }) {
       });
     }
 
+    // 📝 Fetch movie title before deleting, so we can log it
+    const { rows } = await sql`
+      SELECT title FROM mycollection
+      WHERE username = ${username} AND url = ${url}
+      LIMIT 1;
+    `;
+    const movie = rows[0];
+
     await sql`
       DELETE FROM mycollection
       WHERE username = ${username} AND url = ${url};
     `;
+
+    // 🟡 Log activity only if movie existed
+    if (movie) {
+      await sql`
+        INSERT INTO activity (user_id, movie_title, action)
+        VALUES (${verified.id}, ${movie.title}, 'remove');
+      `;
+    }
 
     return new Response(JSON.stringify({ message: 'Movie removed' }), { status: 200 });
   } catch (err) {
