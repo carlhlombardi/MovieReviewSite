@@ -428,7 +428,7 @@ setWantedCount(wantedData.movies?.length || 0);
                     {ownedMovies.map((movie) => (
                       <div key={movie.id} className="text-center">
                         <Image
-                          src={image_url || '/images/default-poster.png'}
+                          src={movie.image_url || '/images/default-poster.png'}
                           alt={movie.title}
                           width={80}
                           height={120}
@@ -460,7 +460,7 @@ setWantedCount(wantedData.movies?.length || 0);
                     {wantedMovies.map((movie) => (
                       <div key={movie.id} className="text-center">
                         <Image
-                          src={image_url || '/images/default-poster.png'}
+                          src={movie.image_url || '/images/default-poster.png'}
                           alt={movie.title}
                           width={80}
                           height={120}
