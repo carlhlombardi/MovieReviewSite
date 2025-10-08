@@ -153,26 +153,28 @@ export default function ProfilePage() {
   // ───────────────────────────
   // Fetch activity feed
   // ───────────────────────────
-  const fetchActivityFeed = async (username) => {
-    try {
-      const [recentRes, followingRes] = await Promise.all([
-        fetch(`/api/activity/feed/${username}`),
-        fetch(`/api/activity/following/${username}`),
-      ]);
+const fetchActivityFeed = async (username) => {
+  try {
+    const [recentRes, followingRes] = await Promise.all([
+      fetch(`/api/activity/feed/${username}`),
+      fetch(`/api/activity/following/${username}`),
+    ]);
 
-      const recentData = await recentRes.json();
-      const followingData = await followingRes.json();
-
-      setRecentActivity(recentData.activities || []);
-      setFollowingActivity(followingData.activities || []);
-    } catch (err) {
-      console.error('Error fetching activity feed:', err);
+    if (!recentRes.ok || !followingRes.ok) {
+      console.error('Error fetching activity feed');
+      return;
     }
-  };
 
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    const recentData = await recentRes.json();
+    const followingData = await followingRes.json();
+
+    setRecentActivity(recentData.feed || []);
+    setFollowingActivity(followingData.feed || []);
+  } catch (err) {
+    console.error('❌ Error fetching activity feed:', err);
+  }
+};
+
 
   const isSelf =
     loggedInUser && profile && loggedInUser.username === profile.username;
