@@ -4,39 +4,32 @@ export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    // 1. Get ID of the requesting user
-    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
-    if (userRes.rows.length === 0) {
-      return new Response(
-        JSON.stringify({ message: 'User not found' }),
-        { status: 404 }
-      );
-    }
-    const userId = userRes.rows[0].id;
-
-    // 2. Get the IDs of users this user follows
+    // 1. Get the usernames this user follows
     const followingRes = await sql`
-      SELECT following_id FROM follows WHERE follower_id = ${userId};
+      SELECT following_username 
+      FROM follows 
+      WHERE follower_username = ${username};
     `;
-    const followingIds = followingRes.rows.map(row => row.following_id);
 
-    if (followingIds.length === 0) {
+    const followingUsernames = followingRes.rows.map(row => row.following_username);
+
+    if (followingUsernames.length === 0) {
       return new Response(JSON.stringify({ feed: [] }), { status: 200 });
     }
 
-    // 3. Fetch activity from followed users
+    // 2. Fetch activity from followed users using their usernames
     const activityRes = await sql`
       SELECT a.movie_title, a.action, a.source, a.created_at, u.username
       FROM activity a
       JOIN users u ON a.user_id = u.id
-      WHERE a.user_id = ANY(${followingIds})
+      WHERE u.username = ANY(${sql.array(followingUsernames, 'text')})
       ORDER BY a.created_at DESC
       LIMIT 50;
     `;
 
-    // 4. Format activity messages safely
+    // 3. Format activity messages
     const formatted = activityRes.rows.map(item => {
-      const source = item.source || 'unknown'; // fallback to avoid crash
+      const source = item.source || 'unknown';
       let text = '';
 
       if (source === 'mycollection') {
@@ -68,9 +61,6 @@ export async function GET(req, { params }) {
     return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in following activity GET:', err);
-    return new Response(
-      JSON.stringify({ message: err.message }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
