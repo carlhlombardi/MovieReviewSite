@@ -474,7 +474,7 @@ useEffect(() => {
                 <ul className="list-unstyled">
                   {recentActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.id}</strong> {act.action}
+                      <strong>{act.user_id}</strong> {act.action}
                       {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
                         {act.created_at && !isNaN(new Date(act.created_at))
@@ -494,7 +494,7 @@ useEffect(() => {
                 <ul className="list-unstyled">
                   {followingActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.id}</strong> {act.action}
+                      <strong>{act.user_id}</strong> {act.action}
                       {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
                         {act.created_at && !isNaN(new Date(act.created_at))
