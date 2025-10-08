@@ -27,12 +27,14 @@ export default function ProfilePage() {
   // Movies
   const [ownedMovies, setOwnedMovies] = useState([]);
   const [wantedMovies, setWantedMovies] = useState([]);
+  const [seenMovies, setSeenMovies] = useState([]);
   const [ownedCount, setOwnedCount] = useState(0);
   const [wantedCount, setWantedCount] = useState(0);
+  const [seenCount, setSeenCount] = useState(0);
 
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   // Fetch profile
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -96,9 +98,9 @@ export default function ProfilePage() {
     }
   }, [router, profileUsername]);
 
-  // ─────────────────────────────────────────────
-  // Fetch followers/following lists
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
+  // Fetch followers/following
+  // ───────────────────────────
   const fetchFollowLists = async (username) => {
     try {
       const [followersRes, followingRes] = await Promise.all([
@@ -116,24 +118,28 @@ export default function ProfilePage() {
     }
   };
 
-  // ─────────────────────────────────────────────
-  // Fetch movies lists (Owned + Wanted)
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
+  // Fetch movie lists (Owned + Wanted + Seen It)
+  // ───────────────────────────
   const fetchMovieLists = async (username) => {
     try {
-      const [ownedRes, wantedRes] = await Promise.all([
+      const [ownedRes, wantedRes, seenRes] = await Promise.all([
         fetch(`/api/auth/profile/${username}/mycollection?limit=5`),
         fetch(`/api/auth/profile/${username}/wantedforcollection?limit=5`),
+        fetch(`/api/auth/profile/${username}/seenit?limit=5`),
       ]);
 
       const ownedData = await ownedRes.json();
       const wantedData = await wantedRes.json();
-setOwnedMovies((ownedData.movies || []).slice(0, 6));
-setWantedMovies((wantedData.movies || []).slice(0, 6));
+      const seenData = await seenRes.json();
 
-setOwnedCount(ownedData.movies?.length || 0);
-setWantedCount(wantedData.movies?.length || 0);
+      setOwnedMovies((ownedData.movies || []).slice(0, 6));
+      setWantedMovies((wantedData.movies || []).slice(0, 6));
+      setSeenMovies((seenData.movies || []).slice(0, 6));
 
+      setOwnedCount(ownedData.movies?.length || 0);
+      setWantedCount(wantedData.movies?.length || 0);
+      setSeenCount(seenData.movies?.length || 0);
     } catch (err) {
       console.error('Error fetching movie lists:', err);
     }
@@ -146,9 +152,9 @@ setWantedCount(wantedData.movies?.length || 0);
   const isSelf =
     loggedInUser && profile && loggedInUser.username === profile.username;
 
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   // Avatar upload
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   const handleAvatarUpload = async (file) => {
     if (!isSelf) return;
     const formData = new FormData();
@@ -184,9 +190,9 @@ setWantedCount(wantedData.movies?.length || 0);
     }
   };
 
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   // Save profile changes
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   const handleSave = async () => {
     if (!isSelf) return;
     try {
@@ -207,9 +213,9 @@ setWantedCount(wantedData.movies?.length || 0);
     }
   };
 
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   // Follow / Unfollow
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   const handleFollowToggle = async () => {
     if (!loggedInUser || !profile) return;
     const method = isFollowing ? 'DELETE' : 'POST';
@@ -238,9 +244,9 @@ setWantedCount(wantedData.movies?.length || 0);
     }
   };
 
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   // UI
-  // ─────────────────────────────────────────────
+  // ───────────────────────────
   if (isLoading)
     return (
       <div className="text-center mt-5">
@@ -366,7 +372,7 @@ setWantedCount(wantedData.movies?.length || 0);
         </Card.Body>
       </Card>
 
-      {/* ─────────── Tabs ─────────── */}
+      {/* ─────────── Followers / Following ─────────── */}
       <Card className="mb-4">
         <Card.Body>
           <Tabs defaultActiveKey="followers" id="profile-tabs" className="mb-3">
@@ -419,14 +425,15 @@ setWantedCount(wantedData.movies?.length || 0);
                 )}
               </div>
             </Tab>
-            </Tabs>
-          </Card.Body>
-          </Card>
+          </Tabs>
+        </Card.Body>
+      </Card>
 
-            {/* ─────────── Movies Owned ─────────── */}
-                  <Card className="mb-4">
-              <Card.Body>
-          <Tabs defaultActiveKey="owned" id="profile-tabs" className="mb-3">
+      {/* ─────────── Movies Owned / Wanted / Seen ─────────── */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
+            {/* OWNED */}
             <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
               {ownedMovies.length > 0 ? (
                 <>
@@ -457,7 +464,7 @@ setWantedCount(wantedData.movies?.length || 0);
               )}
             </Tab>
 
-            {/* ─────────── Movies Wanted ─────────── */}
+            {/* WANTED */}
             <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
               {wantedMovies.length > 0 ? (
                 <>
@@ -485,6 +492,37 @@ setWantedCount(wantedData.movies?.length || 0);
                 </>
               ) : (
                 <p className="text-muted">No wanted movies yet.</p>
+              )}
+            </Tab>
+
+            {/* SEEN IT */}
+            <Tab eventKey="seen" title={`Seen It (${seenCount})`}>
+              {seenMovies.length > 0 ? (
+                <>
+                  <div className="d-flex flex-wrap gap-3">
+                    {seenMovies.map((movie) => (
+                      <div key={movie.id} className="text-center">
+                        <Image
+                          src={movie.image_url || '/images/default-poster.png'}
+                          alt={movie.title}
+                          width={80}
+                          height={120}
+                          className="border rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <Link
+                      href={`/profile/${profile.username}/seenit`}
+                      className="btn btn-outline-primary btn-sm"
+                    >
+                      See All
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted">No seen movies yet.</p>
               )}
             </Tab>
           </Tabs>

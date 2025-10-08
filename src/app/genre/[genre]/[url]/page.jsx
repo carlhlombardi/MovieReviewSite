@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Alert, Spinner, Button } from "react-bootstrap";
 import Image from "next/image";
-import { Heart, HeartFill, Tv, TvFill } from "react-bootstrap-icons";
+import { Heart, HeartFill, Tv, TvFill, Eye, EyeFill } from "react-bootstrap-icons";
 import { useAuth } from "@/app/(auth)/contexts/AuthContext";
 
 // === Helper Functions ===
@@ -20,7 +20,6 @@ const fetchData = async (genre, url) => {
 // === toggle helpers ===
 export const toggleOwnIt = async (username, movieData, action) => {
   const endpoint = `/api/auth/profile/${username}/mycollection`;
-
   const payload =
     action === "like"
       ? {
@@ -36,23 +35,16 @@ export const toggleOwnIt = async (username, movieData, action) => {
 
   const res = await fetch(endpoint, {
     method: action === "like" ? "POST" : "DELETE",
-    credentials: "include", // 👈 send cookie automatically
-    headers: {
-      "Content-Type": "application/json",
-    },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
-  if (!res.ok) {
-    const errMsg = await res.text();
-    throw new Error(`Own It toggle failed: ${errMsg}`);
-  }
+  if (!res.ok) throw new Error(await res.text());
   return await res.json();
 };
 
 export const toggleWantIt = async (username, movieData, action) => {
   const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
-
   const payload =
     action === "add"
       ? {
@@ -68,31 +60,50 @@ export const toggleWantIt = async (username, movieData, action) => {
 
   const res = await fetch(endpoint, {
     method: action === "add" ? "POST" : "DELETE",
-    credentials: "include", // 👈 send cookie automatically
-    headers: {
-      "Content-Type": "application/json",
-    },
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
+};
 
-  if (!res.ok) {
-    const errMsg = await res.text();
-    throw new Error(`Want It toggle failed: ${errMsg}`);
-  }
+// ✅ NEW: toggle seen it
+export const toggleSeenIt = async (username, movieData, action) => {
+  const endpoint = `/api/auth/profile/${username}/seenit`;
+  const payload =
+    action === "seen"
+      ? {
+          username,
+          url: movieData.url,
+          title: movieData.film,
+          genre: movieData.genre,
+          seenit: true,
+          image_url: movieData.image_url,
+        }
+      : { url: movieData.url };
+
+  const res = await fetch(endpoint, {
+    method: action === "seen" ? "POST" : "DELETE",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
   return await res.json();
 };
 
 export default function MoviePage({ params }) {
   const { genre, url } = params;
   const slugifiedUrl = url;
-
-  const { isLoggedIn, user } = useAuth(); // 👈 use our AuthContext
+  const { isLoggedIn, user } = useAuth();
 
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
+  const [isSeen, setIsSeen] = useState(false); // ✅ new state
 
   const handleOwnIt = async () => {
     const action = isOwned ? "unlike" : "like";
@@ -106,6 +117,12 @@ export default function MoviePage({ params }) {
     if (result) setIsWanted(action === "add");
   };
 
+  const handleSeenIt = async () => {
+    const action = isSeen ? "remove" : "seen";
+    const result = await toggleSeenIt(user.username, data, action);
+    if (result) setIsSeen(action === "seen");
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -114,28 +131,33 @@ export default function MoviePage({ params }) {
         setData(movieData);
 
         if (isLoggedIn && user?.username) {
-          // check if movie is in mycollection
+          // mycollection
           const ownRes = await fetch(
             `/api/auth/profile/${user.username}/mycollection`,
             { credentials: "include" }
           );
           const ownJson = ownRes.ok ? await ownRes.json() : { movies: [] };
-          setIsOwned(
-            ownJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
-          );
+          setIsOwned(ownJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
 
-          // check if movie is in wantedforcollection
+          // wantedforcollection
           const wantRes = await fetch(
             `/api/auth/profile/${user.username}/wantedforcollection`,
             { credentials: "include" }
           );
           const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
-          setIsWanted(
-            wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false
+          setIsWanted(wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
+
+          // ✅ seenit
+          const seenRes = await fetch(
+            `/api/auth/profile/${user.username}/seenit`,
+            { credentials: "include" }
           );
+          const seenJson = seenRes.ok ? await seenRes.json() : { movies: [] };
+          setIsSeen(seenJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
         } else {
           setIsOwned(false);
           setIsWanted(false);
+          setIsSeen(false);
         }
       } catch (err) {
         console.error(err);
@@ -144,18 +166,11 @@ export default function MoviePage({ params }) {
         setIsLoading(false);
       }
     };
-
     init();
   }, [genre, slugifiedUrl, isLoggedIn, user?.username]);
 
   if (isLoading)
-    return (
-      <Spinner
-        animation="border"
-        role="status"
-        className="d-block mx-auto my-5"
-      />
-    );
+    return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
   if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
   if (!data) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
 
@@ -193,11 +208,10 @@ export default function MoviePage({ params }) {
           {run_time && <p><strong>Runtime:</strong> {run_time} minutes</p>}
 
           {isLoggedIn && (
-            <div className="my-3">
+            <div className="my-3 d-flex flex-wrap gap-2">
               <Button
                 variant={isOwned ? "danger" : "outline-danger"}
                 onClick={handleOwnIt}
-                className="me-2"
               >
                 {isOwned ? <HeartFill /> : <Heart />} Own It
               </Button>
@@ -207,6 +221,14 @@ export default function MoviePage({ params }) {
                 onClick={handleWantIt}
               >
                 {isWanted ? <TvFill /> : <Tv />} Want It
+              </Button>
+
+              {/* ✅ New Seen It Button */}
+              <Button
+                variant={isSeen ? "success" : "outline-success"}
+                onClick={handleSeenIt}
+              >
+                {isSeen ? <EyeFill /> : <Eye />} Seen It
               </Button>
             </div>
           )}
