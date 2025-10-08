@@ -47,7 +47,7 @@ export async function GET(req, { params }) {
       JOIN users u ON a.user_id = u.id
       WHERE a.user_id = ${user.id}
       ORDER BY a.created_at DESC
-      LIMIT 50;
+      LIMIT 5;
     `;
 
     // 🟢 3. Format response

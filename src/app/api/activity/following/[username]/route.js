@@ -31,7 +31,7 @@ export async function GET(req, { params }) {
       JOIN users u ON a.user_id = u.id
       WHERE u.username = ANY(${followingUsernames})
       ORDER BY a.created_at DESC
-      LIMIT 50;
+      LIMIT 5;
     `;
 
     // 🧹 4. Format feed entries
