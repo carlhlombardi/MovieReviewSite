@@ -32,6 +32,10 @@ export default function ProfilePage() {
   const [wantedCount, setWantedCount] = useState(0);
   const [seenCount, setSeenCount] = useState(0);
 
+  // Activity feed
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [followingActivity, setFollowingActivity] = useState([]);
+
   // ───────────────────────────
   // Fetch profile
   // ───────────────────────────
@@ -89,6 +93,7 @@ export default function ProfilePage() {
       await Promise.all([
         fetchFollowLists(profileData.username),
         fetchMovieLists(profileData.username),
+        fetchActivityFeed(profileData.username),
       ]);
     } catch (err) {
       console.error('Error in profile fetch:', err);
@@ -119,7 +124,7 @@ export default function ProfilePage() {
   };
 
   // ───────────────────────────
-  // Fetch movie lists (Owned + Wanted + Seen It)
+  // Fetch movie lists
   // ───────────────────────────
   const fetchMovieLists = async (username) => {
     try {
@@ -142,6 +147,26 @@ export default function ProfilePage() {
       setSeenCount(seenData.movies?.length || 0);
     } catch (err) {
       console.error('Error fetching movie lists:', err);
+    }
+  };
+
+  // ───────────────────────────
+  // Fetch activity feed
+  // ───────────────────────────
+  const fetchActivityFeed = async (username) => {
+    try {
+      const [recentRes, followingRes] = await Promise.all([
+        fetch(`/api/activity/feed/${username}`),
+        fetch(`/api/activity/following/${username}`),
+      ]);
+
+      const recentData = await recentRes.json();
+      const followingData = await followingRes.json();
+
+      setRecentActivity(recentData.activities || []);
+      setFollowingActivity(followingData.activities || []);
+    } catch (err) {
+      console.error('Error fetching activity feed:', err);
     }
   };
 
@@ -429,6 +454,47 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
+      {/* ─────────── Activity Feed Tabs ─────────── */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
+            <Tab eventKey="recent" title="Recent Activity">
+              {recentActivity.length > 0 ? (
+                <ul className="list-unstyled">
+                  {recentActivity.map((act, idx) => (
+                    <li key={idx} className="mb-2 border-bottom pb-2">
+                      <strong>{act.username}</strong> {act.action}{' '}
+                      <span className="text-muted small">
+                        {new Date(act.timestamp).toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted">No recent activity.</p>
+              )}
+            </Tab>
+
+            <Tab eventKey="followingactivity" title="Following Activity">
+              {followingActivity.length > 0 ? (
+                <ul className="list-unstyled">
+                  {followingActivity.map((act, idx) => (
+                    <li key={idx} className="mb-2 border-bottom pb-2">
+                      <strong>{act.username}</strong> {act.action}{' '}
+                      <span className="text-muted small">
+                        {new Date(act.timestamp).toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted">No activity from following users.</p>
+              )}
+            </Tab>
+          </Tabs>
+        </Card.Body>
+      </Card>
+
       {/* ─────────── Movies Owned / Wanted / Seen ─────────── */}
       <Card className="mb-4">
         <Card.Body>
@@ -464,7 +530,7 @@ export default function ProfilePage() {
               )}
             </Tab>
 
-            {/* WANTED */}
+                    {/* WANTED */}
             <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
               {wantedMovies.length > 0 ? (
                 <>
@@ -483,7 +549,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="mt-3 text-center">
                     <Link
-                      href={`/profile/${profile.username}/wantedformycollection`}
+                      href={`/profile/${profile.username}/wantedforcollection`}
                       className="btn btn-outline-primary btn-sm"
                     >
                       See All
@@ -496,7 +562,7 @@ export default function ProfilePage() {
             </Tab>
 
             {/* SEEN IT */}
-            <Tab eventKey="seen" title={`Seen (${seenCount})`}>
+            <Tab eventKey="seen" title={`Seen It (${seenCount})`}>
               {seenMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
@@ -522,7 +588,7 @@ export default function ProfilePage() {
                   </div>
                 </>
               ) : (
-                <p className="text-muted">No seen movies yet.</p>
+                <p className="text-muted">No movies in Seen It yet.</p>
               )}
             </Tab>
           </Tabs>
