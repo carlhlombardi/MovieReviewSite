@@ -419,9 +419,15 @@ setWantedCount(wantedData.movies?.length || 0);
                 )}
               </div>
             </Tab>
+            </Tabs>
+          </Card.Body>
+          </Card>
 
             {/* ─────────── Movies Owned ─────────── */}
-            <Tab eventKey="owned" title={`Movies Owned (${ownedCount})`}>
+                  <Card className="mb-4">
+              <Card.Body>
+          <Tabs defaultActiveKey="owned" id="profile-tabs" className="mb-3">
+            <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
               {ownedMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
@@ -452,7 +458,7 @@ setWantedCount(wantedData.movies?.length || 0);
             </Tab>
 
             {/* ─────────── Movies Wanted ─────────── */}
-            <Tab eventKey="wanted" title={`Movies Wanted (${wantedCount})`}>
+            <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
               {wantedMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
