@@ -128,11 +128,12 @@ export default function ProfilePage() {
 
       const ownedData = await ownedRes.json();
       const wantedData = await wantedRes.json();
+setOwnedMovies((ownedData.movies || []).slice(0, 5));
+setWantedMovies((wantedData.movies || []).slice(0, 5));
 
-      setOwnedMovies(ownedData.movies || []);
-      setWantedMovies(wantedData.movies || []);
-      setOwnedCount(ownedData.total || 0);
-      setWantedCount(wantedData.total || 0);
+setOwnedCount(ownedData.movies?.length || 0);
+setWantedCount(wantedData.movies?.length || 0);
+
     } catch (err) {
       console.error('Error fetching movie lists:', err);
     }
@@ -427,7 +428,7 @@ export default function ProfilePage() {
                     {ownedMovies.map((movie) => (
                       <div key={movie.id} className="text-center">
                         <Image
-                          src={movie.poster_url || '/images/default-poster.png'}
+                          src={image_url || '/images/default-poster.png'}
                           alt={movie.title}
                           width={80}
                           height={120}
@@ -459,7 +460,7 @@ export default function ProfilePage() {
                     {wantedMovies.map((movie) => (
                       <div key={movie.id} className="text-center">
                         <Image
-                          src={movie.poster_url || '/images/default-poster.png'}
+                          src={image_url || '/images/default-poster.png'}
                           alt={movie.title}
                           width={80}
                           height={120}
