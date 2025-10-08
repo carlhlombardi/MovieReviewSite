@@ -475,9 +475,11 @@ useEffect(() => {
                   {recentActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
                       <strong>{act.username}</strong> {act.action}{' '}
-                      <span className="text-muted small">
-                        {new Date(act.timestamp).toLocaleString()}
-                      </span>
+                        <span className="text-muted small">
+                          {act.timestamp && !isNaN(new Date(act.timestamp))
+                            ? new Date(act.timestamp).toLocaleString()
+                            : ''}
+                        </span>
                     </li>
                   ))}
                 </ul>
@@ -492,9 +494,11 @@ useEffect(() => {
                   {followingActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
                       <strong>{act.username}</strong> {act.action}{' '}
-                      <span className="text-muted small">
-                        {new Date(act.timestamp).toLocaleString()}
-                      </span>
+                        <span className="text-muted small">
+                          {act.timestamp && !isNaN(new Date(act.timestamp))
+                            ? new Date(act.timestamp).toLocaleString()
+                            : ''}
+                        </span>
                     </li>
                   ))}
                 </ul>
