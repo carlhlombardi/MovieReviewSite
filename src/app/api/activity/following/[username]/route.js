@@ -13,14 +13,20 @@ export async function GET(req, { params }) {
 
     const followingUsernames = followingRes.rows.map(row => row.following_username);
 
-    // 🪫 If user follows no one — return empty feed early
+    // 🪫 2. If user follows no one — return empty feed early
     if (followingUsernames.length === 0) {
-      return new Response(JSON.stringify({ feed: [] }), { status: 200 });
+      return new Response(JSON.stringify([]), { status: 200 });
     }
 
-    // 📰 2. Get activity from followed users
+    // 📰 3. Get activity from followed users (include usernames)
     const activityRes = await sql`
-      SELECT a.movie_title, a.action, a.source, a.created_at, u.username
+      SELECT 
+        a.user_id,
+        u.username,
+        a.movie_title,
+        a.action,
+        a.source,
+        a.created_at
       FROM activity a
       JOIN users u ON a.user_id = u.id
       WHERE u.username = ANY(${followingUsernames})
@@ -28,45 +34,47 @@ export async function GET(req, { params }) {
       LIMIT 50;
     `;
 
-    // 🧹 3. Format activity messages
-    const formatted = activityRes.rows.map(item => {
+    // 🧹 4. Format feed entries
+    const formatted = activityRes.rows.map((item) => {
       const source = item.source || 'unknown';
-      let actionText = '';
+      let text = '';
 
       switch (source) {
         case 'mycollection':
-          actionText = item.action === 'add'
-            ? `added "${item.movie_title}" to My Collection`
-            : `removed "${item.movie_title}" from My Collection`;
+          text =
+            item.action === 'add'
+              ? `added "${item.movie_title}" to My Collection`
+              : `removed "${item.movie_title}" from My Collection`;
           break;
-
         case 'wantedforcollection':
-          actionText = item.action === 'want'
-            ? `added "${item.movie_title}" to Wanted List`
-            : `removed "${item.movie_title}" from Wanted List`;
+          text =
+            item.action === 'want'
+              ? `added "${item.movie_title}" to Wanted List`
+              : `removed "${item.movie_title}" from Wanted List`;
           break;
-
         case 'seenit':
-          actionText = item.action === 'seen'
-            ? `marked "${item.movie_title}" as Seen`
-            : `removed "${item.movie_title}" from Seen List`;
+          text =
+            item.action === 'seen'
+              ? `marked "${item.movie_title}" as Seen`
+              : `removed "${item.movie_title}" from Seen List`;
           break;
-
         default:
-          actionText = `did something with "${item.movie_title}"`;
+          text = `did something with "${item.movie_title}"`;
       }
 
       return {
+        user_id: item.user_id,
         username: item.username,
         movie_title: item.movie_title,
         action: item.action,
         source: source,
-        message: `${item.username} ${actionText}`,
+        message: `${item.username} ${text}`,
         created_at: item.created_at,
       };
     });
 
-    return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
+    // ✅ 5. Return feed
+    return new Response(JSON.stringify(formatted), { status: 200 });
   } catch (err) {
     console.error('❌ Error in following activity GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });

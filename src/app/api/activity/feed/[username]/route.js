@@ -40,53 +40,30 @@ export async function GET(req, { params }) {
       );
     }
 
-    // 🟢 2. Fetch user activity (most recent first)
+    // 🟢 2. Fetch user activity, include username via JOIN
     const { rows } = await sql`
-      SELECT movie_title, action, source, created_at
-      FROM activity
-      WHERE user_id = ${user.id}
-      ORDER BY created_at DESC
+      SELECT a.user_id, u.username, a.movie_title, a.action, a.source, a.created_at
+      FROM activity a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.user_id = ${user.id}
+      ORDER BY a.created_at DESC
       LIMIT 50;
     `;
 
-    // 🟢 3. Format entries safely
-    const formatted = rows.map((item) => {
-      const source = item.source || 'unknown';
-      const title = item.movie_title || 'a movie';
-      let text = '';
+    // 🟢 3. Format response
+    const formatted = rows.map((item) => ({
+      user_id: item.user_id,
+      username: item.username,
+      movie_title: item.movie_title,
+      action: item.action,
+      source: item.source,
+      created_at: item.created_at,
+    }));
 
-      if (source === 'mycollection') {
-        text = item.action === 'add'
-          ? `added "${title}" to My Collection`
-          : `removed "${title}" from My Collection`;
-      } else if (source === 'wantedforcollection') {
-        text = item.action === 'want'
-          ? `added "${title}" to Wanted List`
-          : `removed "${title}" from Wanted List`;
-      } else if (source === 'seenit') {
-        text = item.action === 'seen'
-          ? `marked "${title}" as Seen`
-          : `removed "${title}" from Seen List`;
-      } else {
-        text = `did something with "${title}"`;
-      }
-
-      return {
-        movie_title: title,
-        action: item.action,
-        source: source,
-        message: `${username} ${text}`,
-        created_at: item.created_at,
-      };
-    });
-
-    // 🟢 4. Return formatted feed
-    return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
+    // 🟢 4. Return data
+    return new Response(JSON.stringify(formatted), { status: 200 });
   } catch (err) {
     console.error('❌ Error in activity feed GET:', err);
-    return new Response(
-      JSON.stringify({ message: err.message }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
