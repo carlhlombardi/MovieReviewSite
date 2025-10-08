@@ -549,7 +549,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="mt-3 text-center">
                     <Link
-                      href={`/profile/${profile.username}/wantedforcollection`}
+                      href={`/profile/${profile.username}/wantedformycollection`}
                       className="btn btn-outline-primary btn-sm"
                     >
                       See All
