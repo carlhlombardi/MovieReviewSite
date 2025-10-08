@@ -474,11 +474,11 @@ useEffect(() => {
                 <ul className="list-unstyled">
                   {recentActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.username}</strong> {act.action}
-                      {act.film_title ? `: "${act.film_title}"` : ''}{' '}
+                      <strong>{act.id}</strong> {act.action}
+                      {act.film_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
                         {act.timestamp && !isNaN(new Date(act.timestamp))
-                          ? new Date(act.timestamp).toLocaleString()
+                          ? new Date(act.created_at).toLocaleString()
                           : ''}
                       </span>
                     </li>
@@ -494,11 +494,11 @@ useEffect(() => {
                 <ul className="list-unstyled">
                   {followingActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
-                      <strong>{act.username}</strong> {act.action}
-                      {act.film_title ? `: "${act.film_title}"` : ''}{' '}
+                      <strong>{act.id}</strong> {act.action}
+                      {act.film_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
                         {act.timestamp && !isNaN(new Date(act.timestamp))
-                          ? new Date(act.timestamp).toLocaleString()
+                          ? new Date(act.created_at).toLocaleString()
                           : ''}
                       </span>
                     </li>
