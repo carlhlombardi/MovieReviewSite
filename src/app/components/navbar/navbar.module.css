@@ -1,3 +1,37 @@
+.navbar {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Remove bootstrap caret */
+.avatarToggle::after {
+  display: none !important;
+}
+
+.avatarToggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatarImage {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 40px;
+  height: 40px;
+  background-color: #666;
+  color: #fff;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
 .navbartoggler {
   border: none;
   background: transparent;
@@ -27,36 +61,8 @@
   cursor: pointer;
   margin-left: auto;
   font-weight: 500;
-  margin-right: 0.5rem;
-  padding: 0;
 }
 
-/* Avatar Styles */
-.avatarToggle {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatarImage {
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatarFallback {
-  width: 40px;
-  height: 40px;
-  background-color: #666;
-  color: #fff;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-/* Auth Buttons (Login/Register) */
 .authButtons {
   display: flex;
   gap: 10px;
@@ -76,12 +82,29 @@
   color: var(--bg);
 }
 
-/* Mobile Auth Section */
+/* Offcanvas (Mobile Menu) */
+.offcanvas {
+  background-color: #111;
+}
+
+.offcanvasHeader {
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid #444;
+}
+
+.offcanvasBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
 .mobileAuth {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 .mobileAuth button {
@@ -96,4 +119,10 @@
 .mobileAuth button:hover {
   background-color: white;
   color: var(--bg);
+}
+
+.mobileAvatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
 }

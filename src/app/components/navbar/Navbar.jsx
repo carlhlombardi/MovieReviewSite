@@ -36,6 +36,7 @@ const NavbarComponent = () => {
           width={40}
           height={40}
           className={styles.avatarImage}
+          unoptimized // useful if URL is external and not configured in next.config.js
         />
       );
     }
@@ -65,7 +66,7 @@ const NavbarComponent = () => {
   );
 
   return (
-    <Navbar expand="lg" className="navbar-dark">
+    <Navbar expand="lg" className={`navbar-dark ${styles.navbar}`}>
       <Container>
         {/* Logo */}
         <Navbar.Brand href="/">
@@ -78,18 +79,20 @@ const NavbarComponent = () => {
           />
         </Navbar.Brand>
 
-        {/* Mobile Toggler */}
-        <button
-          className={styles.navbartoggler}
-          type="button"
-          onClick={() => setShow(true)}
-        >
-          <span className={styles.navbartogglericon}>
-            <span className={styles.bar}></span>
-            <span className={styles.bar}></span>
-            <span className={styles.bar}></span>
-          </span>
-        </button>
+        {/* Mobile Toggler (only visible on mobile) */}
+        <div className="d-lg-none">
+          <button
+            className={styles.navbartoggler}
+            type="button"
+            onClick={() => setShow(true)}
+          >
+            <span className={styles.navbartogglericon}>
+              <span className={styles.bar}></span>
+              <span className={styles.bar}></span>
+              <span className={styles.bar}></span>
+            </span>
+          </button>
+        </div>
 
         {/* Desktop Nav */}
         <div className="d-none d-lg-flex align-items-center gap-3">
@@ -105,23 +108,32 @@ const NavbarComponent = () => {
         </div>
       </Container>
 
-      {/* Mobile Offcanvas */}
+      {/* Mobile Offcanvas (hidden on desktop) */}
       <Offcanvas
         show={show}
         onHide={() => setShow(false)}
         placement="end"
-        className="custom-offcanvas"
+        className={styles.offcanvas}
       >
-        <Offcanvas.Header>
+        <Offcanvas.Header className={styles.offcanvasHeader}>
           <button className={styles.closebtn} type="button" onClick={() => setShow(false)}>
-            X
+            ✕
           </button>
         </Offcanvas.Header>
-        <Offcanvas.Body>
+        <Offcanvas.Body className={styles.offcanvasBody}>
           <Links handleClose={() => setShow(false)} />
           <div className={styles.mobileAuth}>
             {isLoggedIn ? (
-              <AuthDropdown />
+              <>
+                <div className={styles.mobileAvatar}>{renderAvatar()}</div>
+                <button onClick={() => goTo("")}>Profile</button>
+                <button onClick={() => goTo("/mycollection")}>My Collection</button>
+                <button onClick={() => goTo("/wantedformycollection")}>
+                  Wanted for Collection
+                </button>
+                <button onClick={() => goTo("/seenit")}>Seen It</button>
+                <button onClick={handleLogout}>Logout</button>
+              </>
             ) : (
               <>
                 <button onClick={() => (window.location.href = "/login")}>Login</button>
