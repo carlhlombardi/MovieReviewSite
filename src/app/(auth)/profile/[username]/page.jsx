@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Card, Tabs, Tab, Button } from "react-bootstrap";
+import { Card, Tabs, Tab } from "react-bootstrap";
 
 export default function ProfilePage() {
   const { username } = useParams();
@@ -18,27 +18,8 @@ export default function ProfilePage() {
   const [userActivity, setUserActivity] = useState([]);
   const [followedActivity, setFollowedActivity] = useState([]);
 
-  // ──────────── FETCH PROFILE ────────────
-  const fetchProfile = async (username) => {
-    try {
-      const res = await fetch(`/api/auth/profile/${username}`);
-      if (!res.ok) throw new Error("Profile not found");
-      const data = await res.json();
-      setProfile(data);
-
-      await Promise.all([
-        fetchFollowLists(data.username),
-        fetchMovieLists(data.username),
-        fetchUserActivity(data.username),
-        fetchFollowedActivity(data.username),
-      ]);
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-    }
-  };
-
   // ──────────── FETCH FOLLOWERS & FOLLOWING ────────────
-  const fetchFollowLists = async (username) => {
+  const fetchFollowLists = useCallback(async (username) => {
     try {
       const res = await fetch(`/api/follow/${username}`);
       if (!res.ok) throw new Error("Failed to fetch follow lists");
@@ -48,10 +29,10 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Error fetching follow lists:", err);
     }
-  };
+  }, []);
 
   // ──────────── FETCH MOVIE LISTS ────────────
-  const fetchMovieLists = async (username) => {
+  const fetchMovieLists = useCallback(async (username) => {
     try {
       const res = await fetch(`/api/auth/profile/${username}`);
       if (!res.ok) throw new Error("Failed to fetch movie lists");
@@ -63,42 +44,63 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Error fetching movie lists:", err);
     }
-  };
+  }, []);
 
   // ──────────── FETCH USER ACTIVITY ────────────
-  const fetchUserActivity = async (username) => {
+  const fetchUserActivity = useCallback(async (username) => {
     try {
       const res = await fetch(`/api/activity/feed/${username}`);
       if (!res.ok) throw new Error("Failed to fetch activity");
       const data = await res.json();
-      setUserActivity(data.feed || []);
+      setUserActivity(data.activity || []);
     } catch (err) {
       console.error("Error fetching user activity:", err);
     }
-  };
+  }, []);
 
   // ──────────── FETCH FOLLOWED USERS ACTIVITY ────────────
-  const fetchFollowedActivity = async (username) => {
+  const fetchFollowedActivity = useCallback(async (username) => {
     try {
       const res = await fetch(`/api/activity/following/${username}`);
       if (!res.ok) throw new Error("Failed to fetch followed activity");
       const data = await res.json();
-      setFollowedActivity(data.feed || []);
+      setFollowedActivity(data.activity || []);
     } catch (err) {
       console.error("Error fetching followed activity:", err);
     }
-  };
+  }, []);
+
+  // ──────────── FETCH PROFILE ────────────
+  const fetchProfile = useCallback(
+    async (username) => {
+      try {
+        const res = await fetch(`/api/auth/profile/${username}`);
+        if (!res.ok) throw new Error("Profile not found");
+        const data = await res.json();
+        setProfile(data);
+
+        await Promise.all([
+          fetchFollowLists(data.username),
+          fetchMovieLists(data.username),
+          fetchUserActivity(data.username),
+          fetchFollowedActivity(data.username),
+        ]);
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    },
+    [fetchFollowLists, fetchMovieLists, fetchUserActivity, fetchFollowedActivity]
+  );
 
   // ──────────── USE EFFECT ────────────
   useEffect(() => {
     if (username) fetchProfile(username);
-  }, [username]);
+  }, [username, fetchProfile]);
 
   if (!profile) return <div className="p-4">Loading profile...</div>;
 
   return (
     <div className="container py-4">
-
       {/* ─────────── Profile Header ─────────── */}
       <Card className="mb-4">
         <Card.Body>
@@ -162,7 +164,6 @@ export default function ProfilePage() {
       <Card className="mb-4">
         <Card.Body>
           <Tabs defaultActiveKey="userActivity" id="activity-tabs" className="mb-3">
-
             {/* USER ACTIVITY */}
             <Tab eventKey="userActivity" title="Your Activity">
               {userActivity.length > 0 ? (
@@ -214,7 +215,6 @@ export default function ProfilePage() {
                 <p className="text-muted">No followed activity yet.</p>
               )}
             </Tab>
-
           </Tabs>
         </Card.Body>
       </Card>
