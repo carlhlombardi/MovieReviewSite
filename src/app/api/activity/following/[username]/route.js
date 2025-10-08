@@ -74,7 +74,7 @@ export async function GET(req, { params }) {
     });
 
     // ✅ 5. Return feed
-    return new Response(JSON.stringify(formatted), { status: 200 });
+  return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in following activity GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
