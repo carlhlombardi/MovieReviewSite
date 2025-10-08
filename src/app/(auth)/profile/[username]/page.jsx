@@ -20,19 +20,25 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Followers / Following lists
+  // Followers / Following
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
 
+  // Movies
+  const [ownedMovies, setOwnedMovies] = useState([]);
+  const [wantedMovies, setWantedMovies] = useState([]);
+  const [ownedCount, setOwnedCount] = useState(0);
+  const [wantedCount, setWantedCount] = useState(0);
+
   // ─────────────────────────────────────────────
-  // Fetch current profile + logged-in user
+  // Fetch profile
   // ─────────────────────────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
 
-      // 1️⃣ who is logged in
+      // who is logged in
       const authRes = await fetch('/api/auth/profile', {
         credentials: 'include',
         cache: 'no-store',
@@ -41,7 +47,7 @@ export default function ProfilePage() {
       if (authRes.ok) authUser = await authRes.json();
       setLoggedInUser(authUser);
 
-      // 2️⃣ which profile to display
+      // which profile
       let profileRes;
       if (authUser && profileUsername === authUser.username) {
         profileRes = await fetch('/api/auth/profile', {
@@ -65,7 +71,7 @@ export default function ProfilePage() {
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
-      // 3️⃣ check follow status (if logged in & viewing someone else)
+      // check follow status
       if (authUser && profileData && authUser.username !== profileData.username) {
         const followCheck = await fetch(
           `/api/follow/status?followingUsername=${profileData.username}`,
@@ -77,8 +83,11 @@ export default function ProfilePage() {
         }
       }
 
-      // 4️⃣ fetch followers and following lists
-      await fetchFollowLists(profileData.username);
+      // fetch lists
+      await Promise.all([
+        fetchFollowLists(profileData.username),
+        fetchMovieLists(profileData.username),
+      ]);
     } catch (err) {
       console.error('Error in profile fetch:', err);
       setError(err.message || 'Something went wrong');
@@ -93,8 +102,8 @@ export default function ProfilePage() {
   const fetchFollowLists = async (username) => {
     try {
       const [followersRes, followingRes] = await Promise.all([
-       fetch(`/api/user/followers?username=${username}`),
-       fetch(`/api/user/following?username=${username}`),
+        fetch(`/api/user/followers?username=${username}`),
+        fetch(`/api/user/following?username=${username}`),
       ]);
 
       const followersData = await followersRes.json();
@@ -107,6 +116,28 @@ export default function ProfilePage() {
     }
   };
 
+  // ─────────────────────────────────────────────
+  // Fetch movies lists (Owned + Wanted)
+  // ─────────────────────────────────────────────
+  const fetchMovieLists = async (username) => {
+    try {
+      const [ownedRes, wantedRes] = await Promise.all([
+        fetch(`/api/movies/owned?username=${username}&limit=5`),
+        fetch(`/api/movies/wanted?username=${username}&limit=5`),
+      ]);
+
+      const ownedData = await ownedRes.json();
+      const wantedData = await wantedRes.json();
+
+      setOwnedMovies(ownedData.movies || []);
+      setWantedMovies(wantedData.movies || []);
+      setOwnedCount(ownedData.total || 0);
+      setWantedCount(wantedData.total || 0);
+    } catch (err) {
+      console.error('Error fetching movie lists:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
@@ -115,7 +146,7 @@ export default function ProfilePage() {
     loggedInUser && profile && loggedInUser.username === profile.username;
 
   // ─────────────────────────────────────────────
-  // Avatar upload (only self)
+  // Avatar upload
   // ─────────────────────────────────────────────
   const handleAvatarUpload = async (file) => {
     if (!isSelf) return;
@@ -153,7 +184,7 @@ export default function ProfilePage() {
   };
 
   // ─────────────────────────────────────────────
-  // Save profile changes (bio/avatar)
+  // Save profile changes
   // ─────────────────────────────────────────────
   const handleSave = async () => {
     if (!isSelf) return;
@@ -176,7 +207,7 @@ export default function ProfilePage() {
   };
 
   // ─────────────────────────────────────────────
-  // Follow / Unfollow logic
+  // Follow / Unfollow
   // ─────────────────────────────────────────────
   const handleFollowToggle = async () => {
     if (!loggedInUser || !profile) return;
@@ -198,7 +229,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.success) {
         setIsFollowing(!isFollowing);
-        await fetchFollowLists(profile.username); // refresh lists
+        await fetchFollowLists(profile.username);
       }
     } catch (err) {
       console.error('Follow/unfollow failed:', err);
@@ -213,7 +244,7 @@ export default function ProfilePage() {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
-        <p>Loading profile&hellip;</p>
+        <p>Loading profile…</p>
       </div>
     );
 
@@ -239,6 +270,7 @@ export default function ProfilePage() {
           : `Profile of ${profile.username}`}
       </h2>
 
+      {/* ─────────── Profile Card ─────────── */}
       <Card className="mb-4 p-3">
         <Card.Body className="text-center">
           <div
@@ -333,7 +365,7 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
-      {/* ─────────── Tabs for Followers / Following ─────────── */}
+      {/* ─────────── Tabs ─────────── */}
       <Card className="mb-4">
         <Card.Body>
           <Tabs defaultActiveKey="followers" id="profile-tabs" className="mb-3">
@@ -386,35 +418,72 @@ export default function ProfilePage() {
                 )}
               </div>
             </Tab>
+
+            {/* ─────────── Movies Owned ─────────── */}
+            <Tab eventKey="owned" title={`Movies Owned (${ownedCount})`}>
+              {ownedMovies.length > 0 ? (
+                <>
+                  <div className="d-flex flex-wrap gap-3">
+                    {ownedMovies.map((movie) => (
+                      <div key={movie.id} className="text-center">
+                        <Image
+                          src={movie.poster_url || '/images/default-poster.png'}
+                          alt={movie.title}
+                          width={80}
+                          height={120}
+                          className="border rounded"
+                        />
+                        <p className="small mt-1">{movie.title}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <Link
+                      href={`/profile/${profile.username}/mycollection`}
+                      className="btn btn-outline-primary btn-sm"
+                    >
+                      See All
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted">No movies owned yet.</p>
+              )}
+            </Tab>
+
+            {/* ─────────── Movies Wanted ─────────── */}
+            <Tab eventKey="wanted" title={`Movies Wanted (${wantedCount})`}>
+              {wantedMovies.length > 0 ? (
+                <>
+                  <div className="d-flex flex-wrap gap-3">
+                    {wantedMovies.map((movie) => (
+                      <div key={movie.id} className="text-center">
+                        <Image
+                          src={movie.poster_url || '/images/default-poster.png'}
+                          alt={movie.title}
+                          width={80}
+                          height={120}
+                          className="border rounded"
+                        />
+                        <p className="small mt-1">{movie.title}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <Link
+                      href={`/profile/${profile.username}/wantedformycollection`}
+                      className="btn btn-outline-primary btn-sm"
+                    >
+                      See All
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted">No wanted movies yet.</p>
+              )}
+            </Tab>
           </Tabs>
         </Card.Body>
-      </Card>
-
-      {/* ─────────── Movie links ─────────── */}
-      <Card className="mb-4">
-        <Card.Header as="h5">
-          <Link
-            href={`/profile/${profile.username}/mycollection`}
-            className="text-decoration-none"
-          >
-            {isSelf
-              ? 'Movies Owned — View Your Collection'
-              : `Movies Owned — View ${profile.username}'s Collection`}
-          </Link>
-        </Card.Header>
-      </Card>
-
-      <Card className="mb-4">
-        <Card.Header as="h5">
-          <Link
-            href={`/profile/${profile.username}/wantedformycollection`}
-            className="text-decoration-none"
-          >
-            {isSelf
-              ? 'Movies Wanted — View Your Wish List'
-              : `Movies Wanted — View ${profile.username}'s Wish List`}
-          </Link>
-        </Card.Header>
       </Card>
     </div>
   );
