@@ -5,10 +5,12 @@ import { sql } from '@vercel/postgres';
 async function verifyUser(req, username) {
   const cookieHeader = req.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
-    cookieHeader.split(';').map((c) => {
-      const [name, ...rest] = c.trim().split('=');
-      return [name, decodeURIComponent(rest.join('='))];
-    })
+    cookieHeader
+      .split(';')
+      .map((c) => {
+        const [name, ...rest] = c.trim().split('=');
+        return [name, decodeURIComponent(rest.join('='))];
+      })
   );
   const token = cookies.token;
 
@@ -18,15 +20,15 @@ async function verifyUser(req, username) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
-    if (!user) return null;
-    if (user.id !== decoded.userId) return null;
+    if (!user || user.id !== decoded.userId) return null;
     return user;
-  } catch {
+  } catch (err) {
+    console.error('❌ Token verification failed:', err);
     return null;
   }
 }
 
-/** ✅ GET: Public read (no auth required) */
+/** 🟡 GET — Public read (no auth required) */
 export async function GET(req, { params }) {
   const { username } = params;
 
@@ -37,6 +39,7 @@ export async function GET(req, { params }) {
       WHERE username = ${username}
       ORDER BY title;
     `;
+
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in wantedforcollection GET:', err);
@@ -44,7 +47,7 @@ export async function GET(req, { params }) {
   }
 }
 
-/** ✅ POST: Protected + Log activity */
+/** 🟢 POST — Protected + Log activity */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -53,7 +56,14 @@ export async function POST(req, { params }) {
 
   try {
     const body = await req.json();
-    const { title, genre, image_url, url, iswatched = true, watchcount = 0 } = body;
+    const {
+      title,
+      genre = '',
+      image_url = '',
+      url,
+      iswatched = true,
+      watchcount = 0,
+    } = body;
 
     if (!title || !url) {
       return new Response(
@@ -74,22 +84,23 @@ export async function POST(req, { params }) {
         watchcount = EXCLUDED.watchcount;
     `;
 
-    // 🟢 Log activity with source
+    // 📝 Log activity
     await sql`
       INSERT INTO activity (user_id, movie_title, action, source)
       VALUES (${verified.id}, ${title}, 'want', 'wantedforcollection');
     `;
 
-    return new Response(JSON.stringify({ message: 'Movie added to wanted list' }), {
-      status: 201,
-    });
+    return new Response(
+      JSON.stringify({ message: 'Movie added to wanted list' }),
+      { status: 201 }
+    );
   } catch (err) {
     console.error('❌ Error in wantedforcollection POST:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
-/** ✅ DELETE: Protected + Log activity */
+/** 🔴 DELETE — Protected + Log activity */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -99,12 +110,10 @@ export async function DELETE(req, { params }) {
   try {
     const { url } = await req.json();
     if (!url) {
-      return new Response(JSON.stringify({ message: 'url is required' }), {
-        status: 400,
-      });
+      return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
     }
 
-    // 📝 Get movie title before deleting (for activity log)
+    // 📝 Get movie title for activity log
     const { rows } = await sql`
       SELECT title FROM wantedforcollection
       WHERE username = ${username} AND url = ${url}
@@ -118,7 +127,6 @@ export async function DELETE(req, { params }) {
     `;
 
     if (movie) {
-      // 🟡 Log activity with source
       await sql`
         INSERT INTO activity (user_id, movie_title, action, source)
         VALUES (${verified.id}, ${movie.title}, 'remove', 'wantedforcollection');
