@@ -475,9 +475,9 @@ useEffect(() => {
                   {recentActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
                       <strong>{act.id}</strong> {act.action}
-                      {act.film_title ? `: "${act.movie_title}"` : ''}{' '}
+                      {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
-                        {act.timestamp && !isNaN(new Date(act.timestamp))
+                        {act.created_at && !isNaN(new Date(act.created_at))
                           ? new Date(act.created_at).toLocaleString()
                           : ''}
                       </span>
@@ -495,9 +495,9 @@ useEffect(() => {
                   {followingActivity.map((act, idx) => (
                     <li key={idx} className="mb-2 border-bottom pb-2">
                       <strong>{act.id}</strong> {act.action}
-                      {act.film_title ? `: "${act.movie_title}"` : ''}{' '}
+                      {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
                       <span className="text-muted small">
-                        {act.timestamp && !isNaN(new Date(act.timestamp))
+                        {act.created_at && !isNaN(new Date(act.created_at))
                           ? new Date(act.created_at).toLocaleString()
                           : ''}
                       </span>
