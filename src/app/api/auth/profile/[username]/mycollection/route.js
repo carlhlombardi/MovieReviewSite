@@ -25,20 +25,24 @@ async function verifyUser(req, username) {
   }
 }
 
-/** ✅ GET: Public — Fetch user collection */
+/** ✅ GET: Public — Fetch user's liked movies */
 export async function GET(req, { params }) {
   const { username } = params;
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
+
     const { rows } = await sql`
-      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, a.producer, a.image_url, a.genre, a.review, a.studio, a.director, a.tmdb_id, a.url, m.isliked, m.likedcount
+      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, 
+             a.producer, a.image_url, a.genre, a.review, a.studio, a.director, 
+             a.tmdb_id, a.url, m.isliked, m.likedcount
       FROM allmovies a
-      JOIN mycollection m ON a.url = m.url AND a.username = m.username
+      JOIN mycollection m ON a.url = m.url
       WHERE m.username = ${username} AND m.isliked = TRUE
       ORDER BY a.film
       LIMIT ${limit};
     `;
+
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in mycollection GET:', err);
@@ -49,16 +53,33 @@ export async function GET(req, { params }) {
   }
 }
 
-/** ✅ POST: Protected — Add movie & log activity */
+/** ✅ POST: Protected — Add or update movie in collection */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (!verified)
+  if (!verified) {
     return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
+  }
 
   try {
     const body = await req.json();
-    const { film, genre, image_url, url, isliked = true, likedcount = 0 } = body;
+    const {
+      film,
+      genre,
+      image_url,
+      url,
+      year = null,
+      run_time = null,
+      my_rating = null,
+      screenwriters = null,
+      producer = null,
+      review = null,
+      studio = null,
+      director = null,
+      tmdb_id = null,
+      isliked = true,
+      likedcount = 0,
+    } = body;
 
     if (!film || !genre || !url) {
       return new Response(
@@ -67,11 +88,11 @@ export async function POST(req, { params }) {
       );
     }
 
-    // 📝 Upsert movie details in allmovies
+    // 📝 Upsert movie in allmovies (no username column here)
     await sql`
-      INSERT INTO allmovies (username, url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
-      VALUES (${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
-      ON CONFLICT (username, url)
+      INSERT INTO allmovies (url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
+      VALUES (${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
+      ON CONFLICT (url)
       DO UPDATE SET
         film = EXCLUDED.film,
         year = EXCLUDED.year,
@@ -87,7 +108,7 @@ export async function POST(req, { params }) {
         tmdb_id = EXCLUDED.tmdb_id;
     `;
 
-    // 📝 Upsert isliked/likedcount in mycollection
+    // 📝 Upsert user relationship in mycollection
     await sql`
       INSERT INTO mycollection (username, url, isliked, likedcount)
       VALUES (${username}, ${url}, ${isliked}, ${likedcount})
@@ -97,7 +118,7 @@ export async function POST(req, { params }) {
         likedcount = EXCLUDED.likedcount;
     `;
 
-    // 🟢 Log activity (now includes username)
+    // 🟢 Log activity
     await sql`
       INSERT INTO activity (user_id, username, movie_title, action, source)
       VALUES (${verified.id}, ${username}, ${film}, 'has', 'mycollection');
@@ -116,12 +137,13 @@ export async function POST(req, { params }) {
   }
 }
 
-/** ✅ DELETE: Protected — Remove movie & log activity */
+/** ✅ DELETE: Protected — Remove movie from collection */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
-  if (!verified)
+  if (!verified) {
     return new Response(JSON.stringify({ message: 'Forbidden' }), { status: 403 });
+  }
 
   try {
     const { url } = await req.json();
@@ -132,21 +154,21 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // 📝 Get film for activity log before delete
+    // 📝 Get film title before removal for activity log
     const { rows } = await sql`
       SELECT film FROM allmovies
-      WHERE username = ${username} AND url = ${url}
+      WHERE url = ${url}
       LIMIT 1;
     `;
     const movie = rows[0];
 
-    // ❌ Remove from collection
+    // ❌ Remove link from mycollection (not from allmovies)
     await sql`
-      DELETE FROM allmovies
+      DELETE FROM mycollection
       WHERE username = ${username} AND url = ${url};
     `;
 
-    // 📝 Log removal (includes username)
+    // 📝 Log activity
     if (movie) {
       await sql`
         INSERT INTO activity (user_id, username, movie_title, action, source)

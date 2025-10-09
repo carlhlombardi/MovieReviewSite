@@ -28,20 +28,24 @@ async function verifyUser(req, username) {
   }
 }
 
-/** 🟡 GET — Public read (no auth required) */
+/** 🟡 GET — Public read */
 export async function GET(req, { params }) {
   const { username } = params;
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
+
     const { rows } = await sql`
-      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, a.producer, a.image_url, a.genre, a.review, a.studio, a.director, a.tmdb_id, a.url, w.iswatched, w.watchcount
+      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, 
+             a.producer, a.image_url, a.genre, a.review, a.studio, a.director, 
+             a.tmdb_id, a.url, w.iswatched, w.watchcount
       FROM allmovies a
-      JOIN wantedforcollection w ON a.url = w.url AND a.username = w.username
+      JOIN wantedforcollection w ON a.url = w.url
       WHERE w.username = ${username} AND w.iswatched = TRUE
       ORDER BY a.film
       LIMIT ${limit};
     `;
+
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in wantedforcollection GET:', err);
@@ -49,7 +53,7 @@ export async function GET(req, { params }) {
   }
 }
 
-/** 🟢 POST — Protected + Log activity */
+/** 🟢 POST — Add or update wanted movie + log activity */
 export async function POST(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -63,6 +67,15 @@ export async function POST(req, { params }) {
       genre = '',
       image_url = '',
       url,
+      year = null,
+      run_time = null,
+      my_rating = null,
+      screenwriters = null,
+      producer = null,
+      review = null,
+      studio = null,
+      director = null,
+      tmdb_id = null,
       iswatched = true,
       watchcount = 0,
     } = body;
@@ -74,11 +87,11 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update in allmovies (movie details only)
+    // ✅ Add or update movie in allmovies (shared movie table)
     await sql`
-      INSERT INTO allmovies (username, url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
-      VALUES (${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
-      ON CONFLICT (username, url)
+      INSERT INTO allmovies (url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
+      VALUES (${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
+      ON CONFLICT (url)
       DO UPDATE SET
         film = EXCLUDED.film,
         year = EXCLUDED.year,
@@ -94,7 +107,7 @@ export async function POST(req, { params }) {
         tmdb_id = EXCLUDED.tmdb_id;
     `;
 
-    // ✅ Add or update in wantedforcollection (iswatched, watchcount)
+    // ✅ Add or update user state in wantedforcollection
     await sql`
       INSERT INTO wantedforcollection (username, url, iswatched, watchcount)
       VALUES (${username}, ${url}, ${iswatched}, ${watchcount})
@@ -104,7 +117,7 @@ export async function POST(req, { params }) {
         watchcount = EXCLUDED.watchcount;
     `;
 
-    // 📝 Log activity (now includes username)
+    // 📝 Log activity
     await sql`
       INSERT INTO activity (user_id, username, movie_title, action, source)
       VALUES (${verified.id}, ${username}, ${film}, 'wants', 'wantedforcollection');
@@ -120,7 +133,7 @@ export async function POST(req, { params }) {
   }
 }
 
-/** 🔴 DELETE — Protected + Log activity */
+/** 🔴 DELETE — Remove movie from wanted list + log activity */
 export async function DELETE(req, { params }) {
   const { username } = params;
   const verified = await verifyUser(req, username);
@@ -133,21 +146,21 @@ export async function DELETE(req, { params }) {
       return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
     }
 
-  // 📝 Get film for activity log
+    // 📝 Get film for activity log
     const { rows } = await sql`
       SELECT film FROM allmovies
-      WHERE username = ${username} AND url = ${url}
+      WHERE url = ${url}
       LIMIT 1;
     `;
     const movie = rows[0];
 
-    // ✅ Delete from allmovies
+    // ✅ Delete from wantedforcollection only
     await sql`
-      DELETE FROM allmovies
+      DELETE FROM wantedforcollection
       WHERE username = ${username} AND url = ${url};
     `;
 
-    // 📝 Log removal if movie was found
+    // 📝 Log activity
     if (movie) {
       await sql`
         INSERT INTO activity (user_id, username, movie_title, action, source)

@@ -34,18 +34,21 @@ export async function GET(req, { params }) {
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
+
     const { rows } = await sql`
-      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, a.producer, a.image_url, a.genre, a.review, a.studio, a.director, a.tmdb_id, a.url, s.seenit, s.created_at
+      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters,
+             a.producer, a.image_url, a.genre, a.review, a.studio, a.director,
+             a.tmdb_id, a.url, s.seenit, s.created_at
       FROM allmovies a
       JOIN seenit s ON a.url = s.url AND a.username = s.username
       WHERE s.username = ${username} AND s.seenit = TRUE
       ORDER BY s.created_at DESC
       LIMIT ${limit};
     `;
-    return new Response(
-      JSON.stringify({ movies: rows, total: rows.length }),
-      { status: 200 }
-    );
+
+    return new Response(JSON.stringify({ movies: rows, total: rows.length }), {
+      status: 200,
+    });
   } catch (err) {
     console.error('❌ Error in seenit GET:', err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
@@ -63,9 +66,18 @@ export async function POST(req, { params }) {
     const body = await req.json();
     const {
       film,
+      url,
       genre = '',
       image_url = '',
-      url,
+      year = null,
+      run_time = null,
+      my_rating = null,
+      screenwriters = '',
+      producer = '',
+      review = '',
+      studio = '',
+      director = '',
+      tmdb_id = null,
       seenit = true,
     } = body;
 
@@ -76,10 +88,18 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update movie details in allmovies
+    // ✅ Upsert movie details in allmovies
     await sql`
-      INSERT INTO allmovies (username, url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
-      VALUES (${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
+      INSERT INTO allmovies (
+        username, url, film, year, run_time, my_rating,
+        screenwriters, producer, image_url, genre, review,
+        studio, director, tmdb_id
+      )
+      VALUES (
+        ${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating},
+        ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review},
+        ${studio}, ${director}, ${tmdb_id}
+      )
       ON CONFLICT (username, url)
       DO UPDATE SET
         film = EXCLUDED.film,
@@ -96,16 +116,15 @@ export async function POST(req, { params }) {
         tmdb_id = EXCLUDED.tmdb_id;
     `;
 
-    // ✅ Add or update seenit status in seenit table
+    // ✅ Upsert seenit status
     await sql`
       INSERT INTO seenit (username, url, seenit)
       VALUES (${username}, ${url}, ${seenit})
       ON CONFLICT (username, url)
-      DO UPDATE SET
-        seenit = EXCLUDED.seenit;
+      DO UPDATE SET seenit = EXCLUDED.seenit;
     `;
 
-    // 📝 Log activity (now includes username)
+    // 📝 Log activity
     await sql`
       INSERT INTO activity (user_id, username, movie_title, action, source)
       VALUES (${verified.id}, ${username}, ${film}, 'has seen', 'seenit');
@@ -131,11 +150,13 @@ export async function DELETE(req, { params }) {
   try {
     const { url } = await req.json();
     if (!url) {
-      return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ message: 'url is required' }),
+        { status: 400 }
+      );
     }
 
-    // 📝 Get movie title before deleting
-    // 📝 Get film before deleting
+    // 📝 Get film title before deleting
     const { rows } = await sql`
       SELECT film FROM allmovies
       WHERE username = ${username} AND url = ${url}
@@ -143,13 +164,19 @@ export async function DELETE(req, { params }) {
     `;
     const movie = rows[0];
 
-    // ✅ Delete from allmovies
+    // ✅ Remove from seenit first (to keep other collections safe)
+    await sql`
+      DELETE FROM seenit
+      WHERE username = ${username} AND url = ${url};
+    `;
+
+    // Optional: If you want to fully remove the movie from allmovies
     await sql`
       DELETE FROM allmovies
       WHERE username = ${username} AND url = ${url};
     `;
 
-    // 📝 Log activity (includes username)
+    // 📝 Log activity if movie existed
     if (movie) {
       await sql`
         INSERT INTO activity (user_id, username, movie_title, action, source)
