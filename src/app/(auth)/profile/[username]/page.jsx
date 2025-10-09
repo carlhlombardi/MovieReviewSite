@@ -159,28 +159,28 @@ export default function ProfilePage() {
   // ───────────────────────────
   // Fetch activity feed
   // ───────────────────────────
-  const fetchActivityFeed = async (username) => {
-    try {
-      const [recentRes, followingRes] = await Promise.all([
-        fetch(`/api/activity/feed/${username}`),
-        fetch(`/api/activity/following/${username}`),
-      ]);
+const fetchActivityFeed = async (username) => {
+  try {
+    const [recentRes, followingRes] = await Promise.all([
+      fetch(`/api/activity/feed/${username}?limit=5`, { cache: 'no-store' }),
+      fetch(`/api/activity/following/${username}?limit=5`, { cache: 'no-store' }),
+    ]);
 
-      if (!recentRes.ok || !followingRes.ok) {
-        console.error('Error fetching activity feed');
-        return;
-      }
-
-      const recentData = await recentRes.json();
-      const followingData = await followingRes.json();
-
-      setRecentActivity(recentData.feed || []);
-      setFollowingActivity(followingData.feed || []);
-    } catch (err) {
-      console.error('❌ Error fetching activity feed:', err);
+    if (!recentRes.ok || !followingRes.ok) {
+      console.error('❌ Error fetching activity feed');
+      return;
     }
-  };
 
+    const recentData = await recentRes.json();
+    const followingData = await followingRes.json();
+
+    // ⬇️ Limit to last 5 on the client side too (extra safety)
+    setRecentActivity((recentData.feed || []).slice(0, 5));
+    setFollowingActivity((followingData.feed || []).slice(0, 5));
+  } catch (err) {
+    console.error('❌ Error fetching activity feed:', err);
+  }
+};
   // ───────────────────────────
   // Avatar upload
   // ───────────────────────────
