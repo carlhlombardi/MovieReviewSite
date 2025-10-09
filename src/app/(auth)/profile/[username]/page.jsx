@@ -466,6 +466,7 @@ useEffect(() => {
       </Card>
 
       {/* ─────────── Activity Feed Tabs ─────────── */}
+{!isSelf && loggedInUser && (
 <Card className="mb-4">
   <Card.Body>
     <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
@@ -515,8 +516,7 @@ useEffect(() => {
     </Tabs>
   </Card.Body>
 </Card>
-
-
+ )}
       {/* ─────────── Movies Owned / Wanted / Seen ─────────── */}
       <Card className="mb-4">
         <Card.Body>
