@@ -476,7 +476,7 @@ useEffect(() => {
                   <ul className="list-unstyled">
                     {recentActivity.map((act, idx) => (
                       <li key={idx} className="mb-2 border-bottom pb-2">
-                        <strong>{act.username || `User #${act.user_id}`}</strong>{' '}
+                        <strong>You </strong>{' '}
                         {act.action}
                         {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
                         <span className="text-muted small">
