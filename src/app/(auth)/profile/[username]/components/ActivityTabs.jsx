@@ -7,7 +7,7 @@ export default function ActivityTabs({ recent, following }) {
     <Card className="mb-4">
       <Card.Body>
         <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
-          <Tab eventKey="recent" title="Your Recent Activity">
+          <Tab eventKey="recent" title="Your Activity">
             {recent.length > 0 ? (
               <ul className="list-unstyled">
                 {recent.map((act) => (
@@ -31,7 +31,7 @@ export default function ActivityTabs({ recent, following }) {
             )}
           </Tab>
 
-          <Tab eventKey="following" title="Followers Recent Activity">
+          <Tab eventKey="following" title="Friends Activity">
             {following.length > 0 ? (
               <ul className="list-unstyled">
                 {following.map((act) => (
