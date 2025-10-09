@@ -9,7 +9,7 @@ import styles from "./page.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-// Slugify movie titles for URLs
+// ✅ Slugify movie title with TMDB ID
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
     .toString()
@@ -19,7 +19,7 @@ const slugify = (title, tmdb_id) => {
     .replace(/^-+|-+$/g, "");
 };
 
-// Slugify genre names for URLs
+// ✅ Slugify genre for URLs
 const slugifyGenre = (genre) => {
   return genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 };
@@ -50,7 +50,7 @@ export default function Home() {
     fetchNewlyAdded();
   }, []);
 
-  // 🟡 Fetch last 8 reviewed movies (review not null/blank)
+  // 🟡 Fetch last 8 reviewed movies
   useEffect(() => {
     const fetchNewlyReviewed = async () => {
       try {
@@ -65,7 +65,7 @@ export default function Home() {
     fetchNewlyReviewed();
   }, []);
 
-  // 🟡 Handle input change and fetch suggestions
+  // 🟡 Handle input and fetch suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -106,77 +106,74 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🟡 Handle suggestion click: fetch details, insert into DB, and redirect
-const handleSuggestionClick = async (movie) => {
-  setSearchQuery(movie.title);
-  setShowSuggestions(false);
+  // 🟢 Handle suggestion click: fetch TMDB details and insert into allmovies
+  const handleSuggestionClick = async (movie) => {
+    setSearchQuery(movie.title);
+    setShowSuggestions(false);
 
-  try {
-    // 🟡 Fetch full movie details
-    const res = await fetch(
-      `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
-    );
-    if (!res.ok) throw new Error("Failed to fetch movie details");
+    try {
+      const res = await fetch(
+        `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch movie details");
 
-    const apiResponse = await res.json();
-    const movieData = apiResponse.results?.[0];
+      const apiResponse = await res.json();
+      const movieData = apiResponse.results?.[0];
 
-    if (!movieData || !movieData.title || !movieData.release_date) {
-      alert("Movie data is incomplete.");
-      return;
+      if (!movieData || !movieData.title || !movieData.release_date) {
+        alert("Movie data is incomplete.");
+        return;
+      }
+
+      const year = Number(movieData.release_date.split("-")[0]) || null;
+      const genre = movieData.genre || "Unknown";
+      const genreSlug = slugifyGenre(genre);
+      const slugifiedUrl = slugify(movieData.title, movieData.id);
+
+      // 📝 Payload aligned with your table schema
+      const payload = {
+        film: movieData.title,
+        year,
+        tmdb_id: movieData.id,
+        run_time: movieData.runtime || null,
+        screenwriters: movieData.screenwriters || "",
+        producer: movieData.producer || "",
+        image_url: movieData.poster_path
+          ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+          : "/images/fallback.jpg",
+        genre,
+        url: slugifiedUrl,
+        studio: movieData.production_companies?.[0]?.name || "",
+        director: movieData.director || "",
+      };
+
+      console.log("📦 Inserting movie:", payload);
+
+      const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!insertRes.ok) {
+        const insertData = await insertRes.json().catch(() => ({}));
+        alert(`Failed to insert movie: ${insertData.error || "Unknown error"}`);
+        return;
+      }
+
+      // ✅ Redirect after successful insert
+      router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
+    } catch (error) {
+      console.error("❌ Error adding movie:", error);
+      alert("An unexpected error occurred while adding the movie.");
     }
-
-    // 🟡 Extract core values
-    const year = Number(movieData.release_date.split("-")[0]) || null;
-    const genre = movieData.genre || "Unknown";
-    const genreSlug = slugifyGenre(genre);
-    const slugifiedUrl = slugify(movieData.title, movieData.id);
-
-    // ✅ Build payload matching your `allmovies` table schema
-    const payload = {
-      film: movieData.title,
-      year: year,
-      tmdb_id: movieData.id,
-      run_time: movieData.runtime || null,
-      screenwriters: movieData.screenwriters || "",
-      producer: movieData.producer || "",
-      image_url: movieData.poster_path
-        ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
-        : "/images/fallback.jpg",
-      genre: genre,
-      url: slugifiedUrl,
-      studio: movieData.production_companies?.[0]?.name || "",
-      director: movieData.director || "",
-    };
-
-    console.log("📦 Inserting movie:", payload);
-
-    // ✅ Insert into allmovies (not genre-specific tables anymore)
-    const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!insertRes.ok) {
-      const insertData = await insertRes.json().catch(() => ({}));
-      alert(`Failed to insert movie: ${insertData.error || "Unknown error"}`);
-      return;
-    }
-
-    // 🟢 Redirect user to the movie page after insertion
-    router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
-  } catch (error) {
-    console.error("❌ Error adding movie:", error);
-    alert("An unexpected error occurred while adding the movie.");
-  }
-};
+  };
 
   return (
     <Container className="py-5">
       <h1 className="text-center mb-4">Movie Search</h1>
 
-      {/* Search Input */}
+      {/* 🔎 Search Input */}
       <Form className="mb-4 position-relative">
         <Form.Control
           type="text"
@@ -188,7 +185,7 @@ const handleSuggestionClick = async (movie) => {
           ref={inputRef}
         />
 
-        {/* Suggestions Dropdown */}
+        {/* 🧠 Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <ul
             ref={suggestionsRef}
@@ -233,11 +230,9 @@ const handleSuggestionClick = async (movie) => {
                 >
                   <div className={styles.imagewrapper + " position-relative"}>
                     <Image
-                      src={
-                        decodeURIComponent(
-                          item.image_url || "/images/fallback.jpg"
-                        )
-                      }
+                      src={decodeURIComponent(
+                        item.image_url || "/images/fallback.jpg"
+                      )}
                       alt={item.film}
                       width={200}
                       height={300}
@@ -274,11 +269,9 @@ const handleSuggestionClick = async (movie) => {
                 >
                   <div className={styles.imagewrapper + " position-relative"}>
                     <Image
-                      src={
-                        decodeURIComponent(
-                          item.image_url || "/images/fallback.jpg"
-                        )
-                      }
+                      src={decodeURIComponent(
+                        item.image_url || "/images/fallback.jpg"
+                      )}
                       alt={item.film}
                       width={200}
                       height={300}
