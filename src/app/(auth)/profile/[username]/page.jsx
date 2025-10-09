@@ -147,7 +147,7 @@ export default function ProfilePage() {
 
       // Follow status
       if (authUser && profileData.username !== authUser.username) {
-        const followCheck = await fetch(`/api/users/${username}/follow-statuss=${profileData.username}`, {
+        const followCheck = await fetch(`/api/users/${username}/follow-status=${profileData.username}`, {
           credentials: 'include',
         });
         if (followCheck.ok) {
