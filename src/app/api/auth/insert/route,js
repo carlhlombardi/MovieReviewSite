@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
+    // 📨 Parse request
     let {
       film,
       year,
@@ -17,47 +18,55 @@ export async function POST(req) {
       image_url,
     } = await req.json();
 
+    // 🧼 Normalize input
     film = (film || "").trim();
     genre = (genre || "").trim();
     const yearNum = Number(year);
 
+    // 🛡️ Validate required fields
     if (!film || !genre || !tmdb_id || isNaN(yearNum)) {
       return NextResponse.json(
-        { error: "Missing or invalid required fields", received: { film, year, tmdb_id, genre } },
+        {
+          error: "Missing or invalid required fields",
+          received: { film, year, tmdb_id, genre },
+        },
         { status: 400 }
       );
     }
 
-    const slugify = (title, tmdb_id) =>
-      `${title}-${tmdb_id}`
+    // 🪄 Helper: slugify
+    const slugify = (title, tmdbId) =>
+      `${title}-${tmdbId}`
         .toLowerCase()
         .replace(/'/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-    const genreSlug = genre.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    // 🏷️ Normalize genre slug
+    const genreSlug = genre.toLowerCase().replace(/[^a-z0-9]+/g, "").trim() || "misc";
+
     if (!url) url = slugify(film, tmdb_id);
 
-    // 🎯 Fetch from TMDB if any key field is missing
+    // 🪄 TMDB autofill (only if any key info missing)
     if (!image_url || !studio || !producer || !director || !screenwriters || !run_time) {
       try {
         const tmdbKey = process.env.TMDB_API_KEY;
 
-        // 🔹 Movie details
+        // 🎬 Fetch movie details
         const movieRes = await fetch(
           `https://api.themoviedb.org/3/movie/${tmdb_id}?api_key=${tmdbKey}`
         );
         if (!movieRes.ok) throw new Error("TMDB movie fetch failed");
         const movieData = await movieRes.json();
 
-        // 🔹 Credits (for crew info)
+        // 👥 Fetch credits
         const creditsRes = await fetch(
           `https://api.themoviedb.org/3/movie/${tmdb_id}/credits?api_key=${tmdbKey}`
         );
         if (!creditsRes.ok) throw new Error("TMDB credits fetch failed");
         const credits = await creditsRes.json();
 
-        // 🖼️ Image
+        // 🖼️ Poster image
         if (!image_url) {
           image_url = movieData.poster_path
             ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
@@ -66,25 +75,26 @@ export async function POST(req) {
 
         // 🏭 Studio
         if (!studio) {
-          studio = movieData.production_companies
-            ?.map((c) => c.name)
-            .filter(Boolean)
-            .join(", ") || "";
+          studio =
+            movieData.production_companies
+              ?.map((c) => c.name)
+              .filter(Boolean)
+              .join(", ") || "";
         }
 
-        // 👤 Producer
+        // 👤 Producer(s)
         if (!producer) {
           producer =
             credits.crew
               ?.filter((p) => p.job === "Producer")
               .map((p) => p.name)
+              .filter(Boolean)
               .join(", ") || "";
         }
 
-        // 👨‍💼 Director
+        // 👨 Director
         if (!director) {
-          director =
-            credits.crew?.find((p) => p.job === "Director")?.name || "";
+          director = credits.crew?.find((p) => p.job === "Director")?.name || "";
         }
 
         // ✍️ Screenwriters
@@ -93,6 +103,7 @@ export async function POST(req) {
             credits.crew
               ?.filter((p) => ["Screenplay", "Writer"].includes(p.job))
               .map((p) => p.name)
+              .filter(Boolean)
               .join(", ") || "";
         }
 
@@ -114,7 +125,7 @@ export async function POST(req) {
       return NextResponse.json({ message: "Movie already exists" }, { status: 200 });
     }
 
-    // 📝 Insert into DB
+    // 📝 Insert or update movie
     await sql.query(
       `INSERT INTO allmovies 
         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)

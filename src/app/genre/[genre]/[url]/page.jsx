@@ -5,17 +5,18 @@ import Image from "next/image";
 import { Heart, HeartFill, Tv, TvFill, Eye, EyeFill } from "react-bootstrap-icons";
 import { useAuth } from "@/app/(auth)/contexts/AuthContext";
 
-// === Helper Functions ===
+// 🧰 Helper: Clean genre string
 const slugifyGenre = (genre) =>
   genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
+// 🧭 Fetch movie data
 const fetchData = async (genre, url) => {
   const res = await fetch(`/api/data/${genre}?url=${encodeURIComponent(url)}`);
   if (!res.ok) throw new Error("Failed to fetch movie data");
   return await res.json();
 };
 
-// === toggle helpers ===
+// ❤️ Toggle Own It
 export const toggleOwnIt = async (username, movieData, action) => {
   const endpoint = `/api/auth/profile/${username}/mycollection`;
   const payload =
@@ -30,6 +31,7 @@ export const toggleOwnIt = async (username, movieData, action) => {
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
+
   const res = await fetch(endpoint, {
     method: action === "like" ? "POST" : "DELETE",
     credentials: "include",
@@ -40,6 +42,7 @@ export const toggleOwnIt = async (username, movieData, action) => {
   return await res.json();
 };
 
+// 📺 Toggle Want It
 export const toggleWantIt = async (username, movieData, action) => {
   const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
   const payload =
@@ -54,6 +57,7 @@ export const toggleWantIt = async (username, movieData, action) => {
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
+
   const res = await fetch(endpoint, {
     method: action === "add" ? "POST" : "DELETE",
     credentials: "include",
@@ -64,7 +68,7 @@ export const toggleWantIt = async (username, movieData, action) => {
   return await res.json();
 };
 
-// ✅ NEW: toggle seen it
+// 👁️ Toggle Seen It
 export const toggleSeenIt = async (username, movieData, action) => {
   const endpoint = `/api/auth/profile/${username}/seenit`;
   const payload =
@@ -78,6 +82,7 @@ export const toggleSeenIt = async (username, movieData, action) => {
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
+
   const res = await fetch(endpoint, {
     method: action === "seen" ? "POST" : "DELETE",
     credentials: "include",
@@ -88,9 +93,9 @@ export const toggleSeenIt = async (username, movieData, action) => {
   return await res.json();
 };
 
+// 🧾 Main Component
 export default function MoviePage({ params }) {
   const { genre, url } = params;
-  const slugifiedUrl = url;
   const { isLoggedIn, user } = useAuth();
 
   const [data, setData] = useState(null);
@@ -98,7 +103,7 @@ export default function MoviePage({ params }) {
   const [error, setError] = useState("");
   const [isOwned, setIsOwned] = useState(false);
   const [isWanted, setIsWanted] = useState(false);
-  const [isSeen, setIsSeen] = useState(false); // ✅ new state
+  const [isSeen, setIsSeen] = useState(false);
 
   const handleOwnIt = async () => {
     const action = isOwned ? "unlike" : "like";
@@ -122,33 +127,31 @@ export default function MoviePage({ params }) {
     const init = async () => {
       try {
         setIsLoading(true);
-        const movieData = await fetchData(genre, slugifiedUrl);
+        const movieData = await fetchData(genre, url);
         setData(movieData);
 
         if (isLoggedIn && user?.username) {
-          // mycollection
-          const ownRes = await fetch(
-            `/api/auth/profile/${user.username}/mycollection`,
-            { credentials: "include" }
-          );
+          // 🎬 mycollection
+          const ownRes = await fetch(`/api/auth/profile/${user.username}/mycollection`, {
+            credentials: "include",
+          });
           const ownJson = ownRes.ok ? await ownRes.json() : { movies: [] };
-          setIsOwned(ownJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
+          setIsOwned(ownJson.movies?.some((m) => m.url === url) ?? false);
 
-          // wantedforcollection
+          // 📝 wantedforcollection
           const wantRes = await fetch(
             `/api/auth/profile/${user.username}/wantedforcollection`,
             { credentials: "include" }
           );
           const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
-          setIsWanted(wantJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
+          setIsWanted(wantJson.movies?.some((m) => m.url === url) ?? false);
 
-          // ✅ seenit
-          const seenRes = await fetch(
-            `/api/auth/profile/${user.username}/seenit`,
-            { credentials: "include" }
-          );
+          // 👀 seenit
+          const seenRes = await fetch(`/api/auth/profile/${user.username}/seenit`, {
+            credentials: "include",
+          });
           const seenJson = seenRes.ok ? await seenRes.json() : { movies: [] };
-          setIsSeen(seenJson.movies?.some((m) => m.url === slugifiedUrl) ?? false);
+          setIsSeen(seenJson.movies?.some((m) => m.url === url) ?? false);
         } else {
           setIsOwned(false);
           setIsWanted(false);
@@ -162,7 +165,7 @@ export default function MoviePage({ params }) {
       }
     };
     init();
-  }, [genre, slugifiedUrl, isLoggedIn, user?.username]);
+  }, [genre, url, isLoggedIn, user?.username]);
 
   if (isLoading)
     return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
@@ -218,7 +221,6 @@ export default function MoviePage({ params }) {
                 {isWanted ? <TvFill /> : <Tv />} Want It
               </Button>
 
-              {/* ✅ New Seen It Button */}
               <Button
                 variant={isSeen ? "success" : "outline-success"}
                 onClick={handleSeenIt}
@@ -229,6 +231,7 @@ export default function MoviePage({ params }) {
           )}
         </Col>
       </Row>
+
       <Row>
         <Col>
           {(my_rating || review) && (

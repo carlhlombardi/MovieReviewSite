@@ -12,7 +12,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 // ✅ Slugify movie title with TMDB ID
 const slugify = (title, tmdb_id) => {
   return `${title}-${tmdb_id}`
-    .toString()
     .toLowerCase()
     .replace(/'/g, "")
     .replace(/[^a-z0-9]+/g, "-")
@@ -43,7 +42,7 @@ export default function Home() {
         if (!res.ok) throw new Error();
         const data = await res.json();
         setNewlyAdded(data.results || []);
-      } catch (err) {
+      } catch {
         console.error("❌ Could not load newly added movies");
       }
     };
@@ -58,7 +57,7 @@ export default function Home() {
         if (!res.ok) throw new Error();
         const data = await res.json();
         setNewlyReviewed(data.results || []);
-      } catch (err) {
+      } catch {
         console.error("❌ Could not load newly reviewed movies");
       }
     };
@@ -77,14 +76,12 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/auth/suggest?query=${encodeURIComponent(query)}`
-      );
+      const res = await fetch(`${API_URL}/api/auth/suggest?query=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setSuggestions(data.results || []);
       setShowSuggestions(true);
-    } catch (err) {
+    } catch {
       console.error("❌ Suggestion fetch error");
       setSuggestions([]);
     }
@@ -92,7 +89,7 @@ export default function Home() {
 
   // 🟡 Hide suggestions on outside click
   useEffect(() => {
-    function handleClickOutside(event) {
+    const handleClickOutside = (event) => {
       if (
         inputRef.current &&
         !inputRef.current.contains(event.target) &&
@@ -101,7 +98,7 @@ export default function Home() {
       ) {
         setShowSuggestions(false);
       }
-    }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -112,9 +109,7 @@ export default function Home() {
     setShowSuggestions(false);
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
-      );
+      const res = await fetch(`${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`);
       if (!res.ok) throw new Error("Failed to fetch movie details");
 
       const apiResponse = await res.json();
@@ -130,22 +125,19 @@ export default function Home() {
       const genreSlug = slugifyGenre(genre);
       const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
 
-      // 📝 Payload aligned with your table schema
       const payload = {
-  film: movieData.title,
-  year,
-  tmdb_id: movieData.tmdb_id,
-  run_time: movieData.run_time || null,
-  screenwriters: movieData.screenwriters || "",
-  producer: movieData.producer || "",
-  image_url: movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-    : "/images/fallback.jpg",
-  genre: movieData.genre || "Unknown",
-  url: slugifiedUrl ,
-  studio: movieData.studio || "",
-  director: movieData.director || "",
-};
+        film: movieData.title,
+        year,
+        tmdb_id: movieData.tmdb_id,
+        run_time: movieData.run_time || null,
+        screenwriters: movieData.screenwriters || "",
+        producer: movieData.producer || "",
+        image_url: movieData.image_url || "/images/fallback.jpg",
+        genre: genre,
+        url: slugifiedUrl,
+        studio: movieData.studio || "",
+        director: movieData.director || "",
+      };
 
       console.log("📦 Inserting movie:", payload);
 
@@ -161,7 +153,6 @@ export default function Home() {
         return;
       }
 
-      // ✅ Redirect after successful insert
       router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
     } catch (error) {
       console.error("❌ Error adding movie:", error);
@@ -185,7 +176,6 @@ export default function Home() {
           ref={inputRef}
         />
 
-        {/* 🧠 Suggestions Dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <ul
             ref={suggestionsRef}
@@ -199,8 +189,7 @@ export default function Home() {
                 style={{ cursor: "pointer" }}
                 onClick={() => handleSuggestionClick(movie)}
               >
-                <strong>{movie.title}</strong>{" "}
-                {movie.year ? `(${movie.year})` : ""}
+                <strong>{movie.title}</strong> {movie.year ? `(${movie.year})` : ""}
               </li>
             ))}
           </ul>
@@ -213,26 +202,14 @@ export default function Home() {
           <h2 className="mt-3 mb-3 text-center">Newly Added Films</h2>
           <Row>
             {newlyAdded.map((item) => (
-              <Col
-                key={item.id ?? item.url}
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                className="mb-4"
-              >
+              <Col key={item.id ?? item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <Link
-                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(
-                    item.film,
-                    item.tmdb_id
-                  )}`}
+                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(item.film, item.tmdb_id)}`}
                   className="text-decoration-none"
                 >
-                  <div className={styles.imagewrapper + " position-relative"}>
+                  <div className={`${styles.imagewrapper} position-relative`}>
                     <Image
-                      src={decodeURIComponent(
-                        item.image_url || "/images/fallback.jpg"
-                      )}
+                      src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
                       alt={item.film}
                       width={200}
                       height={300}
@@ -252,26 +229,14 @@ export default function Home() {
           <h2 className="mt-3 mb-3 text-center">Newly Reviewed Films</h2>
           <Row>
             {newlyReviewed.map((item) => (
-              <Col
-                key={item.id ?? item.url}
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                className="mb-4"
-              >
+              <Col key={item.id ?? item.url} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <Link
-                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(
-                    item.film,
-                    item.tmdb_id
-                  )}`}
+                  href={`/genre/${slugifyGenre(item.genre)}/${slugify(item.film, item.tmdb_id)}`}
                   className="text-decoration-none"
                 >
-                  <div className={styles.imagewrapper + " position-relative"}>
+                  <div className={`${styles.imagewrapper} position-relative`}>
                     <Image
-                      src={decodeURIComponent(
-                        item.image_url || "/images/fallback.jpg"
-                      )}
+                      src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
                       alt={item.film}
                       width={200}
                       height={300}

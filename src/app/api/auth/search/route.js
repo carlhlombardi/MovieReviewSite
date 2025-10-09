@@ -6,7 +6,7 @@ export async function GET(req) {
   const API_KEY = process.env.TMDB_API_KEY;
   const BASE_URL = "https://api.themoviedb.org/3";
 
-  // 🧭 Helper to format movie details consistently
+  // 🧭 Helper: Format movie response
   const formatMovie = (movie, credits) => {
     const director = credits.crew?.find((p) => p.job === "Director")?.name || "Unknown";
 
@@ -28,7 +28,9 @@ export async function GET(req) {
       movie.production_companies?.map((p) => p.name).filter(Boolean).join(", ") || "Unknown";
 
     const genre = movie.genres?.[0]?.name?.toLowerCase() || "unknown";
+
     const run_time = movie.runtime || null;
+
     const url = movie.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -53,7 +55,7 @@ export async function GET(req) {
     };
   };
 
-  // 🎯 CASE 1: Fetch single movie by ID
+  // 🎯 CASE 1: Fetch single movie by TMDB ID
   if (movieId) {
     try {
       const movieRes = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`);
@@ -72,7 +74,7 @@ export async function GET(req) {
         }
       );
     } catch (error) {
-      console.error("Movie fetch error:", error);
+      console.error("❌ Movie fetch error:", error);
       return new Response(JSON.stringify({ error: "Failed to fetch movie details" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -80,7 +82,7 @@ export async function GET(req) {
     }
   }
 
-  // 🎯 CASE 2: Search by query
+  // 🎯 CASE 2: Search by movie title (exact match)
   if (!query) {
     return new Response(JSON.stringify({ results: [] }), {
       status: 200,
@@ -92,6 +94,7 @@ export async function GET(req) {
     const searchRes = await fetch(
       `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}`
     );
+    if (!searchRes.ok) throw new Error("Search failed");
     const searchData = await searchRes.json();
 
     const exactMatches = (searchData.results || []).filter(
@@ -122,7 +125,7 @@ export async function GET(req) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Search fetch error:", error);
+    console.error("❌ Search fetch error:", error);
     return new Response(JSON.stringify({ error: "Search failed" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
