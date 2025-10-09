@@ -35,10 +35,11 @@ export async function GET(req, { params }) {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     const { rows } = await sql`
-      SELECT id, title, genre, image_url, url, seenit, created_at
-      FROM allmovies
-      WHERE username = ${username} AND seenit = TRUE
-      ORDER BY created_at DESC
+      SELECT a.film, a.genre, a.image_url, a.url, s.seenit, s.created_at
+      FROM allmovies a
+      JOIN seenit s ON a.url = s.url AND a.username = s.username
+      WHERE a.username = ${username} AND s.seenit = TRUE
+      ORDER BY s.created_at DESC
       LIMIT ${limit};
     `;
     return new Response(
@@ -75,15 +76,23 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update seen movie in allmovies
+    // ✅ Add or update movie details in allmovies
     await sql`
-      INSERT INTO allmovies (username, url, film, genre, seenit, image_url)
-      VALUES (${username}, ${url}, ${film}, ${genre}, ${seenit}, ${image_url})
+      INSERT INTO allmovies (username, url, film, genre, image_url)
+      VALUES (${username}, ${url}, ${film}, ${genre}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
         film = EXCLUDED.film,
         genre = EXCLUDED.genre,
-        image_url = EXCLUDED.image_url,
+        image_url = EXCLUDED.image_url;
+    `;
+
+    // ✅ Add or update seenit status in seenit table
+    await sql`
+      INSERT INTO seenit (username, url, seenit)
+      VALUES (${username}, ${url}, ${seenit})
+      ON CONFLICT (username, url)
+      DO UPDATE SET
         seenit = EXCLUDED.seenit;
     `;
 
