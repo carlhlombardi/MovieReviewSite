@@ -22,15 +22,12 @@ const GenrePage = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(
-          `https://movie-review-site-seven.vercel.app/api/data/${genre}movies`
-        );
+        const res = await fetch(`/api/data/${genre}`);
         if (!res.ok) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
         const json = await res.json();
-        console.log("Fetched data for genre", genre, json);
-        setData(json);
+        setData(json.movies ?? []);
       } catch (err) {
         console.error("Error fetching genre data:", err);
         setError(err.message);
@@ -39,7 +36,6 @@ const GenrePage = () => {
         setLoading(false);
       }
     };
-
     if (genre) {
       fetchGenreData();
     }

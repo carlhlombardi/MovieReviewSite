@@ -10,9 +10,7 @@ const slugifyGenre = (genre) =>
   genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
 const fetchData = async (genre, url) => {
-  const genreSlug = slugifyGenre(genre);
-  const genreTable = `${genreSlug}movies`;
-  const res = await fetch(`/api/data/${genreTable}?url=${encodeURIComponent(url)}`);
+  const res = await fetch(`/api/data/${genre}?url=${encodeURIComponent(url)}`);
   if (!res.ok) throw new Error("Failed to fetch movie data");
   return await res.json();
 };
@@ -25,14 +23,13 @@ export const toggleOwnIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          isliked: movieData.isliked ?? true,
+          isliked: true,
           likedcount: movieData.likedcount ?? 0,
-          title: movieData.film,
+          title: movieData.title ?? movieData.film,
           genre: movieData.genre,
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
-
   const res = await fetch(endpoint, {
     method: action === "like" ? "POST" : "DELETE",
     credentials: "include",
@@ -50,14 +47,13 @@ export const toggleWantIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          title: movieData.film,
+          title: movieData.title ?? movieData.film,
           genre: movieData.genre,
-          iswatched: movieData.iswatched ?? true,
+          iswatched: true,
           watchcount: movieData.watchcount ?? 0,
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
-
   const res = await fetch(endpoint, {
     method: action === "add" ? "POST" : "DELETE",
     credentials: "include",
@@ -76,13 +72,12 @@ export const toggleSeenIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          title: movieData.film,
+          title: movieData.title ?? movieData.film,
           genre: movieData.genre,
           seenit: true,
           image_url: movieData.image_url,
         }
       : { url: movieData.url };
-
   const res = await fetch(endpoint, {
     method: action === "seen" ? "POST" : "DELETE",
     credentials: "include",
