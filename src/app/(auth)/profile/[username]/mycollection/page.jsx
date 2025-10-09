@@ -31,7 +31,7 @@ export default function MyCollectionPage() {
   if (error)
     return (
       <Container className="py-4">
-        <p>Error: {error}</p>
+        <p>Error {error}</p>
       </Container>
     );
 
