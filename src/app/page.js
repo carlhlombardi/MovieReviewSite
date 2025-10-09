@@ -128,7 +128,7 @@ export default function Home() {
       const year = Number(movieData.year) || null;
       const genre = movieData.genre || "Unknown";
       const genreSlug = slugifyGenre(genre);
-      const slugifiedUrl = slugify(movieData.title, movieData.id);
+      const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
 
       // 📝 Payload aligned with your table schema
       const payload = {
