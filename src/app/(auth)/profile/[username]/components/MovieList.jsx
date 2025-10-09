@@ -1,26 +1,45 @@
 'use client';
+import { Row, Col } from 'react-bootstrap';
 import Link from 'next/link';
 import Image from 'next/image';
+import styles from './MovieList.module.css';
 
-export default function MovieList({ movies }) {
-  if (movies.length === 0) return <p className="text-muted">No movies yet.</p>;
+export default function MovieList({ movies = [] }) {
+  if (!movies || movies.length === 0) {
+    return <p className="text-center text-muted my-3">No movies to show.</p>;
+  }
 
   return (
-    <div className="d-flex flex-wrap gap-3">
+    <Row>
       {movies.map((movie) => (
-        <div key={movie.id} style={{ width: 150 }}>
-          <Link href={`/genre/${encodeURIComponent(movie.genre)}/${encodeURIComponent(movie.title)}`}>
-            <Image
-              src={movie.poster_url || '/images/placeholder.png'}
-              alt={movie.title}
-              width={150}
-              height={225}
-              style={{ objectFit: 'cover', borderRadius: 8 }}
-            />
+        <Col
+          key={movie.tmdb_id ?? movie.id}
+          xs={6} sm={4} md={3} lg={2}
+          className="mb-4 text-center"
+        >
+          <Link
+            href={`/genre/${movie.genre}/${encodeURIComponent(movie.url)}`}
+            className="text-decoration-none"
+          >
+            <div className={styles.imageWrapper}>
+              <Image
+                src={
+                  movie.image_url
+                    ? decodeURIComponent(movie.image_url)
+                    : '/images/fallback.jpg'
+                }
+                alt={movie.film}
+                width={200}
+                height={300}
+                className="img-fluid rounded"
+              />
+              <div className={styles.overlay}>
+                <span className={styles.title}>{movie.film}</span>
+              </div>
+            </div>
           </Link>
-          <p className="mt-2 text-center text-truncate">{movie.title}</p>
-        </div>
+        </Col>
       ))}
-    </div>
+    </Row>
   );
 }
