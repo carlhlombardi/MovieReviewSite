@@ -445,6 +445,70 @@ export default function ProfilePage() {
   </Card.Body>
 </Card>
 
+{/* ─── Activity Feed Tabs ───────────────────────────── */}
+<Card className="mb-4">
+  <Card.Body>
+    <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
+      {/* Recent Activity */}
+      <Tab eventKey="recent" title="Your Recent Activity">
+        {recentActivity.length > 0 ? (
+          <ul className="list-unstyled">
+            {recentActivity.map((act, idx) => (
+              <li key={idx} className="mb-2 border-bottom pb-2">
+                <strong>{act.username}</strong> {act.action}
+                {act.film && (
+                  <>
+                    {' '}
+                    <Link href={`/genre/${act.genre}/${encodeURIComponent(act.url)}`}>
+                      {act.film}
+                    </Link>
+                  </>
+                )}
+                <br />
+                <small className="text-muted">
+                  {new Date(act.created_at).toLocaleString()}
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">No recent activity yet.</p>
+        )}
+      </Tab>
+
+      {/* Followers Activity */}
+      <Tab eventKey="following" title="Followers Recent Activity">
+        {followingActivity.length > 0 ? (
+          <ul className="list-unstyled">
+            {followingActivity.map((act, idx) => (
+              <li key={idx} className="mb-2 border-bottom pb-2">
+                <Link href={`/profile/${act.username}`}>
+                  <strong>{act.username}</strong>
+                </Link>{' '}
+                {act.action}
+                {act.film && (
+                  <>
+                    {' '}
+                    <Link href={`/genre/${act.genre}/${encodeURIComponent(act.url)}`}>
+                      {act.film}
+                    </Link>
+                  </>
+                )}
+                <br />
+                <small className="text-muted">
+                  {new Date(act.created_at).toLocaleString()}
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted">No activity from people you follow yet.</p>
+        )}
+      </Tab>
+    </Tabs>
+  </Card.Body>
+</Card>
+
 
       {/* ─── Movies Tabs ───────────────────────────── */}
       <Card className="mb-4">
