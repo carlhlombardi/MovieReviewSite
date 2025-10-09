@@ -25,7 +25,7 @@ const GENRE_DISPLAY_NAMES = {
   romance: "Romance Films",
   sciencefiction: "Science Fiction Films",
   thriller: "Thriller Films",
-  tvmovie: "Made For TV",
+  tvmovie: "Made For TV Films",
   war: "War Films",
   western: "Western Films"
   };
