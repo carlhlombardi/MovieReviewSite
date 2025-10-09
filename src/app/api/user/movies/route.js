@@ -1,7 +1,7 @@
 import { sql } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 
-// 🟡 GET: Get all or specific user movie entry
+// 🟡 GET: Get all or specific user movie entry WITH JOIN
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -14,15 +14,31 @@ export async function GET(req) {
 
     let result;
     if (tmdb_id) {
+      // Get one movie for user
       result = await sql`
-        SELECT * FROM user_movies 
-        WHERE username = ${username} AND tmdb_id = ${tmdb_id};
+        SELECT 
+          um.*,
+          am.film,
+          am.genre,
+          am.image_url,
+          am.url
+        FROM user_movies um
+        JOIN allmovies am ON um.tmdb_id = am.tmdb_id
+        WHERE um.username = ${username} AND um.tmdb_id = ${tmdb_id};
       `;
     } else {
+      // Get all movies for user
       result = await sql`
-        SELECT * FROM user_movies 
-        WHERE username = ${username}
-        ORDER BY created_at DESC;
+        SELECT 
+          um.*,
+          am.film,
+          am.genre,
+          am.image_url,
+          am.url
+        FROM user_movies um
+        JOIN allmovies am ON um.tmdb_id = am.tmdb_id
+        WHERE um.username = ${username}
+        ORDER BY um.created_at DESC;
       `;
     }
 
@@ -32,6 +48,7 @@ export async function GET(req) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
 
 // 🟢 POST: Insert or update a user's movie interaction
 export async function POST(req) {
