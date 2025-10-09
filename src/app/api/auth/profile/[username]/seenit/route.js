@@ -33,12 +33,6 @@ export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    const { rows } = await sql`
-      SELECT id, title, genre, image_url, url, seenit, created_at
-      FROM seenit
-      WHERE username = ${username} AND seenit = TRUE
-      ORDER BY created_at DESC;
-    `;
 
     return new Response(
       JSON.stringify({ movies: rows, total: rows.length }),
@@ -74,9 +68,9 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update seen movie
+    // ✅ Add or update seen movie in allmovies
     await sql`
-      INSERT INTO seenit (username, url, title, genre, seenit, image_url)
+      INSERT INTO allmovies (username, url, title, genre, seenit, image_url)
       VALUES (${username}, ${url}, ${title}, ${genre}, ${seenit}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
@@ -116,16 +110,17 @@ export async function DELETE(req, { params }) {
     }
 
     // 📝 Get movie title before deleting
+    // 📝 Get movie title before deleting
     const { rows } = await sql`
-      SELECT title FROM seenit
+      SELECT title FROM allmovies
       WHERE username = ${username} AND url = ${url}
       LIMIT 1;
     `;
     const movie = rows[0];
 
-    // ✅ Delete from seenit
+    // ✅ Delete from allmovies
     await sql`
-      DELETE FROM seenit
+      DELETE FROM allmovies
       WHERE username = ${username} AND url = ${url};
     `;
 

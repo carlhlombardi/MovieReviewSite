@@ -33,12 +33,6 @@ export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    const { rows } = await sql`
-      SELECT title, genre, image_url, url, iswatched, watchcount
-      FROM wantedforcollection
-      WHERE username = ${username}
-      ORDER BY title;
-    `;
 
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
@@ -72,9 +66,9 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update in wantedforcollection
+    // ✅ Add or update in allmovies
     await sql`
-      INSERT INTO wantedforcollection (username, url, title, genre, iswatched, watchcount, image_url)
+      INSERT INTO allmovies (username, url, title, genre, iswatched, watchcount, image_url)
       VALUES (${username}, ${url}, ${title}, ${genre}, ${iswatched}, ${watchcount}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
@@ -115,16 +109,17 @@ export async function DELETE(req, { params }) {
     }
 
     // 📝 Get movie title for activity log
+    // 📝 Get movie title for activity log
     const { rows } = await sql`
-      SELECT title FROM wantedforcollection
+      SELECT title FROM allmovies
       WHERE username = ${username} AND url = ${url}
       LIMIT 1;
     `;
     const movie = rows[0];
 
-    // ✅ Delete from wantedforcollection
+    // ✅ Delete from allmovies
     await sql`
-      DELETE FROM wantedforcollection
+      DELETE FROM allmovies
       WHERE username = ${username} AND url = ${url};
     `;
 

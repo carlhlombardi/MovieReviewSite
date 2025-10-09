@@ -32,8 +32,8 @@ export async function GET(req, { params }) {
   try {
     const { rows } = await sql`
       SELECT title, genre, image_url, url, isliked, likedcount
-      FROM mycollection
-      WHERE username = ${username}
+      FROM allmovies
+      WHERE username = ${username} AND isliked = TRUE
       ORDER BY title;
     `;
 
@@ -65,9 +65,9 @@ export async function POST(req, { params }) {
       );
     }
 
-    // 📝 Upsert movie in collection
+    // 📝 Upsert movie in allmovies
     await sql`
-      INSERT INTO mycollection (username, title, genre, image_url, url, isliked, likedcount)
+      INSERT INTO allmovies (username, title, genre, image_url, url, isliked, likedcount)
       VALUES (${username}, ${title}, ${genre}, ${image_url}, ${url}, ${isliked}, ${likedcount})
       ON CONFLICT (username, url)
       DO UPDATE SET
@@ -115,7 +115,7 @@ export async function DELETE(req, { params }) {
 
     // 📝 Get title for activity log before delete
     const { rows } = await sql`
-      SELECT title FROM mycollection
+      SELECT title FROM allmovies
       WHERE username = ${username} AND url = ${url}
       LIMIT 1;
     `;
@@ -123,7 +123,7 @@ export async function DELETE(req, { params }) {
 
     // ❌ Remove from collection
     await sql`
-      DELETE FROM mycollection
+      DELETE FROM allmovies
       WHERE username = ${username} AND url = ${url};
     `;
 
