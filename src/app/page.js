@@ -120,7 +120,7 @@ export default function Home() {
       const apiResponse = await res.json();
       const movieData = apiResponse.results?.[0];
 
-      if (!movieData || !movieData.title || !movieData.release_date) {
+      if (!movieData || !movieData.title || !movieData.year) {
         alert("Movie data is incomplete.");
         return;
       }
