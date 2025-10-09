@@ -86,7 +86,7 @@ const GenrePage = () => {
         <Col>
           <label className="me-2">Sort by:</label>
           <div className="d-flex flex-wrap justify-content-center">
-            {['title', 'year', 'studios', 'my_rating'].map((criteria) => (
+            {['film', 'year', 'studio', 'my_rating'].map((criteria) => (
               <Button
                 key={criteria}
                 variant={sortCriteria === criteria ? "primary" : "secondary"}
