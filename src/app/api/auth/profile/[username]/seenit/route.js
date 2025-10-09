@@ -31,9 +31,16 @@ async function verifyUser(req, username) {
 /** 🟡 GET — Public (fetch seen movies) */
 export async function GET(req, { params }) {
   const { username } = params;
-
   try {
-
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const { rows } = await sql`
+      SELECT id, title, genre, image_url, url, seenit, created_at
+      FROM allmovies
+      WHERE username = ${username} AND seenit = TRUE
+      ORDER BY created_at DESC
+      LIMIT ${limit};
+    `;
     return new Response(
       JSON.stringify({ movies: rows, total: rows.length }),
       { status: 200 }
