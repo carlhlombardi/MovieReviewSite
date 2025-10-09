@@ -308,10 +308,9 @@ export default function ProfilePage() {
       <FollowTabs followers={followers} following={following} />
 
       {/* Activity */}
-
-{!isSelf && loggedInUser && (
-<ActivityTabs recent={recentActivity} following={followingActivity} />
-          )}
+       {isSelf && (
+    <ActivityTabs recent={recentActivity} following={followingActivity} />
+  )}
 
       {/* Movies */}
       <MovieTabs
