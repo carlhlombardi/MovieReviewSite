@@ -45,6 +45,7 @@ export function useCollection(username) {
           }));
 
         console.log("Fetched movies:", userMovies);
+        console.log("Filtered & normalized collection:", collectionMovies);
 
 
         setMovies(collectionMovies);
