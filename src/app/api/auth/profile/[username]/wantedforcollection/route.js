@@ -38,7 +38,7 @@ export async function GET(req, { params }) {
       SELECT a.film, a.genre, a.image_url, a.url, w.iswatched, w.watchcount
       FROM allmovies a
       JOIN wantedforcollection w ON a.url = w.url AND a.username = w.username
-      WHERE a.username = ${username} AND w.iswatched = TRUE
+      WHERE w.username = ${username} AND w.iswatched = TRUE
       ORDER BY a.film
       LIMIT ${limit};
     `;
