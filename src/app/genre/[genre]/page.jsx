@@ -18,28 +18,29 @@ const GenrePage = () => {
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
   useEffect(() => {
-    const fetchGenreData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`/api/data/${genre}`);
-        if (!res.ok) {
-          throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
-        }
-        const json = await res.json();
-        setData(json.movies ?? []);
-      } catch (err) {
-        console.error("Error fetching genre data:", err);
-        setError(err.message);
-        setData([]);
-      } finally {
-        setLoading(false);
+const fetchGenreData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`/api/data/${genre}`);
+      if (!res.ok) {
+        throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
       }
-    };
-    if (genre) {
-      fetchGenreData();
+      const json = await res.json();
+      console.log("Fetched genre data:", json);
+
+      const movies = Array.isArray(json) ? json : json.movies ?? [];
+      setData(movies);
+    } catch (err) {
+      console.error("Error fetching genre data:", err);
+      setError(err.message);
+      setData([]);
+    } finally {
+      setLoading(false);
     }
-  }, [genre]);
+  };
+  if (genre) fetchGenreData();
+}, [genre]);
 
   useEffect(() => {
     const sorted = [...data].sort((a, b) => {
@@ -101,42 +102,32 @@ const GenrePage = () => {
       </Row>
 
       <Row>
-        {sortedItems.length > 0 ? (
-          sortedItems.map((item) => {
-            if (!item.url) {
-              // skip items without a URL
-              return null;
-            }
-            // Use item.id as key, fallback to item.tmdb_id if needed
-            const key = item.id || item.tmdb_id || item.url;
-            // Use fallback image if image_url is missing or empty
-            const imageSrc = item.image_url && item.image_url.trim() !== "" ? decodeURIComponent(item.image_url) : "/images/fallback.jpg";
-            return (
-              <Col key={key} xs={12} sm={6} md={4} lg={3} className="mb-4">
-                <Link
-                  href={`/genre/${genre}/${encodeURIComponent(item.url)}`}
-                  className="text-decoration-none"
-                >
-                  <div className={styles.imagewrapper}>
-                    <Image
-                      src={imageSrc}
-                      alt={item.film}
-                      width={200}
-                      height={300}
-                      className="img-fluid rounded"
-                    />
-                  </div>
-                </Link>
-              </Col>
-            );
-          })
-        ) : (
-          <Col>
-            <p className="text-center">
-              No movies available in this genre.
-            </p>
-          </Col>
-        )}
+ {sortedItems.length > 0 ? (
+  sortedItems.map((item) => {
+    const key = item.id || item.tmdb_id || item.url;
+    const imageSrc = item.image_url && item.image_url.trim() !== "" 
+      ? item.image_url 
+      : "/images/fallback.jpg";
+
+    return (
+      <Col key={key} xs={12} sm={6} md={4} lg={3} className="mb-4">
+        <Link href={`/genre/${genre}/${encodeURIComponent(item.url)}`} className="text-decoration-none">
+          <div className={styles.imagewrapper}>
+            <Image
+              src={imageSrc}
+              alt={item.film}
+              width={200}
+              height={300}
+              className="img-fluid rounded"
+            />
+          </div>
+        </Link>
+      </Col>
+    );
+  })
+) : (
+  <Col><p className="text-center">No movies available in this genre.</p></Col>
+)}
       </Row>
     </Container>
   );

@@ -35,7 +35,7 @@ export async function GET(req, { params }) {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     const { rows } = await sql`
-      SELECT a.film, a.genre, a.image_url, a.url, w.iswatched, w.watchcount
+      SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters, a.producer, a.image_url, a.genre, a.review, a.studio, a.director, a.tmdb_id, a.url, w.iswatched, w.watchcount
       FROM allmovies a
       JOIN wantedforcollection w ON a.url = w.url AND a.username = w.username
       WHERE w.username = ${username} AND w.iswatched = TRUE
@@ -76,13 +76,22 @@ export async function POST(req, { params }) {
 
     // ✅ Add or update in allmovies (movie details only)
     await sql`
-      INSERT INTO allmovies (username, url, film, genre, image_url)
-      VALUES (${username}, ${url}, ${film}, ${genre}, ${image_url})
+      INSERT INTO allmovies (username, url, film, year, run_time, my_rating, screenwriters, producer, image_url, genre, review, studio, director, tmdb_id)
+      VALUES (${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating}, ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review}, ${studio}, ${director}, ${tmdb_id})
       ON CONFLICT (username, url)
       DO UPDATE SET
         film = EXCLUDED.film,
+        year = EXCLUDED.year,
+        run_time = EXCLUDED.run_time,
+        my_rating = EXCLUDED.my_rating,
+        screenwriters = EXCLUDED.screenwriters,
+        producer = EXCLUDED.producer,
+        image_url = EXCLUDED.image_url,
         genre = EXCLUDED.genre,
-        image_url = EXCLUDED.image_url;
+        review = EXCLUDED.review,
+        studio = EXCLUDED.studio,
+        director = EXCLUDED.director,
+        tmdb_id = EXCLUDED.tmdb_id;
     `;
 
     // ✅ Add or update in wantedforcollection (iswatched, watchcount)
