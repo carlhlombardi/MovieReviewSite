@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import pool from "@/lib/db"; // ← your Postgres connection
+import pkg from "pg";
+const { Pool } = pkg;
 
-// 🟡 GET: Get user movie data (all or single)
+// 🧰 Create DB pool directly here (no lib/db)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // ⬅️ Make sure this is set in .env.local
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
+
+// 🟡 GET: Get user movie data (all or specific)
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const username = searchParams.get("username");
@@ -14,13 +21,11 @@ export async function GET(req) {
   try {
     let result;
     if (tmdb_id) {
-      // Get specific movie for user
       result = await pool.query(
         `SELECT * FROM user_movies WHERE username = $1 AND tmdb_id = $2`,
         [username, tmdb_id]
       );
     } else {
-      // Get all movies for user
       result = await pool.query(
         `SELECT * FROM user_movies WHERE username = $1 ORDER BY created_at DESC`,
         [username]
@@ -34,25 +39,25 @@ export async function GET(req) {
   }
 }
 
-// 🟢 POST: Add or update movie interaction
+// 🟢 POST: Add or update movie interaction (like, seen, wanted, rating, review)
 export async function POST(req) {
-  const body = await req.json();
-  const {
-    username,
-    tmdb_id,
-    is_liked = false,
-    is_seen = false,
-    is_wanted = false,
-    watch_count = 0,
-    personal_rating = null,
-    personal_review = null,
-  } = body;
-
-  if (!username || !tmdb_id) {
-    return NextResponse.json({ error: "Missing username or tmdb_id" }, { status: 400 });
-  }
-
   try {
+    const body = await req.json();
+    const {
+      username,
+      tmdb_id,
+      is_liked = false,
+      is_seen = false,
+      is_wanted = false,
+      watch_count = 0,
+      personal_rating = null,
+      personal_review = null,
+    } = body;
+
+    if (!username || !tmdb_id) {
+      return NextResponse.json({ error: "Missing username or tmdb_id" }, { status: 400 });
+    }
+
     await pool.query(
       `INSERT INTO user_movies (username, tmdb_id, is_liked, is_seen, is_wanted, watch_count, personal_rating, personal_review)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
@@ -89,7 +94,6 @@ export async function DELETE(req) {
       `DELETE FROM user_movies WHERE username = $1 AND tmdb_id = $2`,
       [username, tmdb_id]
     );
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE user_movies error:", error);
