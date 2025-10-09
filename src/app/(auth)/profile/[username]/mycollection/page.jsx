@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Container } from "react-bootstrap";
 import { useParams } from "next/navigation";
 import { useCollection } from "./hooks/useCollection";
-import CollectionHero from "./components/CollectionHero";
+import CollectionHeader from "./components/CollectionHero";
 import CollectionSortBar from "./components/CollectionSortBar";
 import CollectionGrid from "./components/CollectionGrid";
 
@@ -37,11 +37,8 @@ export default function MyCollectionPage() {
 
   return (
     <Container className="py-4">
-      <CollectionHero username={username} />
-      <CollectionSortBar
-        sortCriteria={sortCriteria}
-        setSortCriteria={setSortCriteria}
-      />
+      <CollectionHeader username={username} />
+      <CollectionSortBar sortCriteria={sortCriteria} setSortCriteria={setSortCriteria} />
       <CollectionGrid movies={sortedMovies} />
     </Container>
   );
