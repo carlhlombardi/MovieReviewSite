@@ -4,8 +4,8 @@ import React from 'react';
 import { Container } from 'react-bootstrap';
 import { useParams } from 'next/navigation';
 
-import useCollection from './hooks/useCollection';
-import useSortedMovies from './hooks/useSortedMovies';
+import { useCollection } from "./hooks/useCollection";
+import { useSortedMovies } from './hooks/useSortedMovies';
 import CollectionHeader from './components/CollectionHeader';
 import MovieGrid from './components/MovieGrid';
 import Loading from './components/Loading';
