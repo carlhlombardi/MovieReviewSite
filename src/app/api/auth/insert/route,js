@@ -1,10 +1,4 @@
 export async function POST(req, { params }) {
-  const genreSegment = params.genre.toLowerCase();
-
-  if (!allowedTables.includes(genreSegment)) {
-    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
-  }
-
   try {
     let {
       title,
@@ -54,7 +48,8 @@ export async function POST(req, { params }) {
       url = slugify(title, tmdb_id);
     }
 
-    const existing = await sql.query(`SELECT 1 FROM ${genreSegment} WHERE url = $1`, [url]);
+    // Check existing in allmovies
+    const existing = await sql.query(`SELECT 1 FROM allmovies WHERE url = $1 AND genre = $2`, [url, genreSlug]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
     }
@@ -65,24 +60,15 @@ export async function POST(req, { params }) {
     }
 
     await sql.query(
-  `INSERT INTO ${genreSegment} 
-     (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-   VALUES 
-     ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-  [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
-);
-
-// also insert into allmovies
-await sql.query(
-  `INSERT INTO allmovies 
-     (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-   VALUES 
-     ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-   ON CONFLICT (tmdb_id, genre) DO UPDATE
-     SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
-         producer=$6, run_time=$7, url=$8, image_url=$9`,  // optional upsert
-  [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
-);
+      `INSERT INTO allmovies 
+         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
+       VALUES 
+         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT (tmdb_id, genre) DO UPDATE
+         SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
+             producer=$6, run_time=$7, url=$8, image_url=$9`,
+      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
+    );
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
   } catch (error) {
