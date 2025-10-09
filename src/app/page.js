@@ -35,7 +35,7 @@ export default function Home() {
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // Fetch last 8 added movies
+  // 🟡 Fetch last 8 added movies
   useEffect(() => {
     const fetchNewlyAdded = async () => {
       try {
@@ -44,13 +44,13 @@ export default function Home() {
         const data = await res.json();
         setNewlyAdded(data.results || []);
       } catch (err) {
-        console.error("Could not load newly added movies");
+        console.error("❌ Could not load newly added movies");
       }
     };
     fetchNewlyAdded();
   }, []);
 
-  // Fetch last 8 reviewed movies (review not null/blank)
+  // 🟡 Fetch last 8 reviewed movies (review not null/blank)
   useEffect(() => {
     const fetchNewlyReviewed = async () => {
       try {
@@ -59,13 +59,13 @@ export default function Home() {
         const data = await res.json();
         setNewlyReviewed(data.results || []);
       } catch (err) {
-        console.error("Could not load newly reviewed movies");
+        console.error("❌ Could not load newly reviewed movies");
       }
     };
     fetchNewlyReviewed();
   }, []);
 
-  // Handle input change and fetch suggestions
+  // 🟡 Handle input change and fetch suggestions
   const handleInputChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -85,12 +85,12 @@ export default function Home() {
       setSuggestions(data.results || []);
       setShowSuggestions(true);
     } catch (err) {
-      console.error("Suggestion fetch error");
+      console.error("❌ Suggestion fetch error");
       setSuggestions([]);
     }
   };
 
-  // Hide suggestions on outside click
+  // 🟡 Hide suggestions on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -106,12 +106,13 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle suggestion click: fetch details, insert into allmovies, and redirect
+  // 🟡 Handle suggestion click: fetch details, insert into DB, and redirect
   const handleSuggestionClick = async (movie) => {
     setSearchQuery(movie.title);
     setShowSuggestions(false);
 
     try {
+      // Fetch full movie details
       const res = await fetch(
         `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
       );
@@ -120,22 +121,40 @@ export default function Home() {
       const apiResponse = await res.json();
       const movieData = apiResponse.results?.[0];
 
-      if (!movieData || !movieData.title || !movieData.year) {
+      if (!movieData || !movieData.title || !movieData.release_date) {
         alert("Movie data is incomplete.");
         return;
       }
 
-      const genreSlug = slugifyGenre(movieData.genre);
-      const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
+      const year = Number(movieData.release_date.split("-")[0]) || null;
+      const genreSlug = slugifyGenre(movieData.genre || "unknown");
+      const slugifiedUrl = slugify(movieData.title, movieData.id);
 
-      // ✅ INSERT INTO ALLMOVIES ONLY
-      const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
+      // ✅ Map data to match your allmovies table
+      const payload = {
+        film: movieData.title,
+        year: year,
+        tmdb_id: movieData.id,
+        run_time: movieData.runtime || null,
+        my_rating: null,
+        screenwriters: movieData.screenwriters || "",
+        producer: movieData.producer || "",
+        image_url: movieData.poster_path
+          ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+          : "/images/fallback.jpg",
+        genre: movieData.genre || "Unknown",
+        review: "",
+        url: slugifiedUrl,
+        studio: movieData.production_companies?.[0]?.name || "",
+        director: movieData.director || "",
+      };
+
+      console.log("📦 Inserting movie:", payload);
+
+      const insertRes = await fetch(`${API_URL}/api/data/${genreSlug}movies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...movieData,
-          url: slugifiedUrl,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!insertRes.ok) {
@@ -144,10 +163,10 @@ export default function Home() {
         return;
       }
 
-      // ✅ Redirect to genre page
+      // ✅ Redirect to movie page
       router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
     } catch (error) {
-      console.error("Error adding movie", error);
+      console.error("❌ Error adding movie:", error);
       alert("An unexpected error occurred.");
     }
   };
@@ -182,21 +201,22 @@ export default function Home() {
                 style={{ cursor: "pointer" }}
                 onClick={() => handleSuggestionClick(movie)}
               >
-                <strong>{movie.title}</strong> ({movie.year})
+                <strong>{movie.title}</strong>{" "}
+                {movie.year ? `(${movie.year})` : ""}
               </li>
             ))}
           </ul>
         )}
       </Form>
 
-      {/* Newly Added Section */}
+      {/* 🟡 Newly Added Section */}
       {newlyAdded.length > 0 && (
         <div>
           <h2 className="mt-3 mb-3 text-center">Newly Added Films</h2>
           <Row>
             {newlyAdded.map((item) => (
               <Col
-                key={item.id ?? item.row_id ?? item.url}
+                key={item.id ?? item.url}
                 xs={12}
                 sm={6}
                 md={4}
@@ -212,9 +232,11 @@ export default function Home() {
                 >
                   <div className={styles.imagewrapper + " position-relative"}>
                     <Image
-                      src={decodeURIComponent(
-                        item.image_url || "/images/fallback.jpg"
-                      )}
+                      src={
+                        decodeURIComponent(
+                          item.image_url || "/images/fallback.jpg"
+                        )
+                      }
                       alt={item.film}
                       width={200}
                       height={300}
@@ -228,14 +250,14 @@ export default function Home() {
         </div>
       )}
 
-      {/* Newly Reviewed Section */}
+      {/* 🟡 Newly Reviewed Section */}
       {newlyReviewed.length > 0 && (
         <div>
           <h2 className="mt-3 mb-3 text-center">Newly Reviewed Films</h2>
           <Row>
             {newlyReviewed.map((item) => (
               <Col
-                key={item.id ?? item.row_id ?? item.url}
+                key={item.id ?? item.url}
                 xs={12}
                 sm={6}
                 md={4}
@@ -251,9 +273,11 @@ export default function Home() {
                 >
                   <div className={styles.imagewrapper + " position-relative"}>
                     <Image
-                      src={decodeURIComponent(
-                        item.image_url || "/images/fallback.jpg"
-                      )}
+                      src={
+                        decodeURIComponent(
+                          item.image_url || "/images/fallback.jpg"
+                        )
+                      }
                       alt={item.film}
                       width={200}
                       height={300}
