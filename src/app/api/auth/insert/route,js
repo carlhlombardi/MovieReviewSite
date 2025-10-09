@@ -1,8 +1,9 @@
-import { sql } from '@vercel/postgres';
-import { NextResponse } from 'next/server';
+import { sql } from "@vercel/postgres";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
+    // 📨 Parse incoming JSON
     let {
       film,
       year,
@@ -17,15 +18,22 @@ export async function POST(req) {
       image_url,
     } = await req.json();
 
-    // 🛑 Required fields check
-    if (!film || !year || !tmdb_id || !genre) {
+    // 🧼 Normalize and validate required fields
+    film = (film || "").trim();
+    genre = (genre || "").trim();
+    const yearNum = Number(year);
+
+    if (!film || !genre || !tmdb_id || isNaN(yearNum)) {
       return NextResponse.json(
-        { error: 'Missing required fields: film, year, tmdb_id, or genre' },
+        {
+          error: "Missing or invalid required fields: film, year, tmdb_id, or genre",
+          received: { film, year, tmdb_id, genre },
+        },
         { status: 400 }
       );
     }
 
-    // 🧪 Slugify helper
+    // 🪄 Slug helpers
     const slugify = (title, tmdb_id) =>
       `${title}-${tmdb_id}`
         .toLowerCase()
@@ -33,28 +41,28 @@ export async function POST(req) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
 
-    const genreSlug = genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    const genreSlug = genre.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
     if (!url) {
       url = slugify(film, tmdb_id);
     }
 
-    // 🕵️ Check if movie already exists
+    // 🖼️ Fallback image if none provided
+    if (!image_url) {
+      image_url = "/images/fallback.jpg";
+    }
+
+    // 🕵️ Check if movie already exists by tmdb_id and genre
     const existing = await sql.query(
-      `SELECT 1 FROM allmovies WHERE url = $1 AND genre = $2`,
-      [url, genreSlug]
+      `SELECT id FROM allmovies WHERE tmdb_id = $1 AND genre = $2`,
+      [tmdb_id, genreSlug]
     );
 
     if (existing.rows.length > 0) {
-      return NextResponse.json({ message: 'Movie already exists' }, { status: 200 });
+      return NextResponse.json({ message: "Movie already exists" }, { status: 200 });
     }
 
-    // 🖼️ Fallback image if none provided
-    if (!image_url) {
-      image_url = '/images/fallback.jpg';
-    }
-
-    // 📝 Insert
+    // 📝 Insert new movie
     await sql.query(
       `INSERT INTO allmovies 
         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
@@ -63,13 +71,24 @@ export async function POST(req) {
        ON CONFLICT (tmdb_id, genre) DO UPDATE
         SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
             producer=$6, run_time=$7, url=$8, image_url=$9`,
-      [film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genreSlug]
+      [
+        film,
+        yearNum,
+        studio,
+        director,
+        screenwriters,
+        producer,
+        run_time,
+        url,
+        image_url,
+        tmdb_id,
+        genreSlug,
+      ]
     );
 
-    return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
-
+    return NextResponse.json({ message: "✅ Movie inserted successfully" }, { status: 201 });
   } catch (error) {
-    console.error('❌ Insert failed:', error);
+    console.error("❌ Insert failed:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
