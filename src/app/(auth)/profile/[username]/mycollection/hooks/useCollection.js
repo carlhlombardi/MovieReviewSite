@@ -32,21 +32,7 @@ export function useCollection(username) {
         }
 
         const userMovies = await res.json();
-
-        // ✅ Filter for collection and normalize shape
-        const collectionMovies = userMovies
-          .filter((m) => m.in_collection === true)
-          .map((m) => ({
-            ...m,
-            genre: m.genre || "unknown",
-            url: m.url || m.tmdb_id?.toString() || "",
-            image_url: m.image_url || "/images/fallback.jpg",
-            film: m.film || m.title || "Untitled",
-          }));
-
-        console.log("Fetched movies:", userMovies);
-        console.log("Filtered & normalized collection:", collectionMovies);
-
+        const collectionMovies = userMovies.filter((m) => m.is_liked === true);
 
         setMovies(collectionMovies);
       } catch (err) {
