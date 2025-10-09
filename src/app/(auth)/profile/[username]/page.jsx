@@ -471,7 +471,7 @@ useEffect(() => {
           <Card.Body>
             <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
               {/* ─────────────── Recent Activity ─────────────── */}
-              <Tab eventKey="recent" title="Recent Activity">
+              <Tab eventKey="recent" title="My Recent Activity">
                 {recentActivity.length > 0 ? (
                   <ul className="list-unstyled">
                     {recentActivity.map((act, idx) => (
@@ -493,7 +493,7 @@ useEffect(() => {
               </Tab>
 
               {/* ─────────────── Following Activity ─────────────── */}
-              <Tab eventKey="followingactivity" title="Following Activity">
+              <Tab eventKey="followingactivity" title="Friends Activity">
                 {followingActivity.length > 0 ? (
                   <ul className="list-unstyled">
                     {followingActivity.map((act, idx) => (
@@ -510,7 +510,7 @@ useEffect(() => {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-muted">No activity from following users.</p>
+                  <p className="text-muted">No activity from friends.</p>
                 )}
               </Tab>
             </Tabs>
