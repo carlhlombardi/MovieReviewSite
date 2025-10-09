@@ -61,27 +61,27 @@ export async function POST(req, { params }) {
   try {
     const body = await req.json();
     const {
-      title,
+      film,
       genre = '',
       image_url = '',
       url,
       seenit = true,
     } = body;
 
-    if (!title || !url) {
+    if (!film || !url) {
       return new Response(
-        JSON.stringify({ message: 'title and url are required' }),
+        JSON.stringify({ message: 'film and url are required' }),
         { status: 400 }
       );
     }
 
     // ✅ Add or update seen movie in allmovies
     await sql`
-      INSERT INTO allmovies (username, url, title, genre, seenit, image_url)
-      VALUES (${username}, ${url}, ${title}, ${genre}, ${seenit}, ${image_url})
+      INSERT INTO allmovies (username, url, film, genre, seenit, image_url)
+      VALUES (${username}, ${url}, ${film}, ${genre}, ${seenit}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
-        title = EXCLUDED.title,
+        film = EXCLUDED.film,
         genre = EXCLUDED.genre,
         image_url = EXCLUDED.image_url,
         seenit = EXCLUDED.seenit;
@@ -90,7 +90,7 @@ export async function POST(req, { params }) {
     // 📝 Log activity (now includes username)
     await sql`
       INSERT INTO activity (user_id, username, movie_title, action, source)
-      VALUES (${verified.id}, ${username}, ${title}, 'has seen', 'seenit');
+      VALUES (${verified.id}, ${username}, ${film}, 'has seen', 'seenit');
     `;
 
     return new Response(
@@ -117,9 +117,9 @@ export async function DELETE(req, { params }) {
     }
 
     // 📝 Get movie title before deleting
-    // 📝 Get movie title before deleting
+    // 📝 Get film before deleting
     const { rows } = await sql`
-      SELECT title FROM allmovies
+      SELECT film FROM allmovies
       WHERE username = ${username} AND url = ${url}
       LIMIT 1;
     `;
@@ -135,7 +135,7 @@ export async function DELETE(req, { params }) {
     if (movie) {
       await sql`
         INSERT INTO activity (user_id, username, movie_title, action, source)
-        VALUES (${verified.id}, ${username}, ${movie.title}, 'hasnt seen', 'seenit');
+        VALUES (${verified.id}, ${username}, ${movie.film}, 'hasnt seen', 'seenit');
       `;
     }
 
