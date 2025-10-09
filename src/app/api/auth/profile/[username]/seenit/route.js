@@ -13,7 +13,6 @@ async function verifyUser(req, username) {
       })
   );
   const token = cookies.token;
-
   if (!token) return null;
 
   try {
@@ -28,7 +27,7 @@ async function verifyUser(req, username) {
   }
 }
 
-/** 🟡 GET — Public (fetch seen movies) */
+/** 🟡 GET — Public (fetch seen movies for a user) */
 export async function GET(req, { params }) {
   const { username } = params;
   try {
@@ -39,8 +38,8 @@ export async function GET(req, { params }) {
       SELECT a.id, a.film, a.year, a.run_time, a.my_rating, a.screenwriters,
              a.producer, a.image_url, a.genre, a.review, a.studio, a.director,
              a.tmdb_id, a.url, s.seenit, s.created_at
-      FROM allmovies a
-      JOIN seenit s ON a.url = s.url AND a.username = s.username
+      FROM seenit s
+      JOIN allmovies a ON a.url = s.url
       WHERE s.username = ${username} AND s.seenit = TRUE
       ORDER BY s.created_at DESC
       LIMIT ${limit};
@@ -88,19 +87,19 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Upsert movie details in allmovies
+    // ✅ Upsert movie details in allmovies (global)
     await sql`
       INSERT INTO allmovies (
-        username, url, film, year, run_time, my_rating,
+        url, film, year, run_time, my_rating,
         screenwriters, producer, image_url, genre, review,
         studio, director, tmdb_id
       )
       VALUES (
-        ${username}, ${url}, ${film}, ${year}, ${run_time}, ${my_rating},
+        ${url}, ${film}, ${year}, ${run_time}, ${my_rating},
         ${screenwriters}, ${producer}, ${image_url}, ${genre}, ${review},
         ${studio}, ${director}, ${tmdb_id}
       )
-      ON CONFLICT (username, url)
+      ON CONFLICT (url)
       DO UPDATE SET
         film = EXCLUDED.film,
         year = EXCLUDED.year,
@@ -116,7 +115,7 @@ export async function POST(req, { params }) {
         tmdb_id = EXCLUDED.tmdb_id;
     `;
 
-    // ✅ Upsert seenit status
+    // ✅ Upsert seenit status for this user
     await sql`
       INSERT INTO seenit (username, url, seenit)
       VALUES (${username}, ${url}, ${seenit})
@@ -158,21 +157,13 @@ export async function DELETE(req, { params }) {
 
     // 📝 Get film title before deleting
     const { rows } = await sql`
-      SELECT film FROM allmovies
-      WHERE username = ${username} AND url = ${url}
-      LIMIT 1;
+      SELECT film FROM allmovies WHERE url = ${url} LIMIT 1;
     `;
     const movie = rows[0];
 
-    // ✅ Remove from seenit first (to keep other collections safe)
+    // ✅ Remove only the seenit entry (not the global movie)
     await sql`
       DELETE FROM seenit
-      WHERE username = ${username} AND url = ${url};
-    `;
-
-    // Optional: If you want to fully remove the movie from allmovies
-    await sql`
-      DELETE FROM allmovies
       WHERE username = ${username} AND url = ${url};
     `;
 
