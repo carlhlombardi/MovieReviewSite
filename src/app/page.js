@@ -125,7 +125,7 @@ export default function Home() {
         return;
       }
 
-      const year = Number(movieData.release_date.split("-")[0]) || null;
+      const year = Number(movieData.year) || null;
       const genre = movieData.genre || "Unknown";
       const genreSlug = slugifyGenre(genre);
       const slugifiedUrl = slugify(movieData.title, movieData.id);
