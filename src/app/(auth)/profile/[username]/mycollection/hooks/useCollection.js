@@ -33,6 +33,7 @@ export function useCollection(username) {
 
         const userMovies = await res.json();
         const collectionMovies = userMovies.filter((m) => m.in_collection === true);
+
         setMovies(collectionMovies);
       } catch (err) {
         console.error("Error fetching collection:", err);
