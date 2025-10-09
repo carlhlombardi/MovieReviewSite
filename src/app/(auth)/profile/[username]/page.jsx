@@ -31,10 +31,24 @@ export default function ProfilePage() {
   const [wantedCount, setWantedCount] = useState(0);
   const [seenCount, setSeenCount] = useState(0);
 
+  // Activity (only used for own profile)
   const [recentActivity, setRecentActivity] = useState([]);
   const [followingActivity, setFollowingActivity] = useState([]);
 
-  const isSelf = loggedInUser && profile && loggedInUser.username === profile.username;
+  const isSelf = !!(loggedInUser && profile && loggedInUser.username === profile.username);
+
+  // ───────────────────────────
+  // Helpers to be defensive about response shapes
+  // ───────────────────────────
+  const normalizeUsersResponse = async (res) => {
+    try {
+      const json = await res.json();
+      // some endpoints return { users: [...] }, others return [...]
+      return json?.users ?? json ?? [];
+    } catch (err) {
+      return [];
+    }
+  };
 
   // ───────────────────────────
   // Fetch followers/following
@@ -42,22 +56,24 @@ export default function ProfilePage() {
   const fetchFollowLists = useCallback(async (username) => {
     try {
       const [followersRes, followingRes] = await Promise.all([
-        fetch(`/api/user/followers?username=${username}`, { cache: 'no-store' }),
-        fetch(`/api/user/following?username=${username}`, { cache: 'no-store' }),
+        fetch(`/api/user/followers?username=${encodeURIComponent(username)}`, { cache: 'no-store' }),
+        fetch(`/api/user/following?username=${encodeURIComponent(username)}`, { cache: 'no-store' }),
       ]);
 
-      const followersData = await followersRes.json();
-      const followingData = await followingRes.json();
+      const followersData = followersRes.ok ? await normalizeUsersResponse(followersRes) : [];
+      const followingData = followingRes.ok ? await normalizeUsersResponse(followingRes) : [];
 
-      setFollowers(followersData.users || []);
-      setFollowing(followingData.users || []);
+      setFollowers(followersData || []);
+      setFollowing(followingData || []);
     } catch (err) {
       console.error('Error fetching follow lists:', err);
+      setFollowers([]);
+      setFollowing([]);
     }
   }, []);
 
   // ───────────────────────────
-  // Fetch movies
+  // Fetch movies (joined with allmovies via your API)
   // ───────────────────────────
   const fetchMovieLists = useCallback(async (username) => {
     try {
@@ -65,12 +81,22 @@ export default function ProfilePage() {
         credentials: 'include',
         cache: 'no-store',
       });
-      if (!res.ok) throw new Error('Failed to fetch user movies');
+      if (!res.ok) {
+        console.warn('fetchMovieLists non-ok response', res.status);
+        setOwnedMovies([]);
+        setWantedMovies([]);
+        setSeenMovies([]);
+        setOwnedCount(0);
+        setWantedCount(0);
+        setSeenCount(0);
+        return;
+      }
       const allMovies = await res.json();
 
-      const owned = allMovies.filter((m) => m.is_liked);
-      const wanted = allMovies.filter((m) => m.is_wanted);
-      const seen = allMovies.filter((m) => m.is_seen);
+      // DB returns joined user_movies + allmovies fields — we expect booleans named is_liked/is_wanted/is_seen
+      const owned = (allMovies || []).filter((m) => !!m.is_liked);
+      const wanted = (allMovies || []).filter((m) => !!m.is_wanted);
+      const seen = (allMovies || []).filter((m) => !!m.is_seen);
 
       setOwnedMovies(owned.slice(0, 6));
       setWantedMovies(wanted.slice(0, 6));
@@ -84,46 +110,59 @@ export default function ProfilePage() {
   }, []);
 
   // ───────────────────────────
-  // Fetch activity feed
+  // Fetch activity feed (only for own profile)
   // ───────────────────────────
   const fetchActivityFeed = useCallback(async (username) => {
     try {
+      // If not logged in as same user, don't call (defensive)
+      if (!isSelf) return;
+
       const [recentRes, followingRes] = await Promise.all([
-        fetch(`/api/activity/feed/${username}?limit=5`, { cache: 'no-store' }),
-        fetch(`/api/activity/following/${username}?limit=5`, { cache: 'no-store' }),
+        fetch(`/api/activity/feed/${encodeURIComponent(username)}?limit=5`, { credentials: 'include', cache: 'no-store' }),
+        fetch(`/api/activity/following/${encodeURIComponent(username)}?limit=5`, { credentials: 'include', cache: 'no-store' }),
       ]);
 
-      if (!recentRes.ok || !followingRes.ok) return;
+      if (recentRes.ok) {
+        const recentData = await recentRes.json();
+        setRecentActivity(recentData.feed || []);
+      } else {
+        setRecentActivity([]);
+      }
 
-      const recentData = await recentRes.json();
-      const followingData = await followingRes.json();
-
-      setRecentActivity(recentData.feed || []);
-      setFollowingActivity(followingData.feed || []);
+      if (followingRes.ok) {
+        const followingData = await followingRes.json();
+        setFollowingActivity(followingData.feed || []);
+      } else {
+        setFollowingActivity([]);
+      }
     } catch (err) {
       console.error('Error fetching activity feed:', err);
     }
-  }, []);
+  }, [isSelf]);
 
   // ───────────────────────────
-  // Fetch follow status
+  // Fetch follow status (whether logged-in user follows target)
   // ───────────────────────────
   const fetchFollowStatus = useCallback(async (targetUsername) => {
     try {
-      const res = await fetch(`/api/users/${targetUsername}/follow-status`, {
+      // endpoint returns { following: true/false, followersCount: n }
+      const res = await fetch(`/api/users/${encodeURIComponent(targetUsername)}/follow-status`, {
         credentials: 'include',
         cache: 'no-store',
       });
-      if (!res.ok) return;
-      const data = await res.json();
-      setIsFollowing(data.following || false);
+      if (!res.ok) {
+        // if 401/500 etc just ignore and leave default
+        return;
+      }
+      const json = await res.json();
+      setIsFollowing(Boolean(json.following));
     } catch (err) {
       console.error('Error fetching follow status:', err);
     }
   }, []);
 
   // ───────────────────────────
-  // Fetch profile
+  // Fetch profile (auth + profile + other resources)
   // ───────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
@@ -135,37 +174,56 @@ export default function ProfilePage() {
         return;
       }
 
+      // 1. Get auth user (if any)
       const authRes = await fetch('/api/auth/profile', { credentials: 'include', cache: 'no-store' });
       let authUser = null;
-      if (authRes.ok) authUser = await authRes.json();
+      if (authRes.ok) {
+        try {
+          authUser = await authRes.json();
+        } catch (_) {
+          authUser = null;
+        }
+      }
       setLoggedInUser(authUser);
 
-      const profileUrl =
-        authUser && profileUsername === authUser.username
-          ? '/api/auth/profile'
-          : `/api/users/${profileUsername}`;
+      // 2. Determine which profile endpoint to call (self vs public)
+      const profileUrl = authUser && profileUsername === authUser.username ? '/api/auth/profile' : `/api/users/${encodeURIComponent(profileUsername)}`;
 
       const profileRes = await fetch(profileUrl, { credentials: 'include', cache: 'no-store' });
       if (profileRes.status === 401) {
         router.replace('/login');
         return;
       }
-      if (!profileRes.ok) throw new Error('Failed to fetch profile');
+      if (!profileRes.ok) {
+        throw new Error('Failed to fetch profile');
+      }
 
       const profileData = await profileRes.json();
       setProfile(profileData);
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
+      // 3. If the visitor is logged in and viewing someone else's profile, check follow status
       if (authUser && profileData.username !== authUser.username) {
         await fetchFollowStatus(profileData.username);
+      } else {
+        setIsFollowing(false);
       }
 
+      // 4. Always fetch followers/following and movies (public info)
       await Promise.all([
         fetchFollowLists(profileData.username),
         fetchMovieLists(profileData.username),
-        fetchActivityFeed(profileData.username),
       ]);
+
+      // 5. Fetch activity feeds only if viewing own profile
+      if (authUser && profileData.username === authUser.username) {
+        await fetchActivityFeed(profileData.username);
+      } else {
+        // clear any previous personal activity
+        setRecentActivity([]);
+        setFollowingActivity([]);
+      }
     } catch (err) {
       console.error('Error in profile fetch:', err);
       setError(err.message || 'Something went wrong');
@@ -173,6 +231,69 @@ export default function ProfilePage() {
       setIsLoading(false);
     }
   }, [profileUsername, router, fetchFollowLists, fetchMovieLists, fetchActivityFeed, fetchFollowStatus]);
+
+  // ───────────────────────────
+  // Avatar upload
+  // ───────────────────────────
+  const handleAvatarUpload = async (file) => {
+    if (!isSelf) return;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setSaving(true);
+      setError('');
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+
+      const newUrl = data.avatar_url || data.url;
+      setAvatarUrl(`${newUrl}?t=${Date.now()}`);
+
+      // patch profile
+      await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: newUrl, bio }),
+      });
+
+      // refresh profile
+      await fetchProfile();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Upload failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ───────────────────────────
+  // Save profile changes
+  // ───────────────────────────
+  const handleSave = async () => {
+    if (!isSelf) return;
+    try {
+      setSaving(true);
+      setError('');
+      const res = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: avatarUrl, bio }),
+      });
+      if (!res.ok) throw new Error('Failed to update profile');
+      await fetchProfile();
+    } catch (err) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ───────────────────────────
   // Follow / Unfollow
@@ -189,12 +310,18 @@ export default function ProfilePage() {
         body: JSON.stringify({ followingUsername: profile.username }),
       });
 
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
+      if (!res.ok) {
+        const text = await res.text().catch(() => 'Unknown error');
+        throw new Error(text || 'Follow request failed');
+      }
 
+      const data = await res.json();
       if (data.success) {
+        // optimistic toggle + refresh followers list
         setIsFollowing(!isFollowing);
         fetchFollowLists(profile.username);
+      } else {
+        throw new Error(data.message || 'Follow API returned no success');
       }
     } catch (err) {
       console.error('Follow/unfollow failed:', err);
@@ -203,9 +330,12 @@ export default function ProfilePage() {
   };
 
   // ───────────────────────────
+  // Initial load
+  // ───────────────────────────
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileUsername]);
 
   // ───────────────────────────
   // UI
@@ -238,12 +368,12 @@ export default function ProfilePage() {
   return (
     <div className="container mt-5">
       <div className="mb-4">
-  <h2>
-    {isSelf
-      ? `Welcome back, ${profile.firstname || profile.username}`
-      : `Profile of ${profile.username}`}
-  </h2>
-</div>
+        <h2>
+          {isSelf
+            ? `Welcome back, ${profile.firstname || profile.username}`
+            : `Profile of ${profile.username}`}
+        </h2>
+      </div>
 
       {/* ─── Profile Card ───────────────────────────── */}
       <Card className="mb-4 p-3">
@@ -292,6 +422,24 @@ export default function ProfilePage() {
           <p><strong>Date Joined:</strong> {new Date(profile.date_joined).toLocaleDateString()}</p>
           <p className="mt-3"><strong>Bio:</strong> {profile.bio || 'No bio yet.'}</p>
 
+          {isSelf && (
+            <>
+              <Form.Group className="mt-2">
+                <Form.Label>Edit Bio</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                />
+              </Form.Group>
+
+              <Button className="mt-3" onClick={handleSave} disabled={saving} variant="primary">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </>
+          )}
+
           {!isSelf && loggedInUser && (
             <Button
               className="mt-3"
@@ -307,10 +455,8 @@ export default function ProfilePage() {
       {/* Followers / Following */}
       <FollowTabs followers={followers} following={following} />
 
-      {/* Activity */}
-       {isSelf && (
-    <ActivityTabs recent={recentActivity} following={followingActivity} />
-  )}
+      {/* Activity - only show on own profile */}
+      {isSelf && <ActivityTabs recent={recentActivity} following={followingActivity} />}
 
       {/* Movies */}
       <MovieTabs
@@ -390,7 +536,7 @@ function ActivityTabs({ recent, following }) {
             {recent.length > 0 ? (
               <ul className="list-unstyled">
                 {recent.map((act) => (
-                  <li key={act.id} className="mb-3 border-bottom pb-2">
+                  <li key={act.id || `${act.username}-${act.created_at}`} className="mb-3 border-bottom pb-2">
                     <div>
                       <strong>{act.username}</strong> {act.action}{' '}
                       {act.movie_title && (
@@ -412,7 +558,7 @@ function ActivityTabs({ recent, following }) {
             {following.length > 0 ? (
               <ul className="list-unstyled">
                 {following.map((act) => (
-                  <li key={act.id} className="mb-3 border-bottom pb-2">
+                  <li key={act.id || `${act.username}-${act.created_at}`} className="mb-3 border-bottom pb-2">
                     <div>
                       <Link href={`/profile/${act.username}`}>
                         <strong>{act.username}</strong>
@@ -461,17 +607,17 @@ function MovieTabs({ ownedMovies, wantedMovies, seenMovies, ownedCount, wantedCo
 
 // ─── Reusable Movie List ─────────────────────────────
 function MovieList({ movies, username, link }) {
-  if (movies.length === 0) {
+  if (!movies || movies.length === 0) {
     return <p className="text-muted">No movies yet.</p>;
   }
   return (
     <>
       <div className="d-flex flex-wrap gap-3">
         {movies.map((movie) => (
-          <div key={movie.tmdb_id} className="text-center">
+          <div key={movie.tmdb_id ?? movie.id ?? movie.url} className="text-center">
             <Image
               src={movie.image_url || '/images/default-poster.png'}
-              alt={movie.film}
+              alt={movie.film || movie.title || 'poster'}
               width={80}
               height={120}
               className="border rounded"
