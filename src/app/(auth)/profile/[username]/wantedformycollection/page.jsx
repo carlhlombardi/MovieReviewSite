@@ -31,16 +31,11 @@ export default function WantedForMyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        // ✅ No localStorage, just include cookies
-        const res = await fetch(
-          `/api/auth/profile/${username}/wantedforcollection`,
-          {
-            credentials: 'include', // <--- important
-          }
-        );
+        const res = await fetch(`/api/auth/profile/${username}/wantedforcollection`, {
+          credentials: 'include',
+        });
 
         if (res.status === 401) {
-          // not logged in, redirect to login
           router.push('/login');
           return;
         }
@@ -50,10 +45,10 @@ export default function WantedForMyCollectionPage() {
         }
 
         const json = await res.json();
+        // Only use allmovies data, filter for iswatched true
         const onlyWatched = (json.movies ?? []).filter((m) =>
-          isWatched(m.iswatched ?? m.is_watched ?? m.watched)
+          isWatched(m.iswatched)
         );
-
         setMovies(onlyWatched);
       } catch (err) {
         console.error('Error fetching wantedforcollection:', err);
@@ -63,7 +58,6 @@ export default function WantedForMyCollectionPage() {
         setLoading(false);
       }
     };
-
     fetchWanted();
   }, [username, router]);
 

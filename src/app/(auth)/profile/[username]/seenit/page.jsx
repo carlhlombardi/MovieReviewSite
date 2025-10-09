@@ -45,20 +45,19 @@ export default function SeenItPage() {
         }
 
         const json = await res.json();
+        // Only use allmovies data, filter for seenit true
         const seenMovies = (json.movies ?? []).filter((m) =>
-          isSeen(m.seenit ?? m.is_seen ?? m.seen)
+          isSeen(m.seenit)
         );
-
         setMovies(seenMovies);
       } catch (err) {
-        console.error('❌ Error fetching seenit:', err);
+        console.error('Error fetching seenit:', err);
         setError(err.message);
         setMovies([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchSeenMovies();
   }, [username, router]);
 

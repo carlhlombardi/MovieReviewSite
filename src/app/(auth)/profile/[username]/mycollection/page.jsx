@@ -31,13 +31,11 @@ export default function MyCollectionPage() {
         setLoading(true);
         setError(null);
 
-        // ✅ no localStorage, just include cookies
         const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
           credentials: 'include',
         });
 
         if (res.status === 401) {
-          // not logged in → go to login
           router.push('/login');
           return;
         }
@@ -47,27 +45,23 @@ export default function MyCollectionPage() {
         }
 
         const json = await res.json();
-
-        // include liked or watched items
-        const combined = (json.movies ?? []).filter(
+        // Only use allmovies data, filter for isliked or iswatched
+        const filtered = (json.movies ?? []).filter(
           (m) => isTrue(m.isliked) || isTrue(m.iswatched)
         );
-
-        // dedupe by url
+        // Deduplicate by url
         const deduped = Array.from(
-          new Map(combined.map((m) => [m.url, m])).values()
+          new Map(filtered.map((m) => [m.url, m])).values()
         );
-
         setMovies(deduped);
       } catch (err) {
-        console.error('Error fetching mycollection:', err);
+        console.error('Error fetching collection:', err);
         setError(err.message);
         setMovies([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchCollection();
   }, [username, router]);
 
