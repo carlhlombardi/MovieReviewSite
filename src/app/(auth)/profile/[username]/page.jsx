@@ -384,6 +384,68 @@ export default function ProfilePage() {
         </Card.Body>
       </Card>
 
+      {/* ─── Followers / Following Tabs ───────────────────────────── */}
+<Card className="mb-4">
+  <Card.Body>
+    <Tabs defaultActiveKey="followers" id="follow-tabs" className="mb-3">
+      <Tab eventKey="followers" title={`Followers (${followers.length})`}>
+        {followers.length > 0 ? (
+          <div className="d-flex flex-wrap gap-3">
+            {followers.map((user) => (
+              <Link
+                key={user.username}
+                href={`/profile/${user.username}`}
+                className="text-decoration-none text-center"
+              >
+                <div>
+                  <Image
+                    src={user.avatar_url || '/images/default-avatar.png'}
+                    alt={user.username}
+                    width={60}
+                    height={60}
+                    className="rounded-circle border"
+                  />
+                  <p className="mt-1 small">{user.username}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted">No followers yet.</p>
+        )}
+      </Tab>
+
+      <Tab eventKey="following" title={`Following (${following.length})`}>
+        {following.length > 0 ? (
+          <div className="d-flex flex-wrap gap-3">
+            {following.map((user) => (
+              <Link
+                key={user.username}
+                href={`/profile/${user.username}`}
+                className="text-decoration-none text-center"
+              >
+                <div>
+                  <Image
+                    src={user.avatar_url || '/images/default-avatar.png'}
+                    alt={user.username}
+                    width={60}
+                    height={60}
+                    className="rounded-circle border"
+                  />
+                  <p className="mt-1 small">{user.username}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted">Not following anyone yet.</p>
+        )}
+      </Tab>
+    </Tabs>
+  </Card.Body>
+</Card>
+
+
       {/* ─── Movies Tabs ───────────────────────────── */}
       <Card className="mb-4">
         <Card.Body>
