@@ -47,9 +47,26 @@ export async function POST(req) {
       url = slugify(film, tmdb_id);
     }
 
-    // 🖼️ Fallback image if none provided
+    // 🖼️ If no image_url provided, fetch poster from TMDB
     if (!image_url) {
-      image_url = "/images/fallback.jpg";
+      try {
+        const tmdbKey = process.env.TMDB_API_KEY;
+        const tmdbRes = await fetch(
+          `https://api.themoviedb.org/3/movie/${tmdb_id}?api_key=${tmdbKey}`
+        );
+
+        if (!tmdbRes.ok) throw new Error("TMDB fetch failed");
+
+        const tmdbData = await tmdbRes.json();
+        if (tmdbData.poster_path) {
+          image_url = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
+        } else {
+          image_url = "/images/fallback.jpg";
+        }
+      } catch (err) {
+        console.error("Poster fetch failed:", err);
+        image_url = "/images/fallback.jpg";
+      }
     }
 
     // 🕵️ Check if movie already exists by tmdb_id and genre
