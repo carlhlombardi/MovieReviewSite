@@ -107,69 +107,70 @@ export default function Home() {
   }, []);
 
   // 🟡 Handle suggestion click: fetch details, insert into DB, and redirect
-  const handleSuggestionClick = async (movie) => {
-    setSearchQuery(movie.title);
-    setShowSuggestions(false);
+const handleSuggestionClick = async (movie) => {
+  setSearchQuery(movie.title);
+  setShowSuggestions(false);
 
-    try {
-      // Fetch full movie details
-      const res = await fetch(
-        `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
-      );
-      if (!res.ok) throw new Error("Failed to fetch movie details");
+  try {
+    // 🟡 Fetch full movie details
+    const res = await fetch(
+      `${API_URL}/api/auth/search?movieId=${encodeURIComponent(movie.id)}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch movie details");
 
-      const apiResponse = await res.json();
-      const movieData = apiResponse.results?.[0];
+    const apiResponse = await res.json();
+    const movieData = apiResponse.results?.[0];
 
-      if (!movieData || !movieData.title || !movieData.release_date) {
-        alert("Movie data is incomplete.");
-        return;
-      }
-
-      const year = Number(movieData.release_date.split("-")[0]) || null;
-      const genreSlug = slugifyGenre(movieData.genre || "unknown");
-      const slugifiedUrl = slugify(movieData.title, movieData.id);
-
-      // ✅ Map data to match your allmovies table
-      const payload = {
-        film: movieData.title,
-        year: year,
-        tmdb_id: movieData.id,
-        run_time: movieData.runtime || null,
-        my_rating: null,
-        screenwriters: movieData.screenwriters || "",
-        producer: movieData.producer || "",
-        image_url: movieData.poster_path
-          ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
-          : "/images/fallback.jpg",
-        genre: movieData.genre || "Unknown",
-        review: "",
-        url: slugifiedUrl,
-        studio: movieData.production_companies?.[0]?.name || "",
-        director: movieData.director || "",
-      };
-
-      console.log("📦 Inserting movie:", payload);
-
-      const insertRes = await fetch(`${API_URL}/api/data/${genreSlug}movies`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!insertRes.ok) {
-        const insertData = await insertRes.json().catch(() => ({}));
-        alert(`Failed to insert movie: ${insertData.error || "Unknown error"}`);
-        return;
-      }
-
-      // ✅ Redirect to movie page
-      router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
-    } catch (error) {
-      console.error("❌ Error adding movie:", error);
-      alert("An unexpected error occurred.");
+    if (!movieData || !movieData.title || !movieData.release_date) {
+      alert("Movie data is incomplete.");
+      return;
     }
-  };
+
+    // 🟡 Extract core values
+    const year = Number(movieData.release_date.split("-")[0]) || null;
+    const genre = movieData.genre || "Unknown";
+    const genreSlug = slugifyGenre(genre);
+    const slugifiedUrl = slugify(movieData.title, movieData.id);
+
+    // ✅ Build payload matching your `allmovies` table schema
+    const payload = {
+      film: movieData.title,
+      year: year,
+      tmdb_id: movieData.id,
+      run_time: movieData.runtime || null,
+      screenwriters: movieData.screenwriters || "",
+      producer: movieData.producer || "",
+      image_url: movieData.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+        : "/images/fallback.jpg",
+      genre: genre,
+      url: slugifiedUrl,
+      studio: movieData.production_companies?.[0]?.name || "",
+      director: movieData.director || "",
+    };
+
+    console.log("📦 Inserting movie:", payload);
+
+    // ✅ Insert into allmovies (not genre-specific tables anymore)
+    const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!insertRes.ok) {
+      const insertData = await insertRes.json().catch(() => ({}));
+      alert(`Failed to insert movie: ${insertData.error || "Unknown error"}`);
+      return;
+    }
+
+    // 🟢 Redirect user to the movie page after insertion
+    router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
+  } catch (error) {
+    console.error("❌ Error adding movie:", error);
+    alert("An unexpected error occurred while adding the movie.");
+  }
+};
 
   return (
     <Container className="py-5">
