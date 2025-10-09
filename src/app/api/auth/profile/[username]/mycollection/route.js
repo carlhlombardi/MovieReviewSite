@@ -28,15 +28,16 @@ async function verifyUser(req, username) {
 /** ✅ GET: Public — Fetch user collection */
 export async function GET(req, { params }) {
   const { username } = params;
-
   try {
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
     const { rows } = await sql`
       SELECT title, genre, image_url, url, isliked, likedcount
       FROM allmovies
       WHERE username = ${username} AND isliked = TRUE
-      ORDER BY title;
+      ORDER BY title
+      LIMIT ${limit};
     `;
-
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in mycollection GET:', err);
