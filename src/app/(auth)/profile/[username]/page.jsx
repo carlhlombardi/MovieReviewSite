@@ -21,11 +21,9 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Followers / Following
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
 
-  // Movies
   const [ownedMovies, setOwnedMovies] = useState([]);
   const [wantedMovies, setWantedMovies] = useState([]);
   const [seenMovies, setSeenMovies] = useState([]);
@@ -33,7 +31,6 @@ export default function ProfilePage() {
   const [wantedCount, setWantedCount] = useState(0);
   const [seenCount, setSeenCount] = useState(0);
 
-  // Activity feed
   const [recentActivity, setRecentActivity] = useState([]);
   const [followingActivity, setFollowingActivity] = useState([]);
 
@@ -45,8 +42,8 @@ export default function ProfilePage() {
   const fetchFollowLists = useCallback(async (username) => {
     try {
       const [followersRes, followingRes] = await Promise.all([
-        fetch(`/api/user/followers?username=${username}`),
-        fetch(`/api/user/following?username=${username}`),
+        fetch(`/api/user/followers?username=${username}`, { cache: 'no-store' }),
+        fetch(`/api/user/following?username=${username}`, { cache: 'no-store' }),
       ]);
 
       const followersData = await followersRes.json();
@@ -101,10 +98,27 @@ export default function ProfilePage() {
       const recentData = await recentRes.json();
       const followingData = await followingRes.json();
 
-      setRecentActivity((recentData.feed || []).slice(0, 5));
-      setFollowingActivity((followingData.feed || []).slice(0, 5));
+      setRecentActivity(recentData.feed || []);
+      setFollowingActivity(followingData.feed || []);
     } catch (err) {
       console.error('Error fetching activity feed:', err);
+    }
+  }, []);
+
+  // ───────────────────────────
+  // Fetch follow status
+  // ───────────────────────────
+  const fetchFollowStatus = useCallback(async (targetUsername) => {
+    try {
+      const res = await fetch(`/api/users/${targetUsername}/follow-status`, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setIsFollowing(data.following || false);
+    } catch (err) {
+      console.error('Error fetching follow status:', err);
     }
   }, []);
 
@@ -121,13 +135,11 @@ export default function ProfilePage() {
         return;
       }
 
-      // Auth user
       const authRes = await fetch('/api/auth/profile', { credentials: 'include', cache: 'no-store' });
       let authUser = null;
       if (authRes.ok) authUser = await authRes.json();
       setLoggedInUser(authUser);
 
-      // Profile (self or public)
       const profileUrl =
         authUser && profileUsername === authUser.username
           ? '/api/auth/profile'
@@ -145,19 +157,9 @@ export default function ProfilePage() {
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
-    // ✅ Follow status check
-if (authUser && profileData.username !== authUser.username) {
-  const followCheck = await fetch(
-    `/api/users/${profileData.username}/follow-status`,
-    { credentials: 'include' }
-  );
-
-  if (followCheck.ok) {
-    const { following } = await followCheck.json();
-    setIsFollowing(following);
-  }
-}
-
+      if (authUser && profileData.username !== authUser.username) {
+        await fetchFollowStatus(profileData.username);
+      }
 
       await Promise.all([
         fetchFollowLists(profileData.username),
@@ -170,66 +172,7 @@ if (authUser && profileData.username !== authUser.username) {
     } finally {
       setIsLoading(false);
     }
-  }, [profileUsername, router, fetchFollowLists, fetchMovieLists, fetchActivityFeed]);
-
-  // ───────────────────────────
-  // Avatar upload
-  // ───────────────────────────
-  const handleAvatarUpload = async (file) => {
-    if (!isSelf) return;
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      setSaving(true);
-      setError('');
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
-
-      const newUrl = data.avatar_url || data.url;
-      setAvatarUrl(`${newUrl}?t=${Date.now()}`);
-
-      await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: newUrl, bio }),
-      });
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'Upload failed');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ───────────────────────────
-  // Save profile changes
-  // ───────────────────────────
-  const handleSave = async () => {
-    if (!isSelf) return;
-    try {
-      setSaving(true);
-      setError('');
-      const res = await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: avatarUrl, bio }),
-      });
-      if (!res.ok) throw new Error('Failed to update profile');
-      await fetchProfile();
-    } catch (err) {
-      setError(err.message || 'Something went wrong');
-    } finally {
-      setSaving(false);
-    }
-  };
+  }, [profileUsername, router, fetchFollowLists, fetchMovieLists, fetchActivityFeed, fetchFollowStatus]);
 
   // ───────────────────────────
   // Follow / Unfollow
@@ -251,7 +194,7 @@ if (authUser && profileData.username !== authUser.username) {
 
       if (data.success) {
         setIsFollowing(!isFollowing);
-        await fetchFollowLists(profile.username);
+        fetchFollowLists(profile.username);
       }
     } catch (err) {
       console.error('Follow/unfollow failed:', err);
@@ -259,8 +202,6 @@ if (authUser && profileData.username !== authUser.username) {
     }
   };
 
-  // ───────────────────────────
-  // Initial load
   // ───────────────────────────
   useEffect(() => {
     fetchProfile();
@@ -345,35 +286,9 @@ if (authUser && profileData.username !== authUser.username) {
             />
           )}
 
-          <p className="mt-3">
-            <strong>Username:</strong> {profile.username}
-          </p>
-          <p>
-            <strong>Date Joined:</strong>{' '}
-            {new Date(profile.date_joined).toLocaleDateString()}
-          </p>
-
-          <p className="mt-3">
-            <strong>Bio:</strong> {profile.bio || 'No bio yet.'}
-          </p>
-
-          {isSelf && (
-            <>
-              <Form.Group className="mt-2">
-                <Form.Label>Edit Bio</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                />
-              </Form.Group>
-
-              <Button className="mt-3" onClick={handleSave} disabled={saving} variant="primary">
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </>
-          )}
+          <p className="mt-3"><strong>Username:</strong> {profile.username}</p>
+          <p><strong>Date Joined:</strong> {new Date(profile.date_joined).toLocaleDateString()}</p>
+          <p className="mt-3"><strong>Bio:</strong> {profile.bio || 'No bio yet.'}</p>
 
           {!isSelf && loggedInUser && (
             <Button
@@ -387,155 +302,160 @@ if (authUser && profileData.username !== authUser.username) {
         </Card.Body>
       </Card>
 
-      {/* ─── Followers / Following Tabs ───────────────────────────── */}
-<Card className="mb-4">
-  <Card.Body>
-    <Tabs defaultActiveKey="followers" id="follow-tabs" className="mb-3">
-      <Tab eventKey="followers" title={`Followers (${followers.length})`}>
-        {followers.length > 0 ? (
-          <div className="d-flex flex-wrap gap-3">
-            {followers.map((user) => (
-              <Link
-                key={user.username}
-                href={`/profile/${user.username}`}
-                className="text-decoration-none text-center"
-              >
-                <div>
-                  <Image
-                    src={user.avatar_url || '/images/default-avatar.png'}
-                    alt={user.username}
-                    width={60}
-                    height={60}
-                    className="rounded-circle border"
-                  />
-                  <p className="mt-1 small">{user.username}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted">No followers yet.</p>
-        )}
-      </Tab>
+      {/* Followers / Following */}
+      <FollowTabs followers={followers} following={following} />
 
-      <Tab eventKey="following" title={`Following (${following.length})`}>
-        {following.length > 0 ? (
-          <div className="d-flex flex-wrap gap-3">
-            {following.map((user) => (
-              <Link
-                key={user.username}
-                href={`/profile/${user.username}`}
-                className="text-decoration-none text-center"
-              >
-                <div>
-                  <Image
-                    src={user.avatar_url || '/images/default-avatar.png'}
-                    alt={user.username}
-                    width={60}
-                    height={60}
-                    className="rounded-circle border"
-                  />
-                  <p className="mt-1 small">{user.username}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted">Not following anyone yet.</p>
-        )}
-      </Tab>
-    </Tabs>
-  </Card.Body>
-</Card>
+      {/* Activity */}
+      <ActivityTabs recent={recentActivity} following={followingActivity} />
 
-{/* ─── Activity Feed Tabs ───────────────────────────── */}
-{/* ─── Activity Feed Tabs ───────────────────────────── */}
-<Card className="mb-4">
-  <Card.Body>
-    <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
-      {/* Your Recent Activity */}
-      <Tab eventKey="recent" title="Your Recent Activity">
-        {recentActivity.length > 0 ? (
-          <ul className="list-unstyled">
-            {recentActivity.map((act) => (
-              <li key={act.id} className="mb-3 border-bottom pb-2">
-                <div>
-                  <strong>{act.username}</strong> {act.action}{' '}
-                  {act.movie_title && (
-                    <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
-                      {act.movie_title}
-                    </Link>
-                  )}
-                </div>
-                <small className="text-muted">
-                  {new Date(act.created_at).toLocaleString()}
-                </small>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted">No recent activity yet.</p>
-        )}
-      </Tab>
-
-      {/* Followers' Activity */}
-      <Tab eventKey="following" title="Followers Recent Activity">
-        {followingActivity.length > 0 ? (
-          <ul className="list-unstyled">
-            {followingActivity.map((act) => (
-              <li key={act.id} className="mb-3 border-bottom pb-2">
-                <div>
-                  <Link href={`/profile/${act.username}`}>
-                    <strong>{act.username}</strong>
-                  </Link>{' '}
-                  {act.action}{' '}
-                  {act.movie_title && (
-                    <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
-                      {act.movie_title}
-                    </Link>
-                  )}
-                </div>
-                <small className="text-muted">
-                  {new Date(act.created_at).toLocaleString()}
-                </small>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted">No activity from people you follow yet.</p>
-        )}
-      </Tab>
-    </Tabs>
-  </Card.Body>
-</Card>
-
-
-      {/* ─── Movies Tabs ───────────────────────────── */}
-      <Card className="mb-4">
-        <Card.Body>
-          <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
-            {/* OWNED */}
-            <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
-              <MovieList movies={ownedMovies} username={profile.username} link="mycollection" />
-            </Tab>
-
-            {/* WANTED */}
-            <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
-              <MovieList movies={wantedMovies} username={profile.username} link="wantedformycollection" />
-            </Tab>
-
-            {/* SEEN */}
-            <Tab eventKey="seen" title={`Seen (${seenCount})`}>
-              <MovieList movies={seenMovies} username={profile.username} link="seenit" />
-            </Tab>
-          </Tabs>
-        </Card.Body>
-      </Card>
+      {/* Movies */}
+      <MovieTabs
+        ownedMovies={ownedMovies} ownedCount={ownedCount}
+        wantedMovies={wantedMovies} wantedCount={wantedCount}
+        seenMovies={seenMovies} seenCount={seenCount}
+        username={profile.username}
+      />
     </div>
   );
 }
 
-// ─── Reusable Movie List Component ─────────────────────────────
+// ─── Followers/Following Component ─────────────────────────────
+function FollowTabs({ followers, following }) {
+  return (
+    <Card className="mb-4">
+      <Card.Body>
+        <Tabs defaultActiveKey="followers" id="follow-tabs" className="mb-3">
+          <Tab eventKey="followers" title={`Followers (${followers.length})`}>
+            {followers.length > 0 ? (
+              <div className="d-flex flex-wrap gap-3">
+                {followers.map((user) => (
+                  <Link key={user.username} href={`/profile/${user.username}`} className="text-decoration-none text-center">
+                    <div>
+                      <Image
+                        src={user.avatar_url || '/images/default-avatar.png'}
+                        alt={user.username}
+                        width={60}
+                        height={60}
+                        className="rounded-circle border"
+                      />
+                      <p className="mt-1 small">{user.username}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted">No followers yet.</p>
+            )}
+          </Tab>
+
+          <Tab eventKey="following" title={`Following (${following.length})`}>
+            {following.length > 0 ? (
+              <div className="d-flex flex-wrap gap-3">
+                {following.map((user) => (
+                  <Link key={user.username} href={`/profile/${user.username}`} className="text-decoration-none text-center">
+                    <div>
+                      <Image
+                        src={user.avatar_url || '/images/default-avatar.png'}
+                        alt={user.username}
+                        width={60}
+                        height={60}
+                        className="rounded-circle border"
+                      />
+                      <p className="mt-1 small">{user.username}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted">Not following anyone yet.</p>
+            )}
+          </Tab>
+        </Tabs>
+      </Card.Body>
+    </Card>
+  );
+}
+
+// ─── Activity Tabs ─────────────────────────────
+function ActivityTabs({ recent, following }) {
+  return (
+    <Card className="mb-4">
+      <Card.Body>
+        <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
+          <Tab eventKey="recent" title="Your Recent Activity">
+            {recent.length > 0 ? (
+              <ul className="list-unstyled">
+                {recent.map((act) => (
+                  <li key={act.id} className="mb-3 border-bottom pb-2">
+                    <div>
+                      <strong>{act.username}</strong> {act.action}{' '}
+                      {act.movie_title && (
+                        <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
+                          {act.movie_title}
+                        </Link>
+                      )}
+                    </div>
+                    <small className="text-muted">{new Date(act.created_at).toLocaleString()}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted">No recent activity yet.</p>
+            )}
+          </Tab>
+
+          <Tab eventKey="following" title="Followers Recent Activity">
+            {following.length > 0 ? (
+              <ul className="list-unstyled">
+                {following.map((act) => (
+                  <li key={act.id} className="mb-3 border-bottom pb-2">
+                    <div>
+                      <Link href={`/profile/${act.username}`}>
+                        <strong>{act.username}</strong>
+                      </Link>{' '}
+                      {act.action}{' '}
+                      {act.movie_title && (
+                        <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
+                          {act.movie_title}
+                        </Link>
+                      )}
+                    </div>
+                    <small className="text-muted">{new Date(act.created_at).toLocaleString()}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted">No activity from people you follow yet.</p>
+            )}
+          </Tab>
+        </Tabs>
+      </Card.Body>
+    </Card>
+  );
+}
+
+// ─── Movies Tabs ─────────────────────────────
+function MovieTabs({ ownedMovies, wantedMovies, seenMovies, ownedCount, wantedCount, seenCount, username }) {
+  return (
+    <Card className="mb-4">
+      <Card.Body>
+        <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
+          <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
+            <MovieList movies={ownedMovies} username={username} link="mycollection" />
+          </Tab>
+          <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
+            <MovieList movies={wantedMovies} username={username} link="wantedformycollection" />
+          </Tab>
+          <Tab eventKey="seen" title={`Seen (${seenCount})`}>
+            <MovieList movies={seenMovies} username={username} link="seenit" />
+          </Tab>
+        </Tabs>
+      </Card.Body>
+    </Card>
+  );
+}
+
+// ─── Reusable Movie List ─────────────────────────────
 function MovieList({ movies, username, link }) {
   if (movies.length === 0) {
     return <p className="text-muted">No movies yet.</p>;
@@ -556,10 +476,7 @@ function MovieList({ movies, username, link }) {
         ))}
       </div>
       <div className="mt-3 text-center">
-        <Link
-          href={`/profile/${username}/${link}`}
-          className="btn btn-outline-primary btn-sm"
-        >
+        <Link href={`/profile/${username}/${link}`} className="btn btn-outline-primary btn-sm">
           See All
         </Link>
       </div>

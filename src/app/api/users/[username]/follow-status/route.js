@@ -12,46 +12,44 @@ function parseCookies(cookieHeader) {
 }
 
 export async function GET(req, { params }) {
-  const { username } = params;
+  const { username } = params; // 👤 target user being viewed
 
   try {
-    // 🧭 Parse token
+    // 🧭 Read token from cookies
     const cookieHeader = req.headers.get('cookie');
     const cookies = parseCookies(cookieHeader);
     const token = cookies.token;
 
-    let followerId = null;
+    let followerUsername = null;
+
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        followerId = decoded.userId;
+        // Get the logged-in user's username
+        const userRes = await sql`
+          SELECT username FROM users WHERE id = ${decoded.userId}
+        `;
+        followerUsername = userRes.rows[0]?.username || null;
       } catch (err) {
-        console.warn('⚠️ Invalid or expired token in follow-status');
+        console.warn('⚠️ Invalid or expired token in follow-status:', err.message);
       }
     }
 
-    // 🧭 Get target user
-    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
-    if (userRes.rows.length === 0) {
-      return new Response(JSON.stringify({ message: 'User not found' }), {
-        status: 404,
-      });
-    }
-    const targetId = userRes.rows[0].id;
-
-    // 🧭 Check if logged-in user follows this target
+    // 🧭 Check if logged-in user follows this profile
     let isFollowing = false;
-    if (followerId) {
+    if (followerUsername) {
       const followRes = await sql`
         SELECT 1 FROM follows
-        WHERE follower_id = ${followerId} AND following_id = ${targetId}
+        WHERE follower_username = ${followerUsername}
+        AND following_username = ${username}
       `;
       isFollowing = followRes.rows.length > 0;
     }
 
-    // 🧮 Count total followers
+    // 🧮 Count total followers of the target user
     const followerCountRes = await sql`
-      SELECT COUNT(*)::int AS count FROM follows WHERE following_id = ${targetId}
+      SELECT COUNT(*)::int AS count FROM follows
+      WHERE following_username = ${username}
     `;
     const followersCount = followerCountRes.rows[0].count;
 
@@ -64,8 +62,6 @@ export async function GET(req, { params }) {
     );
   } catch (err) {
     console.error('❌ follow-status API error:', err);
-    return new Response(JSON.stringify({ message: 'Server error' }), {
-      status: 500,
-    });
+    return new Response(JSON.stringify({ message: 'Server error' }), { status: 500 });
   }
 }
