@@ -1,42 +1,28 @@
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
-export async function POST(req, { params }) {
+export async function POST(req) {
   try {
     let {
-      title,
+      film,
       year,
+      tmdb_id,
+      genre,
       director = "",
       screenwriters = "",
-      producers = "",
-      studios = "",
+      producer = "",
+      studio = "",
       run_time = null,
       url,
       image_url,
-      tmdb_id,
-      genre,
     } = await req.json();
 
     // 🛑 Required fields check
-    if (!title || !year || !tmdb_id || !genre) {
+    if (!film || !year || !tmdb_id || !genre) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, year, tmdb_id, or genre' },
+        { error: 'Missing required fields: film, year, tmdb_id, or genre' },
         { status: 400 }
       );
-    }
-
-    // 🧹 Normalize studios
-    if (Array.isArray(studios)) {
-      studios = studios[0] || '';
-    } else if (typeof studios === 'string') {
-      studios = studios.split(',')[0].trim();
-    }
-
-    // 🧹 Normalize producers
-    if (Array.isArray(producers)) {
-      producers = producers[0] || '';
-    } else if (typeof producers === 'string') {
-      producers = producers.split(',')[0].trim();
     }
 
     // 🧪 Slugify helper
@@ -50,7 +36,7 @@ export async function POST(req, { params }) {
     const genreSlug = genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 
     if (!url) {
-      url = slugify(title, tmdb_id);
+      url = slugify(film, tmdb_id);
     }
 
     // 🕵️ Check if movie already exists
@@ -65,19 +51,19 @@ export async function POST(req, { params }) {
 
     // 🖼️ Fallback image if none provided
     if (!image_url) {
-      image_url = '/images/fallback.jpg'; // you can change this to your default poster
+      image_url = '/images/fallback.jpg';
     }
 
-    // 📝 Insert or update
+    // 📝 Insert
     await sql.query(
       `INSERT INTO allmovies 
         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-      VALUES 
+       VALUES 
         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-      ON CONFLICT (tmdb_id, genre) DO UPDATE
+       ON CONFLICT (tmdb_id, genre) DO UPDATE
         SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
             producer=$6, run_time=$7, url=$8, image_url=$9`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
+      [film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genreSlug]
     );
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
