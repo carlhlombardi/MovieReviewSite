@@ -35,10 +35,11 @@ export async function GET(req, { params }) {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100', 10);
     const { rows } = await sql`
-      SELECT film, genre, image_url, url, iswatched, watchcount
-      FROM allmovies
-      WHERE username = ${username} AND iswatched = TRUE
-      ORDER BY film
+      SELECT a.film, a.genre, a.image_url, a.url, w.iswatched, w.watchcount
+      FROM allmovies a
+      JOIN wantedforcollection w ON a.url = w.url AND a.username = w.username
+      WHERE a.username = ${username} AND w.iswatched = TRUE
+      ORDER BY a.film
       LIMIT ${limit};
     `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
@@ -73,15 +74,23 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Add or update in allmovies
+    // ✅ Add or update in allmovies (movie details only)
     await sql`
-      INSERT INTO allmovies (username, url, film, genre, iswatched, watchcount, image_url)
-      VALUES (${username}, ${url}, ${film}, ${genre}, ${iswatched}, ${watchcount}, ${image_url})
+      INSERT INTO allmovies (username, url, film, genre, image_url)
+      VALUES (${username}, ${url}, ${film}, ${genre}, ${image_url})
       ON CONFLICT (username, url)
       DO UPDATE SET
         film = EXCLUDED.film,
         genre = EXCLUDED.genre,
-        image_url = EXCLUDED.image_url,
+        image_url = EXCLUDED.image_url;
+    `;
+
+    // ✅ Add or update in wantedforcollection (iswatched, watchcount)
+    await sql`
+      INSERT INTO wantedforcollection (username, url, iswatched, watchcount)
+      VALUES (${username}, ${url}, ${iswatched}, ${watchcount})
+      ON CONFLICT (username, url)
+      DO UPDATE SET
         iswatched = EXCLUDED.iswatched,
         watchcount = EXCLUDED.watchcount;
     `;
