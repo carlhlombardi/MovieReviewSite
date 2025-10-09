@@ -32,7 +32,18 @@ export function useCollection(username) {
         }
 
         const userMovies = await res.json();
-        const collectionMovies = userMovies.filter((m) => m.is_liked);
+
+        // ✅ Filter for collection and normalize shape
+        const collectionMovies = userMovies
+          .filter((m) => m.in_collection === true)
+          .map((m) => ({
+            ...m,
+            genre: m.genre || "unknown",
+            url: m.url || m.tmdb_id?.toString() || "",
+            image_url: m.image_url || "/images/fallback.jpg",
+            film: m.film || m.title || "Untitled",
+          }));
+
         setMovies(collectionMovies);
       } catch (err) {
         console.error("Error fetching collection:", err);
