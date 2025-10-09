@@ -44,6 +44,9 @@ export function useCollection(username) {
             film: m.film || m.title || "Untitled",
           }));
 
+        console.log("Fetched movies:", userMovies);
+        console.log("Filtered & normalized collection:", collectionMovies);
+
         setMovies(collectionMovies);
       } catch (err) {
         console.error("Error fetching collection:", err);
