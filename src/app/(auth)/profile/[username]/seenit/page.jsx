@@ -4,9 +4,9 @@ import { useState, useMemo } from "react";
 import { Container } from "react-bootstrap";
 import { useParams } from "next/navigation";
 import { useSeenIt } from "@/hooks/useSeenIt";
-import SeenItHero from "@/components/SeenIt/SeenItHero";
-import SeenItSortBar from "@/components/SeenIt/SeenItSortBar";
-import SeenItGrid from "@/components/SeenIt/SeenItGrid";
+import SeenItHero from "@/components/SeenItHero";
+import SeenItSortBar from "@/components/SeenItSortBar";
+import SeenItGrid from "@/components/SeenItGrid";
 
 export default function SeenItPage() {
   const { username } = useParams();
