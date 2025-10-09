@@ -6,7 +6,54 @@ export async function GET(req) {
   const API_KEY = process.env.TMDB_API_KEY;
   const BASE_URL = "https://api.themoviedb.org/3";
 
-  // 🎯 CASE 1: Fetch by movie ID
+  // 🧭 Helper to format movie details consistently
+  const formatMovie = (movie, credits) => {
+    const director = credits.crew?.find((p) => p.job === "Director")?.name || "Unknown";
+
+    const screenwriters =
+      credits.crew
+        ?.filter((p) => ["Screenplay", "Writer"].includes(p.job))
+        .map((p) => p.name)
+        .filter(Boolean)
+        .join(", ") || "Unknown";
+
+    const producer =
+      credits.crew
+        ?.filter((p) => p.job === "Producer")
+        .map((p) => p.name)
+        .filter(Boolean)
+        .join(", ") || "Unknown";
+
+    const studio =
+      movie.production_companies?.map((p) => p.name).filter(Boolean).join(", ") || "Unknown";
+
+    const genre = movie.genres?.[0]?.name?.toLowerCase() || "unknown";
+    const run_time = movie.runtime || null;
+    const url = movie.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    const image_url = movie.poster_path
+      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+      : "/images/fallback.jpg";
+
+    return {
+      tmdb_id: movie.id,
+      title: movie.title,
+      year: movie.release_date?.slice(0, 4) || "Unknown",
+      director,
+      screenwriters,
+      producer,
+      studio,
+      run_time,
+      genre,
+      url,
+      image_url,
+    };
+  };
+
+  // 🎯 CASE 1: Fetch single movie by ID
   if (movieId) {
     try {
       const movieRes = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`);
@@ -17,46 +64,8 @@ export async function GET(req) {
       if (!creditsRes.ok) throw new Error("Failed to fetch credits");
       const credits = await creditsRes.json();
 
-      const director = credits.crew?.find((p) => p.job === "Director")?.name || "Unknown";
-
-      const screenwriters =
-        credits.crew
-          ?.filter((p) => ["Screenplay", "Writer"].includes(p.job))
-          .map((p) => p.name)
-          .filter(Boolean)
-          .join(", ") || "Unknown";
-
-      const producers =
-        credits.crew
-          ?.filter((p) => p.job === "Producer")
-          .map((p) => p.name)
-          .filter(Boolean)
-          .join(", ") || "Unknown";
-
-      const studios =
-        movie.production_companies?.map((p) => p.name).filter(Boolean).join(", ") || "Unknown";
-
-      const genre = movie.genres?.[0]?.name?.toLowerCase() || "unknown";
-      const run_time = movie.runtime || null;
-      const url = movie.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
       return new Response(
-        JSON.stringify({
-          results: [
-            {
-              tmdb_id: movie.id,
-              title: movie.title,
-              year: movie.release_date?.slice(0, 4) || "Unknown",
-              director,
-              screenwriters,
-              producers,
-              studios,
-              run_time,
-              genre,
-              url,
-            },
-          ],
-        }),
+        JSON.stringify({ results: [formatMovie(movie, credits)] }),
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -104,40 +113,7 @@ export async function GET(req) {
         const creditsRes = await fetch(`${BASE_URL}/movie/${match.id}/credits?api_key=${API_KEY}`);
         const credits = await creditsRes.json();
 
-        const director = credits.crew?.find((p) => p.job === "Director")?.name || "Unknown";
-
-        const screenwriters =
-          credits.crew
-            ?.filter((p) => ["Screenplay", "Writer"].includes(p.job))
-            .map((p) => p.name)
-            .filter(Boolean)
-            .join(", ") || "Unknown";
-
-        const producers =
-          credits.crew
-            ?.filter((p) => p.job === "Producer")
-            .map((p) => p.name)
-            .filter(Boolean)
-            .join(", ") || "Unknown";
-
-        const studios =
-          movie.production_companies?.map((p) => p.name).filter(Boolean).join(", ") || "Unknown";
-
-        const genre = movie.genres?.[0]?.name?.toLowerCase() || "unknown";
-        const run_time = movie.runtime || null;
-        const url = movie.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
-        return {
-          title: movie.title,
-          year: movie.release_date?.slice(0, 4) || "Unknown",
-          director,
-          screenwriters,
-          producers,
-          studios,
-          genre,
-          run_time,
-          url,
-        };
+        return formatMovie(movie, credits);
       })
     );
 

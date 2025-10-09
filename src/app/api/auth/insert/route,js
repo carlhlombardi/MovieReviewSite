@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    // 📨 Parse incoming JSON
     let {
       film,
       year,
@@ -18,22 +17,17 @@ export async function POST(req) {
       image_url,
     } = await req.json();
 
-    // 🧼 Normalize and validate required fields
     film = (film || "").trim();
     genre = (genre || "").trim();
     const yearNum = Number(year);
 
     if (!film || !genre || !tmdb_id || isNaN(yearNum)) {
       return NextResponse.json(
-        {
-          error: "Missing or invalid required fields: film, year, tmdb_id, or genre",
-          received: { film, year, tmdb_id, genre },
-        },
+        { error: "Missing or invalid required fields", received: { film, year, tmdb_id, genre } },
         { status: 400 }
       );
     }
 
-    // 🪄 Slug helpers
     const slugify = (title, tmdb_id) =>
       `${title}-${tmdb_id}`
         .toLowerCase()
@@ -42,34 +36,75 @@ export async function POST(req) {
         .replace(/^-+|-+$/g, "");
 
     const genreSlug = genre.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+    if (!url) url = slugify(film, tmdb_id);
 
-    if (!url) {
-      url = slugify(film, tmdb_id);
-    }
-
-    // 🖼️ If no image_url provided, fetch poster from TMDB
-    if (!image_url) {
+    // 🎯 Fetch from TMDB if any key field is missing
+    if (!image_url || !studio || !producer || !director || !screenwriters || !run_time) {
       try {
         const tmdbKey = process.env.TMDB_API_KEY;
-        const tmdbRes = await fetch(
+
+        // 🔹 Movie details
+        const movieRes = await fetch(
           `https://api.themoviedb.org/3/movie/${tmdb_id}?api_key=${tmdbKey}`
         );
+        if (!movieRes.ok) throw new Error("TMDB movie fetch failed");
+        const movieData = await movieRes.json();
 
-        if (!tmdbRes.ok) throw new Error("TMDB fetch failed");
+        // 🔹 Credits (for crew info)
+        const creditsRes = await fetch(
+          `https://api.themoviedb.org/3/movie/${tmdb_id}/credits?api_key=${tmdbKey}`
+        );
+        if (!creditsRes.ok) throw new Error("TMDB credits fetch failed");
+        const credits = await creditsRes.json();
 
-        const tmdbData = await tmdbRes.json();
-        if (tmdbData.poster_path) {
-          image_url = `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`;
-        } else {
-          image_url = "/images/fallback.jpg";
+        // 🖼️ Image
+        if (!image_url) {
+          image_url = movieData.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
+            : "/images/fallback.jpg";
         }
+
+        // 🏭 Studio
+        if (!studio) {
+          studio = movieData.production_companies
+            ?.map((c) => c.name)
+            .filter(Boolean)
+            .join(", ") || "";
+        }
+
+        // 👤 Producer
+        if (!producer) {
+          producer =
+            credits.crew
+              ?.filter((p) => p.job === "Producer")
+              .map((p) => p.name)
+              .join(", ") || "";
+        }
+
+        // 👨‍💼 Director
+        if (!director) {
+          director =
+            credits.crew?.find((p) => p.job === "Director")?.name || "";
+        }
+
+        // ✍️ Screenwriters
+        if (!screenwriters) {
+          screenwriters =
+            credits.crew
+              ?.filter((p) => ["Screenplay", "Writer"].includes(p.job))
+              .map((p) => p.name)
+              .join(", ") || "";
+        }
+
+        // ⏱️ Runtime
+        if (!run_time) run_time = movieData.runtime || null;
       } catch (err) {
-        console.error("Poster fetch failed:", err);
-        image_url = "/images/fallback.jpg";
+        console.error("❌ TMDB autofill failed:", err);
+        if (!image_url) image_url = "/images/fallback.jpg";
       }
     }
 
-    // 🕵️ Check if movie already exists by tmdb_id and genre
+    // 🕵️ Check if movie already exists
     const existing = await sql.query(
       `SELECT id FROM allmovies WHERE tmdb_id = $1 AND genre = $2`,
       [tmdb_id, genreSlug]
@@ -79,7 +114,7 @@ export async function POST(req) {
       return NextResponse.json({ message: "Movie already exists" }, { status: 200 });
     }
 
-    // 📝 Insert new movie
+    // 📝 Insert into DB
     await sql.query(
       `INSERT INTO allmovies 
         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
