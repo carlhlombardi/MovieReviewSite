@@ -33,9 +33,6 @@ export default function MovieList({ movies = [] }) {
                 height={300}
                 className="img-fluid rounded"
               />
-              <div className={styles.overlay}>
-                <span className={styles.title}>{movie.film}</span>
-              </div>
             </div>
           </Link>
         </Col>

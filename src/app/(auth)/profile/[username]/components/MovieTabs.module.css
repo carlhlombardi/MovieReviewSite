@@ -1,0 +1,18 @@
+.responsiveTabs .nav-link {
+  font-size: 0.8rem;          /* make tab text smaller */
+  padding: 0.4rem 0.3rem;     /* reduce padding so 3 tabs fit side by side */
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .responsiveTabs .nav-item {
+    flex: 1 1 auto;           /* tabs stretch evenly */
+    text-align: center;
+  }
+
+  .responsiveTabs .nav-link {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.2rem;
+  }
+}

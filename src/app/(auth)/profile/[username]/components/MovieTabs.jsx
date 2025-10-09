@@ -2,6 +2,7 @@
 import { Card, Tabs, Tab, Button } from 'react-bootstrap';
 import Link from 'next/link';
 import MovieList from './MovieList';
+import styles from './MovieTabs.module.css';
 
 export default function MovieTabs({
   ownedMovies,
@@ -15,7 +16,11 @@ export default function MovieTabs({
   return (
     <Card className="mb-4">
       <Card.Body>
-        <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
+        <Tabs
+          defaultActiveKey="owned"
+          id="movie-tabs"
+          className={`mb-3 ${styles.responsiveTabs}`}
+        >
           {/* Owned Movies */}
           <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
             <MovieList movies={ownedMovies} />
