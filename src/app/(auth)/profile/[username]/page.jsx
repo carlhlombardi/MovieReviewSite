@@ -446,25 +446,24 @@ export default function ProfilePage() {
 </Card>
 
 {/* ─── Activity Feed Tabs ───────────────────────────── */}
+{/* ─── Activity Feed Tabs ───────────────────────────── */}
 <Card className="mb-4">
   <Card.Body>
     <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
-      {/* Recent Activity */}
+      {/* Your Recent Activity */}
       <Tab eventKey="recent" title="Your Recent Activity">
         {recentActivity.length > 0 ? (
           <ul className="list-unstyled">
-            {recentActivity.map((act, idx) => (
-              <li key={idx} className="mb-2 border-bottom pb-2">
-                <strong>{act.username}</strong> {act.action}
-                {act.film && (
-                  <>
-                    {' '}
-                    <Link href={`/genre/${act.genre}/${encodeURIComponent(act.url)}`}>
-                      {act.film}
+            {recentActivity.map((act) => (
+              <li key={act.id} className="mb-3 border-bottom pb-2">
+                <div>
+                  <strong>{act.username}</strong> {act.action}{' '}
+                  {act.movie_title && (
+                    <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
+                      {act.movie_title}
                     </Link>
-                  </>
-                )}
-                <br />
+                  )}
+                </div>
                 <small className="text-muted">
                   {new Date(act.created_at).toLocaleString()}
                 </small>
@@ -476,25 +475,23 @@ export default function ProfilePage() {
         )}
       </Tab>
 
-      {/* Followers Activity */}
+      {/* Followers' Activity */}
       <Tab eventKey="following" title="Followers Recent Activity">
         {followingActivity.length > 0 ? (
           <ul className="list-unstyled">
-            {followingActivity.map((act, idx) => (
-              <li key={idx} className="mb-2 border-bottom pb-2">
-                <Link href={`/profile/${act.username}`}>
-                  <strong>{act.username}</strong>
-                </Link>{' '}
-                {act.action}
-                {act.film && (
-                  <>
-                    {' '}
-                    <Link href={`/genre/${act.genre}/${encodeURIComponent(act.url)}`}>
-                      {act.film}
+            {followingActivity.map((act) => (
+              <li key={act.id} className="mb-3 border-bottom pb-2">
+                <div>
+                  <Link href={`/profile/${act.username}`}>
+                    <strong>{act.username}</strong>
+                  </Link>{' '}
+                  {act.action}{' '}
+                  {act.movie_title && (
+                    <Link href={`/genre/${encodeURIComponent(act.source)}/${encodeURIComponent(act.movie_title)}`}>
+                      {act.movie_title}
                     </Link>
-                  </>
-                )}
-                <br />
+                  )}
+                </div>
                 <small className="text-muted">
                   {new Date(act.created_at).toLocaleString()}
                 </small>
