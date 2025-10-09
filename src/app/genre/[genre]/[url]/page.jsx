@@ -25,7 +25,7 @@ export const toggleOwnIt = async (username, movieData, action) => {
           url: movieData.url,
           isliked: true,
           likedcount: movieData.likedcount ?? 0,
-          title: movieData.title ?? movieData.film,
+          film: movieData.film,
           genre: movieData.genre,
           image_url: movieData.image_url,
         }
@@ -47,7 +47,7 @@ export const toggleWantIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          title: movieData.title ?? movieData.film,
+          film: movieData.film,
           genre: movieData.genre,
           iswatched: true,
           watchcount: movieData.watchcount ?? 0,
@@ -72,7 +72,7 @@ export const toggleSeenIt = async (username, movieData, action) => {
       ? {
           username,
           url: movieData.url,
-          title: movieData.title ?? movieData.film,
+          film: movieData.film,
           genre: movieData.genre,
           seenit: true,
           image_url: movieData.image_url,
