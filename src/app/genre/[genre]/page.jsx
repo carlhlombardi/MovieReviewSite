@@ -10,7 +10,7 @@ import styles from './GenrePage.module.css'; // make sure this matches actual fi
 const GenrePage = () => {
   const { genre } = useParams();
   const [data, setData] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('title');  // default to title
+  const [sortCriteria, setSortCriteria] = useState('film');  // default to film
   const [sortedItems, setSortedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,8 +47,8 @@ const GenrePage = () => {
       const key = sortCriteria;
 
       // Safely get value from either a[key] or fallback field names
-      const va = (a[key] ?? a.title ?? a.film ?? "").toString();
-      const vb = (b[key] ?? b.title ?? b.film ?? "").toString();
+      const va = (a[key] ?? a.film ?? "").toString();
+      const vb = (b[key] ?? b.film ?? "").toString();
 
       // Numeric sorts
       if (key === 'year') {
@@ -116,7 +116,7 @@ const GenrePage = () => {
                   <div className={styles.imagewrapper}>
                     <Image
                       src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
-                      alt={item.title ?? item.film}
+                      alt={item.film}
                       width={200}
                       height={300}
                       className="img-fluid rounded"
