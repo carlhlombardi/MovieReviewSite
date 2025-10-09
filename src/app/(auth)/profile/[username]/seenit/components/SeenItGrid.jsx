@@ -1,7 +1,7 @@
 "use client";
 
 import { Row, Col } from "react-bootstrap";
-import MovieCard from "../MovieCard";
+import MovieCard from "../../components/MovieCard";
 
 export default function SeenItGrid({ movies }) {
   if (movies.length === 0) {
