@@ -53,7 +53,6 @@ const GenrePage = () => {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
         const json = await res.json();
-        console.log("Fetched genre data:", json);
 
         const movies = Array.isArray(json) ? json : json.movies ?? [];
         setData(movies);

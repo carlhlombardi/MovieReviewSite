@@ -12,7 +12,6 @@ async function fetchTmdbPoster(title, year) {
     }
     const searchData = await searchRes.json();
     if (!searchData.results || searchData.results.length === 0) {
-      console.log('No TMDB movie found for', title);
       return null;
     }
     const posterPath = searchData.results[0].poster_path;

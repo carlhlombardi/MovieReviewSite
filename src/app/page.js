@@ -139,8 +139,6 @@ export default function Home() {
         director: movieData.director || "",
       };
 
-      console.log("📦 Inserting movie:", payload);
-
       const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
