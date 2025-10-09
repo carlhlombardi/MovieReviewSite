@@ -106,7 +106,7 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle suggestion click: fetch details, insert, and redirect
+  // Handle suggestion click: fetch details, insert into allmovies, and redirect
   const handleSuggestionClick = async (movie) => {
     setSearchQuery(movie.title);
     setShowSuggestions(false);
@@ -128,7 +128,8 @@ export default function Home() {
       const genreSlug = slugifyGenre(movieData.genre);
       const slugifiedUrl = slugify(movieData.title, movieData.tmdb_id);
 
-      const insertRes = await fetch(`${API_URL}/api/data/${genreSlug}movies`, {
+      // ✅ INSERT INTO ALLMOVIES ONLY
+      const insertRes = await fetch(`${API_URL}/api/data/allmovies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -143,9 +144,10 @@ export default function Home() {
         return;
       }
 
+      // ✅ Redirect to genre page
       router.push(`/genre/${genreSlug}/${slugifiedUrl}`);
     } catch (error) {
-      console.error("Error adding movie");
+      console.error("Error adding movie", error);
       alert("An unexpected error occurred.");
     }
   };
