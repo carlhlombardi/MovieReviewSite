@@ -1,10 +1,50 @@
-import { sql } from '@vercel/postgres';
+export const dynamic = 'force-dynamic';
 
+import { sql } from '@vercel/postgres';
+import jwt from 'jsonwebtoken';
+
+/** 🛡️ Verify JWT and ensure the user matches the requested username */
+async function verifyUser(req, username) {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const cookies = Object.fromEntries(
+    cookieHeader.split(';').map((c) => {
+      const [name, ...rest] = c.trim().split('=');
+      return [name, decodeURIComponent(rest.join('='))];
+    })
+  );
+
+  const token = cookies.token;
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
+    const user = userRes.rows[0];
+
+    if (!user) return null;
+    if (user.id !== decoded.userId) return null;
+    return user;
+  } catch (err) {
+    console.warn('⚠️ Invalid or expired token', err.message);
+    return null;
+  }
+}
+
+/** 📰 GET — Activity feed from followed users */
 export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    // 🧑 1. Get usernames this user follows
+    // 🧑 1. Verify JWT
+    const user = await verifyUser(req, username);
+    if (!user) {
+      return new Response(
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
+      );
+    }
+
+    // 🧑 2. Get usernames this user follows
     const followingRes = await sql`
       SELECT following_username 
       FROM follows 
@@ -13,12 +53,12 @@ export async function GET(req, { params }) {
 
     const followingUsernames = followingRes.rows.map(row => row.following_username);
 
-    // 🪫 2. If user follows no one — return empty feed early
+    // 🪫 3. If user follows no one — return empty feed early
     if (followingUsernames.length === 0) {
-      return new Response(JSON.stringify([]), { status: 200 });
+      return new Response(JSON.stringify({ feed: [] }), { status: 200 });
     }
 
-    // 📰 3. Get activity from followed users (include usernames)
+    // 📰 4. Get activity from followed users
     const activityRes = await sql`
       SELECT 
         a.user_id,
@@ -34,7 +74,7 @@ export async function GET(req, { params }) {
       LIMIT 5;
     `;
 
-    // 🧹 4. Format feed entries
+    // 🧹 5. Format feed entries
     const formatted = activityRes.rows.map((item) => {
       const source = item.source || 'unknown';
       let text = '';
@@ -73,10 +113,13 @@ export async function GET(req, { params }) {
       };
     });
 
-    // ✅ 5. Return feed
-  return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
+    // ✅ 6. Return feed
+    return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in following activity GET:', err);
-    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ message: 'Server error', error: err.message }),
+      { status: 500 }
+    );
   }
 }

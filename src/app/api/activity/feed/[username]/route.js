@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic';  // ⛔ no caching
+
 import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
 
-/** 🛡️ Optional auth check (currently not used in GET) */
+/** 🛡️ Verify JWT and make sure the user matches the requested username */
 async function verifyUser(req, username) {
   const cookieHeader = req.headers.get('cookie') || '';
   const cookies = Object.fromEntries(
@@ -10,6 +12,7 @@ async function verifyUser(req, username) {
       return [name, decodeURIComponent(rest.join('='))];
     })
   );
+
   const token = cookies.token;
   if (!token) return null;
 
@@ -17,30 +20,31 @@ async function verifyUser(req, username) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
     const user = userRes.rows[0];
+
     if (!user) return null;
-    if (user.id !== decoded.userId) return null;
+    if (user.id !== decoded.userId) return null; // 🚫 don't allow access to others' feeds
     return user;
-  } catch {
+  } catch (err) {
+    console.warn('⚠️ Invalid or expired token', err.message);
     return null;
   }
 }
 
-/** 📰 GET — Activity feed for a specific user */
+/** 📰 GET — Activity feed (requires matching JWT) */
 export async function GET(req, { params }) {
   const { username } = params;
 
   try {
-    // 🟢 1. Confirm user exists
-    const userRes = await sql`SELECT id FROM users WHERE username = ${username}`;
-    const user = userRes.rows[0];
+    // ✅ 1. Verify JWT + user
+    const user = await verifyUser(req, username);
     if (!user) {
       return new Response(
-        JSON.stringify({ message: 'User not found' }),
-        { status: 404 }
+        JSON.stringify({ message: 'Unauthorized' }),
+        { status: 401 }
       );
     }
 
-    // 🟢 2. Fetch user activity, include username via JOIN
+    // ✅ 2. Fetch activity for the authenticated user
     const { rows } = await sql`
       SELECT a.user_id, u.username, a.movie_title, a.action, a.source, a.created_at
       FROM activity a
@@ -50,7 +54,7 @@ export async function GET(req, { params }) {
       LIMIT 5;
     `;
 
-    // 🟢 3. Format response
+    // ✅ 3. Format response
     const formatted = rows.map((item) => ({
       user_id: item.user_id,
       username: item.username,
@@ -60,11 +64,13 @@ export async function GET(req, { params }) {
       created_at: item.created_at,
     }));
 
-    // 🟢 4. Return data
-   // 🟢 4. Return data
-return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
+    // ✅ 4. Return
+    return new Response(JSON.stringify({ feed: formatted }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in activity feed GET:', err);
-    return new Response(JSON.stringify({ message: err.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ message: 'Server error', error: err.message }),
+      { status: 500 }
+    );
   }
 }
