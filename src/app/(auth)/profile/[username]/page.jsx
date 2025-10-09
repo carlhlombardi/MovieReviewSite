@@ -237,11 +237,17 @@ export default function ProfilePage() {
 
   return (
     <div className="container mt-5">
-      <h2>
-        {isSelf
-          ? `Welcome back, ${profile.firstname || profile.username}`
-          : `Profile of ${profile.username}`}
-      </h2>
+      <div className="mb-4">
+  <h2>
+    {isSelf
+      ? `Welcome back, ${profile.firstname || profile.username}`
+      : `Profile of ${profile.username}`}
+  </h2>
+
+  {isSelf && (
+    <ActivityTabs recent={recentActivity} following={followingActivity} />
+  )}
+</div>
 
       {/* ─── Profile Card ───────────────────────────── */}
       <Card className="mb-4 p-3">
