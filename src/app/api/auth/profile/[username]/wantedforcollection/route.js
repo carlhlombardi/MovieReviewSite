@@ -31,9 +31,16 @@ async function verifyUser(req, username) {
 /** 🟡 GET — Public read (no auth required) */
 export async function GET(req, { params }) {
   const { username } = params;
-
   try {
-
+    const { searchParams } = new URL(req.url);
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const { rows } = await sql`
+      SELECT title, genre, image_url, url, iswatched, watchcount
+      FROM allmovies
+      WHERE username = ${username} AND iswatched = TRUE
+      ORDER BY title
+      LIMIT ${limit};
+    `;
     return new Response(JSON.stringify({ movies: rows }), { status: 200 });
   } catch (err) {
     console.error('❌ Error in wantedforcollection GET:', err);
