@@ -243,10 +243,6 @@ export default function ProfilePage() {
       ? `Welcome back, ${profile.firstname || profile.username}`
       : `Profile of ${profile.username}`}
   </h2>
-
-  {isSelf && (
-    <ActivityTabs recent={recentActivity} following={followingActivity} />
-  )}
 </div>
 
       {/* ─── Profile Card ───────────────────────────── */}
@@ -312,7 +308,9 @@ export default function ProfilePage() {
       <FollowTabs followers={followers} following={following} />
 
       {/* Activity */}
-      <ActivityTabs recent={recentActivity} following={followingActivity} />
+       {isSelf && (
+    <ActivityTabs recent={recentActivity} following={followingActivity} />
+  )}
 
       {/* Movies */}
       <MovieTabs
