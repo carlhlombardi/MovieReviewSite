@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Row, Col } from 'react-bootstrap';
-import MovieCard from './MovieCard';
+import MovieCard from '../../components/MovieCard';
 
 export default function MovieGrid({ movies }) {
   if (!movies || movies.length === 0) return null;
