@@ -137,13 +137,13 @@ export default function Home() {
   tmdb_id: movieData.tmdb_id,
   run_time: movieData.run_time || null,
   screenwriters: movieData.screenwriters || "",
-  producer: movieData.producers || "",
+  producer: movieData.producer || "",
   image_url: movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : "/images/fallback.jpg",
   genre: movieData.genre || "Unknown",
   url: slugifiedUrl ,
-  studio: movieData.studios || "",
+  studio: movieData.studio || "",
   director: movieData.director || "",
 };
 
