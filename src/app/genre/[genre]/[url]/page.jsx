@@ -12,7 +12,7 @@ const fetchMovieData = async (genre, url) => {
   return await res.json();
 };
 
-// 🧭 Fetch user movie state from new table
+// 🧭 Fetch user movie state
 const fetchUserMovie = async (username, tmdb_id) => {
   const res = await fetch(
     `/api/user/movies?username=${encodeURIComponent(username)}&tmdb_id=${tmdb_id}`,
@@ -23,7 +23,7 @@ const fetchUserMovie = async (username, tmdb_id) => {
   return data[0] || null;
 };
 
-// 🪄 Toggle states in user_movies
+// 🪄 Update user_movies
 const updateUserMovie = async (payload) => {
   const res = await fetch(`/api/user/movies`, {
     method: "POST",
@@ -71,29 +71,58 @@ export default function MoviePage({ params }) {
   const handleToggle = async (field) => {
     if (!isLoggedIn || !movieData?.tmdb_id) return;
 
-    const newState = {
+    // 🧠 Optimistically update local state
+    const updatedState = {
       username: user.username,
       tmdb_id: movieData.tmdb_id,
-      is_liked: field === "is_liked" ? !(userMovieData?.is_liked ?? false) : userMovieData?.is_liked ?? false,
-      is_wanted: field === "is_wanted" ? !(userMovieData?.is_wanted ?? false) : userMovieData?.is_wanted ?? false,
-      is_seen: field === "is_seen" ? !(userMovieData?.is_seen ?? false) : userMovieData?.is_seen ?? false,
+      is_liked:
+        field === "is_liked"
+          ? !(userMovieData?.is_liked ?? false)
+          : userMovieData?.is_liked ?? false,
+      is_wanted:
+        field === "is_wanted"
+          ? !(userMovieData?.is_wanted ?? false)
+          : userMovieData?.is_wanted ?? false,
+      is_seen:
+        field === "is_seen"
+          ? !(userMovieData?.is_seen ?? false)
+          : userMovieData?.is_seen ?? false,
+      watch_count: userMovieData?.watch_count ?? 0,
+      personal_rating: userMovieData?.personal_rating ?? null,
+      personal_review: userMovieData?.personal_review ?? null,
     };
 
+    // 💨 Update immediately in UI
+    setUserMovieData(updatedState);
+
     try {
-      await updateUserMovie(newState);
-      setUserMovieData(newState);
+      await updateUserMovie(updatedState);
     } catch (err) {
-      console.error(err);
+      console.error("Toggle error:", err);
       alert("Failed to update movie state");
+      // ⏪ Roll back if failed
+      setUserMovieData(userMovieData);
     }
   };
 
   if (isLoading)
-    return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
+    return (
+      <Spinner animation="border" role="status" className="d-block mx-auto my-5" />
+    );
 
-  if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
+  if (error)
+    return (
+      <Alert variant="danger" className="my-5">
+        {error}
+      </Alert>
+    );
 
-  if (!movieData) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
+  if (!movieData)
+    return (
+      <Alert variant="warning" className="my-5">
+        Movie not found
+      </Alert>
+    );
 
   const {
     film,
@@ -106,7 +135,6 @@ export default function MoviePage({ params }) {
     image_url,
     my_rating,
     review,
-    tmdb_id,
   } = movieData;
 
   const isOwned = userMovieData?.is_liked ?? false;

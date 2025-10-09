@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Alert, Spinner, Card, Button, Form, Tabs, Tab } from 'react-bootstrap';
@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const { username: profileUsername } = useParams();
   const fileInputRef = useRef(null);
 
+  // ─── States ─────────────────────────────
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,9 +40,78 @@ export default function ProfilePage() {
   const isSelf = loggedInUser && profile && loggedInUser.username === profile.username;
 
   // ───────────────────────────
+  // Fetch followers/following
+  // ───────────────────────────
+  const fetchFollowLists = useCallback(async (username) => {
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+        fetch(`/api/user/followers?username=${username}`),
+        fetch(`/api/user/following?username=${username}`),
+      ]);
+
+      const followersData = await followersRes.json();
+      const followingData = await followingRes.json();
+
+      setFollowers(followersData.users || []);
+      setFollowing(followingData.users || []);
+    } catch (err) {
+      console.error('Error fetching follow lists:', err);
+    }
+  }, []);
+
+  // ───────────────────────────
+  // Fetch movies
+  // ───────────────────────────
+  const fetchMovieLists = useCallback(async (username) => {
+    try {
+      const res = await fetch(`/api/user/movies?username=${encodeURIComponent(username)}`, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!res.ok) throw new Error('Failed to fetch user movies');
+      const allMovies = await res.json();
+
+      const owned = allMovies.filter((m) => m.is_liked);
+      const wanted = allMovies.filter((m) => m.is_wanted);
+      const seen = allMovies.filter((m) => m.is_seen);
+
+      setOwnedMovies(owned.slice(0, 6));
+      setWantedMovies(wanted.slice(0, 6));
+      setSeenMovies(seen.slice(0, 6));
+      setOwnedCount(owned.length);
+      setWantedCount(wanted.length);
+      setSeenCount(seen.length);
+    } catch (err) {
+      console.error('Error fetching movie lists:', err);
+    }
+  }, []);
+
+  // ───────────────────────────
+  // Fetch activity feed
+  // ───────────────────────────
+  const fetchActivityFeed = useCallback(async (username) => {
+    try {
+      const [recentRes, followingRes] = await Promise.all([
+        fetch(`/api/activity/feed/${username}?limit=5`, { cache: 'no-store' }),
+        fetch(`/api/activity/following/${username}?limit=5`, { cache: 'no-store' }),
+      ]);
+
+      if (!recentRes.ok || !followingRes.ok) return;
+
+      const recentData = await recentRes.json();
+      const followingData = await followingRes.json();
+
+      setRecentActivity((recentData.feed || []).slice(0, 5));
+      setFollowingActivity((followingData.feed || []).slice(0, 5));
+    } catch (err) {
+      console.error('Error fetching activity feed:', err);
+    }
+  }, []);
+
+  // ───────────────────────────
   // Fetch profile
   // ───────────────────────────
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
@@ -51,45 +121,35 @@ export default function ProfilePage() {
         return;
       }
 
-      // who is logged in
-      const authRes = await fetch('/api/auth/profile', {
-        credentials: 'include',
-        cache: 'no-store',
-      });
+      // Auth user
+      const authRes = await fetch('/api/auth/profile', { credentials: 'include', cache: 'no-store' });
       let authUser = null;
       if (authRes.ok) authUser = await authRes.json();
       setLoggedInUser(authUser);
 
-      // which profile
-      let profileRes;
-      if (authUser && profileUsername === authUser.username) {
-        profileRes = await fetch('/api/auth/profile', {
-          credentials: 'include',
-          cache: 'no-store',
-        });
-      } else {
-        profileRes = await fetch(`/api/users/${profileUsername}`, {
-          cache: 'no-store',
-        });
-      }
+      // Profile (self or public)
+      const profileUrl =
+        authUser && profileUsername === authUser.username
+          ? '/api/auth/profile'
+          : `/api/users/${profileUsername}`;
 
+      const profileRes = await fetch(profileUrl, { credentials: 'include', cache: 'no-store' });
       if (profileRes.status === 401) {
         router.replace('/login');
         return;
       }
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
-      const profileData = await profileRes.json();
 
+      const profileData = await profileRes.json();
       setProfile(profileData);
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
-      // check follow status
-      if (authUser && profileData && authUser.username !== profileData.username) {
-        const followCheck = await fetch(
-          `/api/follow/status?followingUsername=${profileData.username}`,
-          { credentials: 'include' }
-        );
+      // Follow status
+      if (authUser && profileData.username !== authUser.username) {
+        const followCheck = await fetch(`/api/follow/status?followingUsername=${profileData.username}`, {
+          credentials: 'include',
+        });
         if (followCheck.ok) {
           const { following } = await followCheck.json();
           setIsFollowing(following);
@@ -107,80 +167,8 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profileUsername, router, fetchFollowLists, fetchMovieLists, fetchActivityFeed]);
 
-  // ───────────────────────────
-  // Fetch followers/following
-  // ───────────────────────────
-  const fetchFollowLists = async (username) => {
-    try {
-      const [followersRes, followingRes] = await Promise.all([
-        fetch(`/api/user/followers?username=${username}`),
-        fetch(`/api/user/following?username=${username}`),
-      ]);
-
-      const followersData = await followersRes.json();
-      const followingData = await followingRes.json();
-
-      setFollowers(followersData.users || []);
-      setFollowing(followingData.users || []);
-    } catch (err) {
-      console.error('Error fetching follow lists:', err);
-    }
-  };
-
-  // ───────────────────────────
-  // Fetch movie lists
-  // ───────────────────────────
-  const fetchMovieLists = async (username) => {
-    try {
-      const [ownedRes, wantedRes, seenRes] = await Promise.all([
-        fetch(`/api/auth/profile/${username}/mycollection?limit=5`),
-        fetch(`/api/auth/profile/${username}/wantedforcollection?limit=5`),
-        fetch(`/api/auth/profile/${username}/seenit?limit=5`),
-      ]);
-
-      const ownedData = await ownedRes.json();
-      const wantedData = await wantedRes.json();
-      const seenData = await seenRes.json();
-
-      setOwnedMovies((ownedData.movies || []).slice(0, 6));
-      setWantedMovies((wantedData.movies || []).slice(0, 6));
-      setSeenMovies((seenData.movies || []).slice(0, 6));
-
-      setOwnedCount(ownedData.movies?.length || 0);
-      setWantedCount(wantedData.movies?.length || 0);
-      setSeenCount(seenData.movies?.length || 0);
-    } catch (err) {
-      console.error('Error fetching movie lists:', err);
-    }
-  };
-
-  // ───────────────────────────
-  // Fetch activity feed
-  // ───────────────────────────
-const fetchActivityFeed = async (username) => {
-  try {
-    const [recentRes, followingRes] = await Promise.all([
-      fetch(`/api/activity/feed/${username}?limit=5`, { cache: 'no-store' }),
-      fetch(`/api/activity/following/${username}?limit=5`, { cache: 'no-store' }),
-    ]);
-
-    if (!recentRes.ok || !followingRes.ok) {
-      console.error('❌ Error fetching activity feed');
-      return;
-    }
-
-    const recentData = await recentRes.json();
-    const followingData = await followingRes.json();
-
-    // ⬇️ Limit to last 5 on the client side too (extra safety)
-    setRecentActivity((recentData.feed || []).slice(0, 5));
-    setFollowingActivity((followingData.feed || []).slice(0, 5));
-  } catch (err) {
-    console.error('❌ Error fetching activity feed:', err);
-  }
-};
   // ───────────────────────────
   // Avatar upload
   // ───────────────────────────
@@ -188,6 +176,7 @@ const fetchActivityFeed = async (username) => {
     if (!isSelf) return;
     const formData = new FormData();
     formData.append('file', file);
+
     try {
       setSaving(true);
       setError('');
@@ -200,8 +189,7 @@ const fetchActivityFeed = async (username) => {
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
       const newUrl = data.avatar_url || data.url;
-      const withTs = `${newUrl}?t=${Date.now()}`;
-      setAvatarUrl(withTs);
+      setAvatarUrl(`${newUrl}?t=${Date.now()}`);
 
       await fetch('/api/auth/profile', {
         method: 'PATCH',
@@ -209,8 +197,6 @@ const fetchActivityFeed = async (username) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: newUrl, bio }),
       });
-
-      await fetchProfile();
     } catch (err) {
       console.error(err);
       setError(err.message || 'Upload failed');
@@ -257,12 +243,9 @@ const fetchActivityFeed = async (username) => {
         body: JSON.stringify({ followingUsername: profile.username }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
-      }
-
+      if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
+
       if (data.success) {
         setIsFollowing(!isFollowing);
         await fetchFollowLists(profile.username);
@@ -276,34 +259,37 @@ const fetchActivityFeed = async (username) => {
   // ───────────────────────────
   // Initial load
   // ───────────────────────────
-useEffect(() => {
-  fetchProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [profileUsername]);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
   // ───────────────────────────
   // UI
   // ───────────────────────────
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
         <p>Loading profile…</p>
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Alert variant="danger" className="mt-5">
         {error}
       </Alert>
     );
+  }
 
-  if (!profile)
+  if (!profile) {
     return (
       <Alert variant="warning" className="mt-5">
         Profile not found.
       </Alert>
     );
+  }
 
   return (
     <div className="container mt-5">
@@ -313,7 +299,7 @@ useEffect(() => {
           : `Profile of ${profile.username}`}
       </h2>
 
-      {/* ─────────── Profile Card ─────────── */}
+      {/* ─── Profile Card ───────────────────────────── */}
       <Card className="mb-4 p-3">
         <Card.Body className="text-center">
           <div
@@ -330,9 +316,7 @@ useEffect(() => {
               justifyContent: 'center',
               backgroundColor: '#f0f0f0',
             }}
-            onClick={() => {
-              if (isSelf && fileInputRef.current) fileInputRef.current.click();
-            }}
+            onClick={() => isSelf && fileInputRef.current?.click()}
           >
             {avatarUrl ? (
               <Image
@@ -354,10 +338,7 @@ useEffect(() => {
               accept="image/*"
               ref={fileInputRef}
               style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) handleAvatarUpload(file);
-              }}
+              onChange={(e) => e.target.files[0] && handleAvatarUpload(e.target.files[0])}
             />
           )}
 
@@ -385,12 +366,7 @@ useEffect(() => {
                 />
               </Form.Group>
 
-              <Button
-                className="mt-3"
-                onClick={handleSave}
-                disabled={saving}
-                variant="primary"
-              >
+              <Button className="mt-3" onClick={handleSave} disabled={saving} variant="primary">
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </>
@@ -408,214 +384,59 @@ useEffect(() => {
         </Card.Body>
       </Card>
 
-      {/* ─────────── Followers / Following ─────────── */}
-      <Card className="mb-4">
-        <Card.Body>
-          <Tabs defaultActiveKey="followers" id="profile-tabs" className="mb-3">
-            <Tab eventKey="followers" title={`Followers (${followers.length})`}>
-              <div className="d-flex flex-wrap gap-3">
-                {followers.length > 0 ? (
-                  followers.map((user) => (
-                    <Link
-                      href={`/profile/${user.username}`}
-                      key={user.username}
-                      className="text-center text-decoration-none"
-                    >
-                      <Image
-                        src={user.avatar_url || '/images/default-avatar.png'}
-                        alt={user.username}
-                        width={60}
-                        height={60}
-                        className="rounded-circle border"
-                      />
-                      <p className="small mt-1">{user.username}</p>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-muted">No followers yet.</p>
-                )}
-              </div>
-            </Tab>
-
-            <Tab eventKey="following" title={`Following (${following.length})`}>
-              <div className="d-flex flex-wrap gap-3">
-                {following.length > 0 ? (
-                  following.map((user) => (
-                    <Link
-                      href={`/profile/${user.username}`}
-                      key={user.username}
-                      className="text-center text-decoration-none"
-                    >
-                      <Image
-                        src={user.avatar_url || '/images/default-avatar.png'}
-                        alt={user.username}
-                        width={60}
-                        height={60}
-                        className="rounded-circle border"
-                      />
-                      <p className="small mt-1">{user.username}</p>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-muted">Not following anyone yet.</p>
-                )}
-              </div>
-            </Tab>
-          </Tabs>
-        </Card.Body>
-      </Card>
-
-      {/* ─────────── Activity Feed Tabs ─────────── */}
-      {loggedInUser && (
-        <Card className="mb-4">
-          <Card.Body>
-            <Tabs defaultActiveKey="recent" id="activity-tabs" className="mb-3">
-              {/* ─────────────── Recent Activity ─────────────── */}
-              <Tab eventKey="recent" title="My Recent Activity">
-                {recentActivity.length > 0 ? (
-                  <ul className="list-unstyled">
-                    {recentActivity.map((act, idx) => (
-                      <li key={idx} className="mb-2 border-bottom pb-2">
-                        <strong>You </strong>{' '}
-                        {act.action}
-                        {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
-                        <span className="text-muted small">
-                          {act.created_at && !isNaN(new Date(act.created_at))
-                            ? new Date(act.created_at).toLocaleString()
-                            : ''}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted">No recent activity.</p>
-                )}
-              </Tab>
-
-              {/* ─────────────── Following Activity ─────────────── */}
-              <Tab eventKey="followingactivity" title="Friends Activity">
-                {followingActivity.length > 0 ? (
-                  <ul className="list-unstyled">
-                    {followingActivity.map((act, idx) => (
-                      <li key={idx} className="mb-2 border-bottom pb-2">
-                        <strong>{act.username || `User #${act.user_id}`}</strong>{' '}
-                        {act.action}
-                        {act.movie_title ? `: "${act.movie_title}"` : ''}{' '}
-                        <span className="text-muted small">
-                          {act.created_at && !isNaN(new Date(act.created_at))
-                            ? new Date(act.created_at).toLocaleString()
-                            : ''}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted">No activity from friends.</p>
-                )}
-              </Tab>
-            </Tabs>
-          </Card.Body>
-        </Card>
-      )}
-      {/* ─────────── Movies Owned / Wanted / Seen ─────────── */}
+      {/* ─── Movies Tabs ───────────────────────────── */}
       <Card className="mb-4">
         <Card.Body>
           <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
             {/* OWNED */}
-            <Tab eventKey="owned" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Owned ({ownedCount})</span>}>
-              {ownedMovies.length > 0 ? (
-                <>
-                  <div className="d-flex flex-wrap gap-3">
-                    {ownedMovies.map((movie) => (
-                      <div key={movie.id} className="text-center">
-                        <Image
-                          src={movie.image_url || '/images/default-poster.png'}
-                          alt={movie.title}
-                          width={80}
-                          height={120}
-                          className="border rounded"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 text-center">
-                    <Link
-                      href={`/profile/${profile.username}/mycollection`}
-                      className="btn btn-outline-primary btn-sm"
-                    >
-                      See All
-                    </Link>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted">No movies owned yet.</p>
-              )}
+            <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
+              <MovieList movies={ownedMovies} username={profile.username} link="mycollection" />
             </Tab>
 
             {/* WANTED */}
-            <Tab eventKey="wanted" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Wanted ({wantedCount})</span>}>
-              {wantedMovies.length > 0 ? (
-                <>
-                  <div className="d-flex flex-wrap gap-3">
-                    {wantedMovies.map((movie) => (
-                      <div key={movie.id} className="text-center">
-                        <Image
-                          src={movie.image_url || '/images/default-poster.png'}
-                          alt={movie.title}
-                          width={80}
-                          height={120}
-                          className="border rounded"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 text-center">
-                    <Link
-                      href={`/profile/${profile.username}/wantedformycollection`}
-                      className="btn btn-outline-primary btn-sm"
-                    >
-                      See All
-                    </Link>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted">No wanted movies yet.</p>
-              )}
+            <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
+              <MovieList movies={wantedMovies} username={profile.username} link="wantedformycollection" />
             </Tab>
 
             {/* SEEN */}
-            <Tab eventKey="seen" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Seen ({seenCount})</span>}>
-              {seenMovies.length > 0 ? (
-                <>
-                  <div className="d-flex flex-wrap gap-3">
-                    {seenMovies.map((movie) => (
-                      <div key={movie.id} className="text-center">
-                        <Image
-                          src={movie.image_url || '/images/default-poster.png'}
-                          alt={movie.title}
-                          width={80}
-                          height={120}
-                          className="border rounded"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 text-center">
-                    <Link
-                      href={`/profile/${profile.username}/seenit`}
-                      className="btn btn-outline-primary btn-sm"
-                    >
-                      See All
-                    </Link>
-                  </div>
-                </>
-              ) : (
-                <p className="text-muted">No movies seen yet.</p>
-              )}
+            <Tab eventKey="seen" title={`Seen (${seenCount})`}>
+              <MovieList movies={seenMovies} username={profile.username} link="seenit" />
             </Tab>
           </Tabs>
         </Card.Body>
       </Card>
     </div>
+  );
+}
+
+// ─── Reusable Movie List Component ─────────────────────────────
+function MovieList({ movies, username, link }) {
+  if (movies.length === 0) {
+    return <p className="text-muted">No movies yet.</p>;
+  }
+  return (
+    <>
+      <div className="d-flex flex-wrap gap-3">
+        {movies.map((movie) => (
+          <div key={movie.tmdb_id} className="text-center">
+            <Image
+              src={movie.image_url || '/images/default-poster.png'}
+              alt={movie.film}
+              width={80}
+              height={120}
+              className="border rounded"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 text-center">
+        <Link
+          href={`/profile/${username}/${link}`}
+          className="btn btn-outline-primary btn-sm"
+        >
+          See All
+        </Link>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Row, Col, Button } from 'react-bootstrap';
@@ -13,7 +13,7 @@ export default function MyCollectionPage() {
 
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('film');
+  const [sortCriteria, setSortCriteria] = useState('title');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,72 +23,70 @@ export default function MyCollectionPage() {
   const isTrue = (val) =>
     val === true || val === 'true' || val === 't' || val === 1 || val === '1';
 
-  useEffect(() => {
+  const fetchCollection = useCallback(async () => {
     if (!username) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-    const fetchCollection = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
+        credentials: 'include',
+      });
 
-        const res = await fetch(`/api/auth/profile/${username}/mycollection`, {
-          credentials: 'include',
-        });
-
-        if (res.status === 401) {
-          router.push('/login');
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
-        }
-
-        const json = await res.json();
-        // Only use allmovies data, filter for isliked or iswatched
-        const filtered = (json.movies ?? []).filter(
-          (m) => isTrue(m.isliked) || isTrue(m.iswatched)
-        );
-        // Deduplicate by url
-        const deduped = Array.from(
-          new Map(filtered.map((m) => [m.url, m])).values()
-        );
-        setMovies(deduped);
-      } catch (err) {
-        console.error('Error fetching collection:', err);
-        setError(err.message);
-        setMovies([]);
-      } finally {
-        setLoading(false);
+      if (res.status === 401) {
+        router.push('/login');
+        return;
       }
-    };
-    fetchCollection();
+
+      if (!res.ok) {
+        throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
+      }
+
+      const json = await res.json();
+      const filtered = (json.movies ?? []).filter(
+        (m) => isTrue(m.isliked) || isTrue(m.iswatched)
+      );
+
+      const deduped = Array.from(new Map(filtered.map((m) => [m.url, m])).values());
+      setMovies(deduped);
+    } catch (err) {
+      console.error('Error fetching collection:', err);
+      setError(err.message);
+      setMovies([]);
+    } finally {
+      setLoading(false);
+    }
   }, [username, router]);
 
-  // Sort movies whenever movies or sortCriteria changes
+  useEffect(() => {
+    fetchCollection();
+  }, [fetchCollection]);
+
   useEffect(() => {
     const sorted = [...movies].sort((a, b) => {
       const key = sortCriteria;
-      const va = (a[key] ?? a.film ?? '').toString();
-      const vb = (b[key] ?? b.film ?? '').toString();
+      const va = (a[key] ?? a.title ?? '').toString();
+      const vb = (b[key] ?? b.title ?? '').toString();
       return va.localeCompare(vb);
     });
     setSortedMovies(sorted);
   }, [movies, sortCriteria]);
 
-  if (loading)
+  if (loading) {
     return (
       <Container className="py-4">
         <p>Loading…</p>
       </Container>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Container className="py-4">
         <p>Error: {error}</p>
       </Container>
     );
+  }
 
   return (
     <Container className="py-4">
@@ -129,11 +127,9 @@ export default function MyCollectionPage() {
                 href={`/genre/${item.genre}/${encodeURIComponent(item.url)}`}
                 className="text-decoration-none"
               >
-                <div className={styles.imagewrapper + ' position-relative'}>
+                <div className={`${styles.imagewrapper} position-relative`}>
                   <Image
-                    src={decodeURIComponent(
-                      item.image_url || '/images/fallback.jpg'
-                    )}
+                    src={decodeURIComponent(item.image_url || '/images/fallback.jpg')}
                     alt={item.film}
                     width={200}
                     height={300}
