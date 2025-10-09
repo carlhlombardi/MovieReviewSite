@@ -108,8 +108,7 @@ export async function DELETE(req, { params }) {
       return new Response(JSON.stringify({ message: 'url is required' }), { status: 400 });
     }
 
-    // 📝 Get movie title for activity log
-    // 📝 Get movie title for activity log
+  // 📝 Get movie title for activity log
     const { rows } = await sql`
       SELECT title FROM allmovies
       WHERE username = ${username} AND url = ${url}
