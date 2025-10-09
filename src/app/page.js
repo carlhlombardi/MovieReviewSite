@@ -142,7 +142,7 @@ export default function Home() {
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : "/images/fallback.jpg",
   genre: movieData.genre || "Unknown",
-  url: movieData.url,
+  url: slugifiedUrl ,
   studio: movieData.studios || "",
   director: movieData.director || "",
 };
