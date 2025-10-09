@@ -7,7 +7,7 @@ export default function useNewlyReviewedMovies() {
   useEffect(() => {
     const fetchNewlyReviewed = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/data/newlyreviewed?limit=8`);
+        const res = await fetch(`${API_URL}/api/data/newlyreviewed?limit=9`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         setNewlyReviewed(data.results || []);

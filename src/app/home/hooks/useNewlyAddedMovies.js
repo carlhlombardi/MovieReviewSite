@@ -7,7 +7,7 @@ export default function useNewlyAddedMovies() {
   useEffect(() => {
     const fetchNewlyAdded = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/data/newlyadded?limit=8`);
+        const res = await fetch(`${API_URL}/api/data/newlyadded?limit=9`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         setNewlyAdded(data.results || []);
