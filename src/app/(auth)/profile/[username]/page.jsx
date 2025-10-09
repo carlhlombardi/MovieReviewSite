@@ -145,16 +145,19 @@ export default function ProfilePage() {
       setAvatarUrl(profileData.avatar_url || '');
       setBio(profileData.bio || '');
 
-      // Follow status
-      if (authUser && profileData.username !== authUser.username) {
-        const followCheck = await fetch(`/api/users/${username}/follow-status=${profileData.username}`, {
-          credentials: 'include',
-        });
-        if (followCheck.ok) {
-          const { following } = await followCheck.json();
-          setIsFollowing(following);
-        }
-      }
+    // ✅ Follow status check
+if (authUser && profileData.username !== authUser.username) {
+  const followCheck = await fetch(
+    `/api/users/${profileData.username}/follow-status`,
+    { credentials: 'include' }
+  );
+
+  if (followCheck.ok) {
+    const { following } = await followCheck.json();
+    setIsFollowing(following);
+  }
+}
+
 
       await Promise.all([
         fetchFollowLists(profileData.username),
