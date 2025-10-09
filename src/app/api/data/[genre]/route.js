@@ -58,7 +58,7 @@ export async function POST(req, { params }) {
 
   try {
     let {
-      title,
+      film,
       year,
       director = '',
       screenwriters = '',
@@ -73,9 +73,9 @@ export async function POST(req, { params }) {
       review = ''
     } = await req.json();
 
-    if (!title || !year || !tmdb_id || !genreInput) {
+    if (!film || !year || !tmdb_id || !genreInput) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, year, tmdb_id, or genre' },
+        { error: 'Missing required fields: film, year, tmdb_id, or genre' },
         { status: 400 }
       );
     }
@@ -88,8 +88,8 @@ export async function POST(req, { params }) {
     }
 
     // Slugify
-    const slugify = (title, tmdb_id) => {
-      return `${title}-${tmdb_id}`
+    const slugify = (film, tmdb_id) => {
+      return `${film}-${tmdb_id}`
         .toString()
         .toLowerCase()
         .replace(/'/g, '')
@@ -100,7 +100,7 @@ export async function POST(req, { params }) {
     const genreSlug = genreInput.toString().toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
 
     if (!url) {
-      url = slugify(title, tmdb_id);
+      url = slugify(film, tmdb_id);
     }
 
     // Check existing
@@ -111,7 +111,7 @@ export async function POST(req, { params }) {
 
     // Fetch poster if missing
     if (!image_url) {
-      const fetchedImageUrl = await fetchTmdbPoster(title, year);
+      const fetchedImageUrl = await fetchTmdbPoster(film, year);
       if (fetchedImageUrl) {
         image_url = fetchedImageUrl;
       }
@@ -126,7 +126,7 @@ export async function POST(req, { params }) {
        ON CONFLICT (tmdb_id, genre) DO UPDATE
          SET film=$1, year=$2, studio=$3, director=$4, screenwriters=$5,
              producer=$6, run_time=$7, url=$8, image_url=$9, my_rating=$12, review=$13`,
-      [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug, my_rating, review]
+      [film, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug, my_rating, review]
     );
 
     return NextResponse.json({ message: 'Movie inserted successfully' }, { status: 201 });
