@@ -9,7 +9,7 @@ import useSortedMovies from './hooks/useSortedMovies';
 import CollectionHeader from './components/CollectionHeader';
 import MovieGrid from './components/MovieGrid';
 import Loading from './components/Loading';
-import ErrorMessage from './components/ErrorMessage';
+import ErrorMessage from './components/Error';
 
 export default function MyCollectionPage() {
   const { username } = useParams();
