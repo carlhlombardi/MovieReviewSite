@@ -107,15 +107,19 @@ const GenrePage = () => {
               // skip items without a URL
               return null;
             }
+            // Use item.id as key, fallback to item.tmdb_id if needed
+            const key = item.id || item.tmdb_id || item.url;
+            // Use fallback image if image_url is missing or empty
+            const imageSrc = item.image_url && item.image_url.trim() !== "" ? decodeURIComponent(item.image_url) : "/images/fallback.jpg";
             return (
-              <Col key={item.id ?? item.row_id} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <Col key={key} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <Link
                   href={`/genre/${genre}/${encodeURIComponent(item.url)}`}
                   className="text-decoration-none"
                 >
                   <div className={styles.imagewrapper}>
                     <Image
-                      src={decodeURIComponent(item.image_url || "/images/fallback.jpg")}
+                      src={imageSrc}
                       alt={item.film}
                       width={200}
                       height={300}
