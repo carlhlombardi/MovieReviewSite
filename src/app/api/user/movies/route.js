@@ -1,45 +1,39 @@
+import { sql } from "@vercel/postgres";
 import { NextResponse } from "next/server";
-import pkg from "pg";
-const { Pool } = pkg;
 
-// 🧰 Create DB pool directly here (no lib/db)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // ⬅️ Make sure this is set in .env.local
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-});
-
-// 🟡 GET: Get user movie data (all or specific)
+// 🟡 GET: Get all or specific user movie entry
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const username = searchParams.get("username");
-  const tmdb_id = searchParams.get("tmdb_id");
-
-  if (!username) {
-    return NextResponse.json({ error: "Missing username" }, { status: 400 });
-  }
-
   try {
+    const { searchParams } = new URL(req.url);
+    const username = searchParams.get("username");
+    const tmdb_id = searchParams.get("tmdb_id");
+
+    if (!username) {
+      return NextResponse.json({ error: "Missing username" }, { status: 400 });
+    }
+
     let result;
     if (tmdb_id) {
-      result = await pool.query(
-        `SELECT * FROM user_movies WHERE username = $1 AND tmdb_id = $2`,
-        [username, tmdb_id]
-      );
+      result = await sql`
+        SELECT * FROM user_movies 
+        WHERE username = ${username} AND tmdb_id = ${tmdb_id};
+      `;
     } else {
-      result = await pool.query(
-        `SELECT * FROM user_movies WHERE username = $1 ORDER BY created_at DESC`,
-        [username]
-      );
+      result = await sql`
+        SELECT * FROM user_movies 
+        WHERE username = ${username}
+        ORDER BY created_at DESC;
+      `;
     }
 
     return NextResponse.json(result.rows);
   } catch (error) {
-    console.error("GET user_movies error:", error);
+    console.error("❌ GET user_movies error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
-// 🟢 POST: Add or update movie interaction (like, seen, wanted, rating, review)
+// 🟢 POST: Insert or update a user's movie interaction
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -58,45 +52,46 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing username or tmdb_id" }, { status: 400 });
     }
 
-    await pool.query(
-      `INSERT INTO user_movies (username, tmdb_id, is_liked, is_seen, is_wanted, watch_count, personal_rating, personal_review)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-       ON CONFLICT (username, tmdb_id)
-       DO UPDATE SET
-         is_liked = EXCLUDED.is_liked,
-         is_seen = EXCLUDED.is_seen,
-         is_wanted = EXCLUDED.is_wanted,
-         watch_count = EXCLUDED.watch_count,
-         personal_rating = EXCLUDED.personal_rating,
-         personal_review = EXCLUDED.personal_review`,
-      [username, tmdb_id, is_liked, is_seen, is_wanted, watch_count, personal_rating, personal_review]
-    );
+    // 📝 Insert or update
+    await sql`
+      INSERT INTO user_movies (username, tmdb_id, is_liked, is_seen, is_wanted, watch_count, personal_rating, personal_review)
+      VALUES (${username}, ${tmdb_id}, ${is_liked}, ${is_seen}, ${is_wanted}, ${watch_count}, ${personal_rating}, ${personal_review})
+      ON CONFLICT (username, tmdb_id)
+      DO UPDATE SET
+        is_liked = EXCLUDED.is_liked,
+        is_seen = EXCLUDED.is_seen,
+        is_wanted = EXCLUDED.is_wanted,
+        watch_count = EXCLUDED.watch_count,
+        personal_rating = EXCLUDED.personal_rating,
+        personal_review = EXCLUDED.personal_review;
+    `;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: "✅ User movie updated successfully" }, { status: 201 });
   } catch (error) {
-    console.error("POST user_movies error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("❌ POST user_movies error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// 🔴 DELETE: Remove a user’s movie entry
+// 🔴 DELETE: Remove user movie entry
 export async function DELETE(req) {
-  const { searchParams } = new URL(req.url);
-  const username = searchParams.get("username");
-  const tmdb_id = searchParams.get("tmdb_id");
-
-  if (!username || !tmdb_id) {
-    return NextResponse.json({ error: "Missing username or tmdb_id" }, { status: 400 });
-  }
-
   try {
-    await pool.query(
-      `DELETE FROM user_movies WHERE username = $1 AND tmdb_id = $2`,
-      [username, tmdb_id]
-    );
-    return NextResponse.json({ success: true });
+    const { searchParams } = new URL(req.url);
+    const username = searchParams.get("username");
+    const tmdb_id = searchParams.get("tmdb_id");
+
+    if (!username || !tmdb_id) {
+      return NextResponse.json({ error: "Missing username or tmdb_id" }, { status: 400 });
+    }
+
+    await sql`
+      DELETE FROM user_movies 
+      WHERE username = ${username} AND tmdb_id = ${tmdb_id};
+    `;
+
+    return NextResponse.json({ message: "🗑️ Movie entry deleted" });
   } catch (error) {
-    console.error("DELETE user_movies error:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("❌ DELETE user_movies error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
