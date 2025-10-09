@@ -132,20 +132,20 @@ export default function Home() {
 
       // 📝 Payload aligned with your table schema
       const payload = {
-        film: movieData.title,
-        year,
-        tmdb_id: movieData.id,
-        run_time: movieData.runtime || null,
-        screenwriters: movieData.screenwriters || "",
-        producer: movieData.producer || "",
-        image_url: movieData.poster_path
-          ? `https://image.tmdb.org/t/p/w500${movieData.poster_path}`
-          : "/images/fallback.jpg",
-        genre,
-        url: slugifiedUrl,
-        studio: movieData.production_companies?.[0]?.name || "",
-        director: movieData.director || "",
-      };
+  film: movieData.title,
+  year,
+  tmdb_id: movieData.tmdb_id,
+  run_time: movieData.run_time || null,
+  screenwriters: movieData.screenwriters || "",
+  producer: movieData.producers || "",
+  image_url: movie.poster_path
+    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    : "/images/fallback.jpg",
+  genre: movieData.genre || "Unknown",
+  url: movieData.url,
+  studio: movieData.studios || "",
+  director: movieData.director || "",
+};
 
       console.log("📦 Inserting movie:", payload);
 
