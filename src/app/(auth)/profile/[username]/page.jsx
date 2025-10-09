@@ -522,7 +522,7 @@ useEffect(() => {
         <Card.Body>
           <Tabs defaultActiveKey="owned" id="movie-tabs" className="mb-3">
             {/* OWNED */}
-            <Tab eventKey="owned" title={`Owned (${ownedCount})`}>
+            <Tab eventKey="owned" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Owned ({ownedCount})</span>}>
               {ownedMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
@@ -553,7 +553,7 @@ useEffect(() => {
             </Tab>
 
             {/* WANTED */}
-            <Tab eventKey="wanted" title={`Wanted (${wantedCount})`}>
+            <Tab eventKey="wanted" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Wanted ({wantedCount})</span>}>
               {wantedMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
@@ -584,7 +584,7 @@ useEffect(() => {
             </Tab>
 
             {/* SEEN */}
-            <Tab eventKey="seen" title={`Seen (${seenCount})`}>
+            <Tab eventKey="seen" title={<span style={{fontSize: '0.85rem', whiteSpace: 'nowrap'}}>Seen ({seenCount})</span>}>
               {seenMovies.length > 0 ? (
                 <>
                   <div className="d-flex flex-wrap gap-3">
