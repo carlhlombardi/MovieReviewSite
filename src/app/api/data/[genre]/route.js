@@ -1,29 +1,5 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
-
-const allowedTables = [
-  'actionmovies',
-  'allmovies',
-  'adventuremovies',
-  'animationmovies',
-  'comedymovies',
-  'crimemovies',
-  'documentarymovies',
-  'dramamovies',
-  'familymovies',
-  'fantasymovies',
-  'historymovies',
-  'horrormovies',
-  'musicmovies',
-  'mysterymovies',
-  'romancemovies',
-  'sciencefictionmovies',
-  'tvmoviemovies',
-  'thrillermovies',
-  'warmovies',
-  'westernmovies'
-];
-
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 async function fetchTmdbPoster(title, year) {
@@ -51,31 +27,25 @@ async function fetchTmdbPoster(title, year) {
 }
 
 export async function GET(req, { params }) {
-  const genreSegment = params.genre.toLowerCase();
+  const genre = params.genre.toLowerCase();
   const urlParam = new URL(req.url).searchParams.get('url');
-
-  if (!allowedTables.includes(genreSegment)) {
-    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
-  }
 
   try {
     if (urlParam) {
-      // ✅ Single movie – always from allmovies
+      // Single movie by URL
       const result = await sql.query(`SELECT * FROM allmovies WHERE url = $1`, [urlParam]);
       if (result.rows.length === 0) {
         return NextResponse.json({ error: 'Movie not found' }, { status: 404 });
       }
       return NextResponse.json(result.rows[0]);
+    } else if (genre === 'allmovies') {
+      // All movies
+      const result = await sql.query(`SELECT * FROM allmovies`);
+      return NextResponse.json(result.rows);
     } else {
-      if (genreSegment === 'allmovies') {
-        // ✅ "All Movies" page
-        const result = await sql.query(`SELECT * FROM allmovies`);
-        return NextResponse.json(result.rows);
-      } else {
-        // ✅ Genre pages – pull from that genre table
-        const result = await sql.query(`SELECT * FROM ${genreSegment}`);
-        return NextResponse.json(result.rows);
-      }
+      // Movies by genre
+      const result = await sql.query(`SELECT * FROM allmovies WHERE genre = $1`, [genre]);
+      return NextResponse.json(result.rows);
     }
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -84,11 +54,7 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  const genreSegment = params.genre.toLowerCase();
-
-  if (!allowedTables.includes(genreSegment)) {
-    return NextResponse.json({ error: 'Invalid genre' }, { status: 400 });
-  }
+  const genre = params.genre.toLowerCase();
 
   try {
     let {
@@ -102,12 +68,12 @@ export async function POST(req, { params }) {
       url,
       image_url,
       tmdb_id,
-      genre,
+      genre: genreInput,
       my_rating = 0,
       review = ''
     } = await req.json();
 
-    if (!title || !year || !tmdb_id || !genre) {
+    if (!title || !year || !tmdb_id || !genreInput) {
       return NextResponse.json(
         { error: 'Missing required fields: title, year, tmdb_id, or genre' },
         { status: 400 }
@@ -131,7 +97,7 @@ export async function POST(req, { params }) {
         .replace(/^-+|-+$/g, '');
     };
 
-    const genreSlug = genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
+    const genreSlug = genreInput.toString().toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
 
     if (!url) {
       url = slugify(title, tmdb_id);
@@ -149,17 +115,6 @@ export async function POST(req, { params }) {
       if (fetchedImageUrl) {
         image_url = fetchedImageUrl;
       }
-    }
-
-    // Insert into genre table
-    if (genreSegment !== 'allmovies') {
-      await sql.query(
-        `INSERT INTO ${genreSegment} 
-         (film, year, studio, director, screenwriters, producer, run_time, url, image_url, tmdb_id, genre)
-         VALUES 
-         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [title, year, studios, director, screenwriters, producers, run_time, url, image_url, tmdb_id, genreSlug]
-      );
     }
 
     // Insert/upsert into allmovies (with rating + review)
