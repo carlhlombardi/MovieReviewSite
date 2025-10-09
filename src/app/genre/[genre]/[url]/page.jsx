@@ -5,157 +5,58 @@ import Image from "next/image";
 import { Heart, HeartFill, Tv, TvFill, Eye, EyeFill } from "react-bootstrap-icons";
 import { useAuth } from "@/app/(auth)/contexts/AuthContext";
 
-// 🧰 Helper: Clean genre string
-const slugifyGenre = (genre) =>
-  genre.toString().toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
-
-// 🧭 Fetch movie data
-const fetchData = async (genre, url) => {
+// 🧭 Fetch movie data from allmovies
+const fetchMovieData = async (genre, url) => {
   const res = await fetch(`/api/data/${genre}?url=${encodeURIComponent(url)}`);
   if (!res.ok) throw new Error("Failed to fetch movie data");
   return await res.json();
 };
 
-// ❤️ Toggle Own It
-export const toggleOwnIt = async (username, movieData, action) => {
-  const endpoint = `/api/auth/profile/${username}/mycollection`;
-  const payload =
-    action === "like"
-      ? {
-          username,
-          url: movieData.url,
-          isliked: true,
-          likedcount: movieData.likedcount ?? 0,
-          film: movieData.film,
-          genre: movieData.genre,
-          image_url: movieData.image_url,
-        }
-      : { url: movieData.url };
+// 🧭 Fetch user movie state from new table
+const fetchUserMovie = async (username, tmdb_id) => {
+  const res = await fetch(
+    `/api/user/movies?username=${encodeURIComponent(username)}&tmdb_id=${tmdb_id}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data[0] || null;
+};
 
-  const res = await fetch(endpoint, {
-    method: action === "like" ? "POST" : "DELETE",
-    credentials: "include",
+// 🪄 Toggle states in user_movies
+const updateUserMovie = async (payload) => {
+  const res = await fetch(`/api/user/movies`, {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 };
 
-// 📺 Toggle Want It
-export const toggleWantIt = async (username, movieData, action) => {
-  const endpoint = `/api/auth/profile/${username}/wantedforcollection`;
-  const payload =
-    action === "add"
-      ? {
-          username,
-          url: movieData.url,
-          film: movieData.film,
-          genre: movieData.genre,
-          iswatched: true,
-          watchcount: movieData.watchcount ?? 0,
-          image_url: movieData.image_url,
-        }
-      : { url: movieData.url };
-
-  const res = await fetch(endpoint, {
-    method: action === "add" ? "POST" : "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return await res.json();
-};
-
-// 👁️ Toggle Seen It
-export const toggleSeenIt = async (username, movieData, action) => {
-  const endpoint = `/api/auth/profile/${username}/seenit`;
-  const payload =
-    action === "seen"
-      ? {
-          username,
-          url: movieData.url,
-          film: movieData.film,
-          genre: movieData.genre,
-          seenit: true,
-          image_url: movieData.image_url,
-        }
-      : { url: movieData.url };
-
-  const res = await fetch(endpoint, {
-    method: action === "seen" ? "POST" : "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return await res.json();
-};
-
-// 🧾 Main Component
 export default function MoviePage({ params }) {
   const { genre, url } = params;
   const { isLoggedIn, user } = useAuth();
 
-  const [data, setData] = useState(null);
+  const [movieData, setMovieData] = useState(null);
+  const [userMovieData, setUserMovieData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isOwned, setIsOwned] = useState(false);
-  const [isWanted, setIsWanted] = useState(false);
-  const [isSeen, setIsSeen] = useState(false);
 
-  const handleOwnIt = async () => {
-    const action = isOwned ? "unlike" : "like";
-    const result = await toggleOwnIt(user.username, data, action);
-    if (result) setIsOwned(action === "like");
-  };
-
-  const handleWantIt = async () => {
-    const action = isWanted ? "remove" : "add";
-    const result = await toggleWantIt(user.username, data, action);
-    if (result) setIsWanted(action === "add");
-  };
-
-  const handleSeenIt = async () => {
-    const action = isSeen ? "remove" : "seen";
-    const result = await toggleSeenIt(user.username, data, action);
-    if (result) setIsSeen(action === "seen");
-  };
-
+  // 🔁 Load movie and user state
   useEffect(() => {
     const init = async () => {
       try {
         setIsLoading(true);
-        const movieData = await fetchData(genre, url);
-        setData(movieData);
+        const data = await fetchMovieData(genre, url);
+        setMovieData(data);
 
-        if (isLoggedIn && user?.username) {
-          // 🎬 mycollection
-          const ownRes = await fetch(`/api/auth/profile/${user.username}/mycollection`, {
-            credentials: "include",
-          });
-          const ownJson = ownRes.ok ? await ownRes.json() : { movies: [] };
-          setIsOwned(ownJson.movies?.some((m) => m.url === url) ?? false);
-
-          // 📝 wantedforcollection
-          const wantRes = await fetch(
-            `/api/auth/profile/${user.username}/wantedforcollection`,
-            { credentials: "include" }
-          );
-          const wantJson = wantRes.ok ? await wantRes.json() : { movies: [] };
-          setIsWanted(wantJson.movies?.some((m) => m.url === url) ?? false);
-
-          // 👀 seenit
-          const seenRes = await fetch(`/api/auth/profile/${user.username}/seenit`, {
-            credentials: "include",
-          });
-          const seenJson = seenRes.ok ? await seenRes.json() : { movies: [] };
-          setIsSeen(seenJson.movies?.some((m) => m.url === url) ?? false);
+        if (isLoggedIn && user?.username && data.tmdb_id) {
+          const userMovie = await fetchUserMovie(user.username, data.tmdb_id);
+          setUserMovieData(userMovie);
         } else {
-          setIsOwned(false);
-          setIsWanted(false);
-          setIsSeen(false);
+          setUserMovieData(null);
         }
       } catch (err) {
         console.error(err);
@@ -167,10 +68,32 @@ export default function MoviePage({ params }) {
     init();
   }, [genre, url, isLoggedIn, user?.username]);
 
+  const handleToggle = async (field) => {
+    if (!isLoggedIn || !movieData?.tmdb_id) return;
+
+    const newState = {
+      username: user.username,
+      tmdb_id: movieData.tmdb_id,
+      is_liked: field === "is_liked" ? !(userMovieData?.is_liked ?? false) : userMovieData?.is_liked ?? false,
+      is_wanted: field === "is_wanted" ? !(userMovieData?.is_wanted ?? false) : userMovieData?.is_wanted ?? false,
+      is_seen: field === "is_seen" ? !(userMovieData?.is_seen ?? false) : userMovieData?.is_seen ?? false,
+    };
+
+    try {
+      await updateUserMovie(newState);
+      setUserMovieData(newState);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update movie state");
+    }
+  };
+
   if (isLoading)
     return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
+
   if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
-  if (!data) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
+
+  if (!movieData) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
 
   const {
     film,
@@ -183,7 +106,12 @@ export default function MoviePage({ params }) {
     image_url,
     my_rating,
     review,
-  } = data;
+    tmdb_id,
+  } = movieData;
+
+  const isOwned = userMovieData?.is_liked ?? false;
+  const isWanted = userMovieData?.is_wanted ?? false;
+  const isSeen = userMovieData?.is_seen ?? false;
 
   return (
     <Container className="my-5">
@@ -195,6 +123,7 @@ export default function MoviePage({ params }) {
             <div>No image available</div>
           )}
         </Col>
+
         <Col xs={12} md={6} className="order-md-1">
           <h2 className="text-center">
             {film} {year && `(${year})`}
@@ -209,21 +138,21 @@ export default function MoviePage({ params }) {
             <div className="my-3 d-flex flex-wrap gap-2">
               <Button
                 variant={isOwned ? "danger" : "outline-danger"}
-                onClick={handleOwnIt}
+                onClick={() => handleToggle("is_liked")}
               >
                 {isOwned ? <HeartFill /> : <Heart />} Own It
               </Button>
 
               <Button
                 variant={isWanted ? "primary" : "outline-primary"}
-                onClick={handleWantIt}
+                onClick={() => handleToggle("is_wanted")}
               >
                 {isWanted ? <TvFill /> : <Tv />} Want It
               </Button>
 
               <Button
                 variant={isSeen ? "success" : "outline-success"}
-                onClick={handleSeenIt}
+                onClick={() => handleToggle("is_seen")}
               >
                 {isSeen ? <EyeFill /> : <Eye />} Seen It
               </Button>
