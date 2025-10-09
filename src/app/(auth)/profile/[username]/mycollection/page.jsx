@@ -13,7 +13,7 @@ export default function MyCollectionPage() {
 
   const [movies, setMovies] = useState([]);
   const [sortedMovies, setSortedMovies] = useState([]);
-  const [sortCriteria, setSortCriteria] = useState('title');
+  const [sortCriteria, setSortCriteria] = useState('film');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -69,8 +69,8 @@ export default function MyCollectionPage() {
   useEffect(() => {
     const sorted = [...movies].sort((a, b) => {
       const key = sortCriteria;
-      const va = (a[key] ?? a.title ?? '').toString();
-      const vb = (b[key] ?? b.title ?? '').toString();
+      const va = (a[key] ?? a.film ?? '').toString();
+      const vb = (b[key] ?? b.film ?? '').toString();
       return va.localeCompare(vb);
     });
     setSortedMovies(sorted);
@@ -134,7 +134,7 @@ export default function MyCollectionPage() {
                     src={decodeURIComponent(
                       item.image_url || '/images/fallback.jpg'
                     )}
-                    alt={item.title ?? item.film}
+                    alt={item.film}
                     width={200}
                     height={300}
                     className="img-fluid rounded"
