@@ -31,15 +31,8 @@ export function useCollection(username) {
           throw new Error(`Fetch failed ${res.status}: ${await res.text()}`);
         }
 
-const userMovies = await res.json();
-console.log("Fetched movies:", userMovies); // 👈 Add this line
-
-const collectionMovies = userMovies.filter((m) => m.in_collection === true);
-console.log("Filtered collection:", collectionMovies); // 👈 And this
-
-
-
-
+        const userMovies = await res.json();
+        const collectionMovies = userMovies.filter((m) => m.is_liked);
         setMovies(collectionMovies);
       } catch (err) {
         console.error("Error fetching collection:", err);
