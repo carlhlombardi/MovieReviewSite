@@ -82,30 +82,29 @@ export default function useComments(tmdb_id, username) {
   };
 
   // 🔹 Like / unlike a comment (updates tree)
-  const likeComment = async (id, delta) => {
-    try {
-      const res = await fetch(`/api/comments/like?id=${id}&delta=${delta}`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Failed to like comment");
-      const data = await res.json();
+const likeComment = async (id) => {
+  try {
+    const res = await fetch(`/api/comments/like?id=${id}`, {
+      method: "POST",
+      headers: {
+        "x-username": username,
+      },
+    });
 
-      const updateLikeInTree = (nodes) =>
-        nodes.map((node) => {
-          if (node.id === id) {
-            return { ...node, like_count: data.like_count };
-          }
-          if (node.replies?.length) {
-            return { ...node, replies: updateLikeInTree(node.replies) };
-          }
-          return node;
-        });
-
-      setComments((prev) => updateLikeInTree(prev));
-    } catch (err) {
-      console.error("❌ likeComment error:", err);
+    if (!res.ok) {
+      console.error("❌ likeComment failed:", await res.text());
+      throw new Error("Failed to toggle like");
     }
-  };
+
+    const data = await res.json();
+    setComments((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, like_count: data.like_count } : c))
+    );
+  } catch (err) {
+    console.error("❌ likeComment error:", err);
+  }
+};
+
 
   useEffect(() => {
     if (tmdb_id) fetchComments();
