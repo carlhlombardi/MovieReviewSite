@@ -1,18 +1,24 @@
+/* MovieTabs.module.css */
 .responsiveTabs .nav-link {
-  font-size: 0.8rem;          /* make tab text smaller */
-  padding: 0.4rem 0.3rem;     /* reduce padding so 3 tabs fit side by side */
+  font-size: 1rem; /* Default size on desktop */
+  padding: 0.5rem 1rem;
   text-align: center;
-  white-space: nowrap;
 }
 
+/* On small screens — make the titles smaller */
 @media (max-width: 576px) {
+  .responsiveTabs .nav-link {
+    font-size: 0.8rem;       /* smaller text */
+    padding: 0.4rem 0.5rem;  /* tighter padding */
+  }
+
   .responsiveTabs .nav-item {
-    flex: 1 1 auto;           /* tabs stretch evenly */
+    flex: 1;                 /* each tab takes equal width */
     text-align: center;
   }
 
-  .responsiveTabs .nav-link {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.2rem;
+  .responsiveTabs .nav {
+    display: flex;
+    justify-content: space-between;
   }
 }
