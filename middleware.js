@@ -1,38 +1,44 @@
-import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
 
 export async function middleware(req) {
   const { pathname } = req.nextUrl;
+  const cookie = req.cookies.get("token");
 
-  // Check for JWT on protected routes
-  const cookie = req.cookies.get('token');
-
+  // If no token, redirect to login
   if (!cookie) {
-    // No token → redirect to login
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    // Verify token
-    jwt.verify(cookie.value, process.env.JWT_SECRET);
-    return NextResponse.next();
-  } catch {
-    // Invalid token → redirect to login
-    return NextResponse.redirect(new URL('/login', req.url));
+    // ✅ Verify and decode token
+    const decoded = jwt.verify(cookie.value, process.env.JWT_SECRET);
+
+    // ✅ Attach user info to request headers
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-userid", decoded.id?.toString());
+    requestHeaders.set("x-username", decoded.username);
+
+    const res = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    return res;
+  } catch (err) {
+    console.error("❌ Invalid token:", err);
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
   matcher: [
-    // 🔐 Profile pages
-    '/profile/:path*',
-
-    // 🔐 API endpoints that require authentication
-    '/api/users/:path*/follow-status',     // Follow / Unfollow status checks
-    '/api/users/:path*/follow',            // (if you have follow/unfollow actions)
-
-    '/api/activity/following/:path*',      // Following feed (requires logged in user)
-
-    '/api/protected/:path*',               // Any other explicitly protected endpoints
+    "/profile/:path*",
+    "/api/users/:path*/follow-status",
+    "/api/users/:path*/follow",
+    "/api/activity/following/:path*",
+    "/api/comments/like/:path*",     // ✅ protect like API
+    "/api/protected/:path*",
   ],
 };

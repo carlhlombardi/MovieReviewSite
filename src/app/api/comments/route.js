@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "@vercel/postgres"; // works great with Neon too
+import { sql } from "@vercel/postgres";
 
 // 🟡 Get all comments for a movie
 export async function GET(req) {
@@ -28,11 +28,13 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
+
+    // ✅ Get user from token (injected by middleware)
     const username = req.headers.get("x-username");
     const userIdHeader = req.headers.get("x-userid");
     const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
 
-    if (!username) {
+    if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -40,33 +42,22 @@ export async function POST(req) {
       return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
     }
 
-    const safeMovieTitle = movie_title && movie_title.trim() !== "" ? movie_title : null;
-    const safeSource = source && source.trim() !== "" ? source : null;
+    const safeMovieTitle = movie_title?.trim() || null;
+    const safeSource = source?.trim() || null;
 
     // Insert the comment
     const { rows } = await sql`
-      INSERT INTO comments (tmdb_id, username, content, parent_id)
-      VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null})
+      INSERT INTO comments (tmdb_id, username, content, parent_id, movie_title, source)
+      VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null}, ${safeMovieTitle}, ${safeSource})
       RETURNING *;
     `;
     const newComment = rows[0];
 
-    // Insert into activity
-    try {
-      await sql`
-        INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-        VALUES (
-          ${Number.isNaN(userId) ? null : userId},
-          ${username},
-          ${parent_id ? 'replied to a comment' : 'commented on'},
-          ${safeMovieTitle},
-          ${safeSource},
-          NOW()
-        )
-      `;
-    } catch (err) {
-      console.error("❌ Error inserting activity:", err);
-    }
+    // Insert activity log
+    await sql`
+      INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+      VALUES (${userId}, ${username}, ${parent_id ? "replied to a comment" : "commented on"}, ${safeMovieTitle}, ${safeSource}, NOW());
+    `;
 
     return NextResponse.json(newComment);
   } catch (err) {
@@ -79,12 +70,17 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const { id, content } = await req.json();
-    const user = req.headers.get("x-username");
+    const username = req.headers.get("x-username");
+    const userIdHeader = req.headers.get("x-userid");
+
+    if (!username || !userIdHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { rowCount } = await sql`
       UPDATE comments
       SET content = ${content}, updated_at = NOW()
-      WHERE id = ${id} AND username = ${user}
+      WHERE id = ${id} AND username = ${username}
     `;
 
     if (rowCount === 0) {
@@ -103,12 +99,21 @@ export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    const user = req.headers.get("x-username");
+    const username = req.headers.get("x-username");
+    const userIdHeader = req.headers.get("x-userid");
 
-    await sql`
+    if (!username || !userIdHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { rowCount } = await sql`
       DELETE FROM comments
-      WHERE id = ${id} AND username = ${user}
+      WHERE id = ${id} AND username = ${username}
     `;
+
+    if (rowCount === 0) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -117,13 +122,19 @@ export async function DELETE(req) {
   }
 }
 
-// ❤️ Like or unlike comment
+// ❤️ Like or unlike comment (this can stay here or in a separate /like route)
 export async function PATCH(req) {
   try {
     const { id, delta } = await req.json();
+    const username = req.headers.get("x-username");
+    const userIdHeader = req.headers.get("x-userid");
 
     if (!id || typeof delta !== "number") {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    if (!username || !userIdHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await sql`

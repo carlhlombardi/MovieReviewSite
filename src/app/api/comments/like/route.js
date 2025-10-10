@@ -5,39 +5,51 @@ export async function POST(req) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    const username = req.headers.get("x-username");
+
+    // ✅ user info is automatically injected by middleware
     const userIdHeader = req.headers.get("x-userid");
+    const username = req.headers.get("x-username");
     const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
 
-    if (!id || !username || !userId) {
-      return NextResponse.json({ error: "Missing id, username, or userId" }, { status: 400 });
+    if (!id || !userId || !username) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // check existing like
     const existing = await sql`
-      SELECT 1 FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
+      SELECT 1 FROM comment_likes WHERE comment_id = ${id} AND user_id = ${userId};
     `;
 
     let like_count;
 
     if (existing.rows.length > 0) {
-      // Unlike
-      await sql`DELETE FROM comment_likes WHERE comment_id = ${id} AND username = ${username};`;
-      const { rows } = await sql`
-        UPDATE comments SET like_count = like_count - 1 WHERE id = ${id} RETURNING like_count;
-      `;
-      like_count = rows[0].like_count;
-    } else {
-      // Like
+      // 👎 Unlike
       await sql`
-        INSERT INTO comment_likes (comment_id, username) VALUES (${id}, ${username});
+        DELETE FROM comment_likes
+        WHERE comment_id = ${id} AND user_id = ${userId};
       `;
-      const { rows } = await sql`
-        UPDATE comments SET like_count = like_count + 1 WHERE id = ${id} RETURNING like_count;
-      `;
-      like_count = rows[0].like_count;
 
-      // Get movie info from comment
+      const { rows } = await sql`
+        UPDATE comments
+        SET like_count = GREATEST(like_count - 1, 0)
+        WHERE id = ${id}
+        RETURNING like_count;
+      `;
+      like_count = rows[0]?.like_count ?? 0;
+    } else {
+      // ❤️ Like
+      await sql`
+        INSERT INTO comment_likes (comment_id, user_id, username)
+        VALUES (${id}, ${userId}, ${username});
+      `;
+
+      const { rows } = await sql`
+        UPDATE comments
+        SET like_count = like_count + 1
+        WHERE id = ${id}
+        RETURNING like_count;
+      `;
+      like_count = rows[0]?.like_count ?? 1;
+
       const commentInfo = await sql`
         SELECT movie_title, source FROM comments WHERE id = ${id};
       `;
@@ -46,7 +58,7 @@ export async function POST(req) {
 
       await sql`
         INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-        VALUES (${userId}, ${username}, 'liked a comment', ${movie_title}, ${source}, NOW())
+        VALUES (${userId}, ${username}, 'liked a comment', ${movie_title}, ${source}, NOW());
       `;
     }
 
@@ -56,4 +68,3 @@ export async function POST(req) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
