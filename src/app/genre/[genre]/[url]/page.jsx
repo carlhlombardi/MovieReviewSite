@@ -43,12 +43,6 @@ export default function MoviePage({ params }) {
       </Alert>
     );
 
-    console.log("🎬 MoviePage data:", {
-  tmdb_id: movieData?.tmdb_id,
-  title: movieData?.film,
-  username: user?.username,
-});
-
   return (
     <Container className="my-5">
       <Row>
