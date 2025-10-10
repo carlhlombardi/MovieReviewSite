@@ -26,7 +26,7 @@ export async function GET(req) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    const userId = decoded.id; // ✅ match your login JWT payload
 
     const { rows } = await sql`
       SELECT id, username, firstname, lastname, email,
@@ -55,6 +55,7 @@ export async function GET(req) {
   }
 }
 
+// PATCH logged-in user profile
 export async function PATCH(req) {
   const cookieHeader = req.headers.get('cookie');
   const cookies = parseCookies(cookieHeader);
@@ -69,17 +70,15 @@ export async function PATCH(req) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    const userId = decoded.id; // ✅ match your login JWT payload
     const body = await req.json();
 
-    // Build fields manually instead of using sql.join()
     let avatar_url = null;
     let bio = null;
 
     if (body.avatar_url !== undefined) avatar_url = body.avatar_url;
     if (body.bio !== undefined) bio = body.bio;
 
-    // If neither field is provided, reject
     if (avatar_url === null && bio === null) {
       return new Response(JSON.stringify({ message: 'No fields to update' }), {
         status: 400,
@@ -87,7 +86,6 @@ export async function PATCH(req) {
       });
     }
 
-    // Perform one update using COALESCE so unspecified fields remain unchanged
     const { rows } = await sql`
       UPDATE users
       SET 
