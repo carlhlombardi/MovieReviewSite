@@ -35,28 +35,27 @@ export default function useComments(tmdb_id, username) {
   // ───────────────────────────────
   // Post new comment
   // ───────────────────────────────
-  const postComment = async (content, parent_id = null) => {
-  if (!content.trim()) return;
+const postComment = async (content, parent_id = null) => {
+  console.log("🟡 postComment called with:", {
+    tmdb_id,
+    username,
+    content,
+    parent_id,
+  });
 
-  console.log("🟡 Posting comment:", { tmdb_id, username, content, parent_id });
+  if (!content?.trim()) {
+    console.error("🚫 Empty comment text");
+    return;
+  }
 
   const res = await fetch("/api/comments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tmdb_id,
-      username,
-      content,
-      parent_id,
-    }),
+    body: JSON.stringify({ tmdb_id, username, content, parent_id }),
   });
 
-  if (!res.ok) {
-    const err = await res.text();
-    console.error("❌ Comment post failed:", err);
-  } else {
-    console.log("✅ Comment posted successfully");
-  }
+  const data = await res.json();
+  console.log("🟢 POST response:", res.status, data);
 };
 
 

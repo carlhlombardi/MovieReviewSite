@@ -29,12 +29,12 @@ export default function MoviePage({ params }) {
       />
     );
 
-  if (error)
-    return (
-      <Alert variant="danger" className="my-5">
-        {error}
-      </Alert>
-    );
+  // if (error)
+  //   return (
+  //     <Alert variant="danger" className="my-5">
+  //       {error}
+  //     </Alert>
+  //   );
 
   if (!movieData)
     return (
