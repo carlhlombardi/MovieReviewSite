@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { MessageCircle, ThumbsUp, Edit3, Trash2, CornerDownRight } from "lucide-react";
 
 export default function CommentItem({
   comment,
@@ -10,39 +9,34 @@ export default function CommentItem({
   onDelete,
   onReply,
 }) {
-  // ✅ Hooks must come first
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
-  const [editText, setEditText] = useState(comment?.content ?? "");
+  const [editText, setEditText] = useState(comment.content);
   const [replyText, setReplyText] = useState("");
-
-  // ✅ Return null AFTER hooks are declared
-  if (!comment) return null;
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
-    if (!editText.trim()) return;
-    onEdit(comment.id, editText.trim());
+    onEdit(comment.id, editText);
     setIsEditing(false);
   };
 
   const handleReplySubmit = (e) => {
     e.preventDefault();
-    if (!replyText.trim()) return;
-    onReply(replyText.trim(), comment.id);
+    onReply(replyText, comment.id);
     setReplyText("");
     setIsReplying(false);
   };
 
   return (
-    <div className="border rounded p-3 mb-3 bg-light shadow-sm">
-      <div className="d-flex justify-content-between align-items-center">
+    <div className="border rounded p-3 mb-3 bg-light">
+      <div className="d-flex justify-content-between">
         <strong>{comment.username}</strong>
         <small className="text-muted">
           {new Date(comment.created_at).toLocaleString()}
         </small>
       </div>
 
+      {/* Comment content */}
       {isEditing ? (
         <form onSubmit={handleEditSubmit} className="mt-2">
           <textarea
@@ -68,13 +62,14 @@ export default function CommentItem({
         <p className="mt-2 mb-2">{comment.content}</p>
       )}
 
+      {/* Comment actions */}
       <div className="d-flex gap-3 small">
         <button
           className="btn btn-link btn-sm p-0"
-          onClick={() => onLike(comment.id)}
+          onClick={onLike}
           disabled={!username}
         >
-          <ThumbsUp size={14} /> {comment.like_count || 0}
+          👍 {comment.likes || 0}
         </button>
 
         {username && (
@@ -83,7 +78,7 @@ export default function CommentItem({
               className="btn btn-link btn-sm p-0"
               onClick={() => setIsReplying((v) => !v)}
             >
-              <CornerDownRight size={14} /> Reply
+              Reply
             </button>
 
             {username === comment.username && (
@@ -92,13 +87,13 @@ export default function CommentItem({
                   className="btn btn-link btn-sm p-0"
                   onClick={() => setIsEditing((v) => !v)}
                 >
-                  <Edit3 size={14} /> Edit
+                  Edit
                 </button>
                 <button
                   className="btn btn-link btn-sm text-danger p-0"
-                  onClick={() => onDelete(comment.id)}
+                  onClick={onDelete}
                 >
-                  <Trash2 size={14} /> Delete
+                  Delete
                 </button>
               </>
             )}
@@ -106,6 +101,7 @@ export default function CommentItem({
         )}
       </div>
 
+      {/* Inline reply form */}
       {isReplying && (
         <form onSubmit={handleReplySubmit} className="mt-2 ms-3">
           <textarea
@@ -130,16 +126,17 @@ export default function CommentItem({
         </form>
       )}
 
+      {/* Nested replies */}
       {comment.replies?.length > 0 && (
-        <div className="mt-3 ms-4 border-start ps-3">
+        <div className="mt-3 ms-4">
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}
               comment={reply}
               username={username}
-              onLike={onLike}
+              onLike={() => onLike(reply.id)}
               onEdit={onEdit}
-              onDelete={onDelete}
+              onDelete={() => onDelete(reply.id)}
               onReply={onReply}
             />
           ))}
