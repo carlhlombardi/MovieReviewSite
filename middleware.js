@@ -38,7 +38,7 @@ export const config = {
     "/api/users/:path*/follow-status",
     "/api/users/:path*/follow",
     "/api/activity/following/:path*",
-    "/api/comments/like/:path*",     // ✅ protect like API
+    "/api/comments/:path*",     // ✅ protect like API
     "/api/protected/:path*",
   ],
 };
