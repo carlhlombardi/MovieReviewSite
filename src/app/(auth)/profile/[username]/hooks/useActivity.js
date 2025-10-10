@@ -1,7 +1,8 @@
 'use client';
 import { useState, useCallback } from 'react';
 
-const ALLOWED_TYPES = ['has', 'wants', 'has seen'];
+// ✅ Add comment actions here
+const ALLOWED_TYPES = ['has', 'wants', 'has seen', 'commented on', 'replied to a comment'];
 
 const filterAllowed = (feed) => {
   if (!Array.isArray(feed)) return [];
@@ -29,7 +30,7 @@ export function useActivity() {
         setFollowingActivity(filterAllowed(data.feed));
       }
     } catch (err) {
-      console.error('Error fetching activity:', err);
+      console.error('❌ Error fetching activity:', err);
     }
   }, []);
 

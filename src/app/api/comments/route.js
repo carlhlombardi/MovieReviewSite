@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
+import { getAuthHeaders } from "../../utils/getAuthHeaders";
 
 // 🟡 Get all comments for a movie
 export async function GET(req) {
@@ -28,11 +29,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
-
-    // ✅ Get user from token (injected by middleware)
-    const username = req.headers.get("x-username");
-    const userIdHeader = req.headers.get("x-userid");
-    const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
+    const { username, userId } = getAuthHeaders(req);
 
     if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,7 +50,7 @@ export async function POST(req) {
     `;
     const newComment = rows[0];
 
-    // Insert activity log
+    // Insert activity
     await sql`
       INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
       VALUES (${userId}, ${username}, ${parent_id ? "replied to a comment" : "commented on"}, ${safeMovieTitle}, ${safeSource}, NOW());
@@ -70,10 +67,9 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const { id, content } = await req.json();
-    const username = req.headers.get("x-username");
-    const userIdHeader = req.headers.get("x-userid");
+    const { username, userId } = getAuthHeaders(req);
 
-    if (!username || !userIdHeader) {
+    if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -99,10 +95,9 @@ export async function DELETE(req) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    const username = req.headers.get("x-username");
-    const userIdHeader = req.headers.get("x-userid");
+    const { username, userId } = getAuthHeaders(req);
 
-    if (!username || !userIdHeader) {
+    if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -122,18 +117,17 @@ export async function DELETE(req) {
   }
 }
 
-// ❤️ Like or unlike comment (this can stay here or in a separate /like route)
+// ❤️ Like or unlike comment
 export async function PATCH(req) {
   try {
     const { id, delta } = await req.json();
-    const username = req.headers.get("x-username");
-    const userIdHeader = req.headers.get("x-userid");
+    const { username, userId } = getAuthHeaders(req);
 
     if (!id || typeof delta !== "number") {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    if (!username || !userIdHeader) {
+    if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
