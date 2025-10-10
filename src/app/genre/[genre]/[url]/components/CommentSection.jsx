@@ -4,9 +4,8 @@ import CommentForm from "./CommentForm";
 import useComments from "../hooks/useComments";
 
 export default function CommentSection({ tmdb_id, username }) {
-  // ✅ Pass both tmdb_id and username to the hook
   const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id, username);
+    useComments(tmdb_id);
 
   const handleReply = (parentId) => {
     const reply = prompt("Reply to this comment:");
@@ -22,14 +21,12 @@ export default function CommentSection({ tmdb_id, username }) {
     <div className="mt-4">
       <h4 className="mb-3">💬 Comments</h4>
 
-      {/* ✅ Only show form if user is logged in */}
       {username ? (
         <CommentForm onSubmit={postComment} />
       ) : (
         <p className="text-muted">Sign in to leave a comment.</p>
       )}
 
-      {/* ✅ Display comments */}
       {comments.length === 0 ? (
         <p className="text-muted mt-2">No comments yet. Be the first!</p>
       ) : (

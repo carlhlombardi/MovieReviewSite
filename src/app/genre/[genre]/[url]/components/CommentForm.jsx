@@ -1,47 +1,33 @@
+// src/app/genre/[genre]/[url]/components/CommentForm.jsx
 "use client";
-import CommentItem from "./CommentItem";
-import CommentForm from "./CommentForm";
-import useComments from "../hooks/useComments";
+import { useState } from "react";
 
-export default function CommentSection({ tmdb_id, username }) {
-  const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id);
+export default function CommentForm({ onSubmit }) {
+  const [text, setText] = useState("");
 
-  const handleReply = (parentId) => {
-    const reply = prompt("Reply to this comment:");
-    if (reply?.trim()) postComment(reply.trim(), parentId);
-  };
-
-  const handleEdit = (comment) => {
-    const text = prompt("Edit your comment:", comment.content);
-    if (text?.trim()) editComment(comment.id, text.trim());
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    try {
+      await onSubmit(text.trim());
+      setText(""); // clear form
+    } catch (err) {
+      alert(err.message || "Failed to post comment");
+    }
   };
 
   return (
-    <div className="mt-4">
-      <h4 className="mb-3">💬 Comments</h4>
-
-      {username ? (
-        <CommentForm onSubmit={postComment} />
-      ) : (
-        <p className="text-muted">Sign in to leave a comment.</p>
-      )}
-
-      {comments.length === 0 ? (
-        <p className="text-muted mt-2">No comments yet. Be the first!</p>
-      ) : (
-        comments.map((comment) => (
-          <CommentItem
-            key={comment.id}
-            comment={comment}
-            username={username}
-            onLike={() => likeComment(comment.id)}
-            onEdit={() => handleEdit(comment)}
-            onDelete={() => deleteComment(comment.id)}
-            onReply={() => handleReply(comment.id)}
-          />
-        ))
-      )}
-    </div>
+    <form onSubmit={handleSubmit} className="mb-3">
+      <textarea
+        className="form-control mb-2"
+        placeholder="Write a comment..."
+        rows="3"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button type="submit" className="btn btn-primary">
+        Post Comment
+      </button>
+    </form>
   );
 }
