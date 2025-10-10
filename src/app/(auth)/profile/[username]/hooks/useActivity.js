@@ -5,6 +5,18 @@ export function useActivity() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [followingActivity, setFollowingActivity] = useState([]);
 
+  // Allowed activity types to show
+  const ALLOWED_TYPES = [
+    'is_liked',
+    'is_wamted',
+    'is_seen',
+  ];
+
+  const filterAllowed = (feed) => {
+    if (!Array.isArray(feed)) return [];
+    return feed.filter((item) => ALLOWED_TYPES.includes(item.type));
+  };
+
   const fetchActivityFeed = useCallback(async (username) => {
     try {
       const [recentRes, followingRes] = await Promise.all([
@@ -14,12 +26,12 @@ export function useActivity() {
 
       if (recentRes.ok) {
         const data = await recentRes.json();
-        setRecentActivity(data.feed || []);
+        setRecentActivity(filterAllowed(data.feed));
       }
 
       if (followingRes.ok) {
         const data = await followingRes.json();
-        setFollowingActivity(data.feed || []);
+        setFollowingActivity(filterAllowed(data.feed));
       }
     } catch (err) {
       console.error('Error fetching activity:', err);
