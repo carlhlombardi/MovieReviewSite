@@ -29,7 +29,7 @@ export default function CommentItem({
   };
 
   return (
-    <Card className="mb-3 border-0 shadow-sm bg-light">
+    <Card className="mb-3 border-0 shadow-sm bg-light rounded-3">
       <Card.Body>
         <div className="d-flex justify-content-between align-items-center">
           <strong>{comment.username}</strong>
@@ -67,23 +67,32 @@ export default function CommentItem({
         )}
 
         {/* Comment actions */}
-        <div className="d-flex gap-3 small mt-2">
+        <div className="d-flex flex-wrap gap-3 small mt-2">
           <Button
-            variant="link"
+            variant={comment.likedByUser ? "primary" : "outline-primary"}
             size="sm"
-            className="p-0 text-decoration-none"
+            className={`px-2 py-0 d-flex align-items-center gap-1 rounded-pill ${
+              comment.likedByUser ? "text-white bg-primary border-primary" : ""
+            }`}
             onClick={onLike}
             disabled={!username}
           >
-            👍 {comment.likes || 0}
+            <span
+              className={`fw-bold ${
+                comment.likedByUser ? "text-white" : "text-primary"
+              }`}
+            >
+              👍
+            </span>
+            <span>{comment.likes || 0}</span>
           </Button>
 
           {username && (
             <>
               <Button
-                variant="link"
+                variant="outline-secondary"
                 size="sm"
-                className="p-0 text-decoration-none"
+                className="px-2 py-0 rounded-pill"
                 onClick={() => setIsReplying((v) => !v)}
               >
                 Reply
@@ -92,17 +101,17 @@ export default function CommentItem({
               {username === comment.username && (
                 <>
                   <Button
-                    variant="link"
+                    variant="outline-success"
                     size="sm"
-                    className="p-0 text-decoration-none"
+                    className="px-2 py-0 rounded-pill"
                     onClick={() => setIsEditing((v) => !v)}
                   >
                     Edit
                   </Button>
                   <Button
-                    variant="link"
+                    variant="outline-danger"
                     size="sm"
-                    className="p-0 text-danger text-decoration-none"
+                    className="px-2 py-0 rounded-pill"
                     onClick={onDelete}
                   >
                     Delete
