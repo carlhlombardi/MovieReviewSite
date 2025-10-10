@@ -19,43 +19,51 @@ export async function GET(req) {
 
 // 🟢 Post new comment or reply
 export async function POST(req) {
-  const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
-  const username = req.headers.get("x-username");
-  const userId = req.headers.get("x-userid");
+  try {
+    const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
+    const username = req.headers.get("x-username");
+    const userIdHeader = req.headers.get("x-userid");
+    const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
 
-  if (!username) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!content || content.trim() === "") {
-    return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
+    if (!username) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!content || content.trim() === "") {
+      return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
+    }
+
+    const safeMovieTitle = movie_title && movie_title.trim() !== "" ? movie_title : null;
+    const safeSource = source && source.trim() !== "" ? source : null;
+
+    // Insert the comment
+    const { rows } = await sql`
+      INSERT INTO comments (tmdb_id, username, content, parent_id)
+      VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null})
+      RETURNING *;
+    `;
+    const newComment = rows[0];
+
+    // Insert into activity
+    try {
+      await sql`
+        INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+        VALUES (
+          ${Number.isNaN(userId) ? null : userId},
+          ${username},
+          ${parent_id ? 'replied to a comment' : 'commented on'},
+          ${safeMovieTitle},
+          ${safeSource},
+          NOW()
+        )
+      `;
+    } catch (err) {
+      console.error("❌ Error inserting activity:", err);
+    }
+
+    return NextResponse.json(newComment);
+  } catch (err) {
+    console.error("❌ POST /api/comments failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-
-  const safeMovieTitle = movie_title || null;
-  const safeSource = source || null;
-
-  // Insert the comment and return it
-  const { rows } = await sql`
-    INSERT INTO comments (tmdb_id, username, content, parent_id)
-    VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null})
-    RETURNING *;
-  `;
-
-  const newComment = rows[0];
-
-  // Log the activity
-  await sql`
-    INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-    VALUES (
-      ${userId || null},
-      ${username},
-      ${parent_id ? 'replied to a comment' : 'commented on'},
-      ${safeMovieTitle},
-      ${safeSource},
-      NOW()
-    )
-  `;
-
-  return NextResponse.json(newComment);
 }
-
 
 // ✏️ Edit comment
 export async function PUT(req) {
