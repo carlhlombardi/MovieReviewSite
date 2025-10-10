@@ -1,39 +1,39 @@
-import { sql } from '@vercel/postgres';
-import jwt from 'jsonwebtoken';
+import { sql } from "@vercel/postgres";
+import jwt from "jsonwebtoken";
 
 // ─────────────────────────────────────────────
-//  Helper: parse cookies safely
+// Helper: parse cookies safely
 // ─────────────────────────────────────────────
 function parseCookies(header) {
   if (!header) return {};
   const cookies = {};
-  header.split(';').forEach((pair) => {
-    const [name, ...rest] = pair.trim().split('=');
-    cookies[name] = decodeURIComponent(rest.join('='));
+  header.split(";").forEach((pair) => {
+    const [name, ...rest] = pair.trim().split("=");
+    cookies[name] = decodeURIComponent(rest.join("="));
   });
   return cookies;
 }
 
 // ─────────────────────────────────────────────
-//  POST /api/follow → follow a user
-//  expects: { followingUsername }
+// POST /api/follow → follow a user
+// expects: { followingUsername }
 // ─────────────────────────────────────────────
 export async function POST(req) {
   try {
-    const cookies = parseCookies(req.headers.get('cookie'));
+    const cookies = parseCookies(req.headers.get("cookie"));
     const token = cookies.token;
     if (!token)
-      return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const followerUsername = decoded.username; // ✅ assuming JWT stores username
+    const followerUsername = decoded.username;
     const { followingUsername } = await req.json();
 
     if (!followingUsername)
-      return new Response(JSON.stringify({ message: 'Missing followingUsername' }), { status: 400 });
+      return new Response(JSON.stringify({ message: "Missing followingUsername" }), { status: 400 });
 
     if (followerUsername === followingUsername)
-      return new Response(JSON.stringify({ message: 'Cannot follow yourself' }), { status: 400 });
+      return new Response(JSON.stringify({ message: "Cannot follow yourself" }), { status: 400 });
 
     await sql`
       INSERT INTO follows (follower_username, following_username)
@@ -41,30 +41,41 @@ export async function POST(req) {
       ON CONFLICT DO NOTHING;
     `;
 
+    // ✅ Log "followed" in activity
+    const userRes = await sql`SELECT id FROM users WHERE username = ${followerUsername}`;
+    const user = userRes.rows[0];
+
+    if (user) {
+      await sql`
+        INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+        VALUES (${user.id}, ${followerUsername}, 'followed', ${followingUsername}, 'social', NOW());
+      `;
+    }
+
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err) {
-    console.error('Follow POST error:', err);
+    console.error("Follow POST error:", err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
 // ─────────────────────────────────────────────
-//  DELETE /api/follow → unfollow a user
-//  expects: { followingUsername }
+// DELETE /api/follow → unfollow a user
+// expects: { followingUsername }
 // ─────────────────────────────────────────────
 export async function DELETE(req) {
   try {
-    const cookies = parseCookies(req.headers.get('cookie'));
+    const cookies = parseCookies(req.headers.get("cookie"));
     const token = cookies.token;
     if (!token)
-      return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
+      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const followerUsername = decoded.username;
     const { followingUsername } = await req.json();
 
     if (!followingUsername)
-      return new Response(JSON.stringify({ message: 'Missing followingUsername' }), { status: 400 });
+      return new Response(JSON.stringify({ message: "Missing followingUsername" }), { status: 400 });
 
     await sql`
       DELETE FROM follows
@@ -72,25 +83,36 @@ export async function DELETE(req) {
       AND following_username = ${followingUsername};
     `;
 
+    // ✅ Log "unfollowed" in activity
+    const userRes = await sql`SELECT id FROM users WHERE username = ${followerUsername}`;
+    const user = userRes.rows[0];
+
+    if (user) {
+      await sql`
+        INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+        VALUES (${user.id}, ${followerUsername}, 'unfollowed', ${followingUsername}, 'social', NOW());
+      `;
+    }
+
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (err) {
-    console.error('Follow DELETE error:', err);
+    console.error("Follow DELETE error:", err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }
 
 // ─────────────────────────────────────────────
-//  GET /api/follow/status?username=someone
+// GET /api/follow/status?username=someone
 // ─────────────────────────────────────────────
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const followingUsername = searchParams.get('username');
+    const followingUsername = searchParams.get("username");
 
     if (!followingUsername)
       return new Response(JSON.stringify({ following: false }), { status: 200 });
 
-    const cookies = parseCookies(req.headers.get('cookie'));
+    const cookies = parseCookies(req.headers.get("cookie"));
     const token = cookies.token;
     if (!token)
       return new Response(JSON.stringify({ following: false }), { status: 200 });
@@ -107,7 +129,7 @@ export async function GET(req) {
 
     return new Response(JSON.stringify({ following: result.rowCount > 0 }), { status: 200 });
   } catch (err) {
-    console.error('Follow GET error:', err);
+    console.error("Follow GET error:", err);
     return new Response(JSON.stringify({ message: err.message }), { status: 500 });
   }
 }

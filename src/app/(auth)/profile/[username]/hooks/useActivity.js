@@ -3,15 +3,17 @@ import { useState, useCallback } from 'react';
 
 // ✅ Allowed actions (must match DB constraint exactly)
 const ALLOWED_TYPES = [
-      'wants',
-      'doesnt want',
-      'has seen',
-      'hasnt seen',
-      'has',
-      'doesnt have',
-      'commented on',
-      'replied to a comment',
-      'liked'
+  'wants',
+  'doesnt want',
+  'has seen',
+  'hasnt seen',
+  'has',
+  'doesnt have',
+  'commented on',
+  'replied to a comment',
+  'liked',
+  'followed',
+  'social',
 ];
 
 // ✅ Filter to only valid activity actions
@@ -22,28 +24,33 @@ const filterAllowed = (feed) => {
 
 // ✅ Nicely format an activity entry into a readable sentence
 const formatActivity = (activity) => {
-  const { username, action, title, target_type } = activity;
+  const { username, action, movie_title, target_type } = activity;
   const name = username || 'Someone';
 
   switch (action) {
     case 'wants':
-      return `${name} wants ${title || target_type || 'something'}`;
+      return `${name} wants ${movie_title || target_type || 'something'}`;
     case 'doesnt want':
-      return `${name} doesn't want ${title || target_type || 'that'}`;
+      return `${name} doesn't want ${movie_title || target_type || 'that'}`;
     case 'has seen':
-      return `${name} has seen ${title || 'this movie'}`;
+      return `${name} has seen ${movie_title || 'this movie'}`;
     case 'hasnt seen':
-      return `${name} hasn't seen ${title || 'this movie yet'}`;
+      return `${name} hasn't seen ${movie_title || 'this movie yet'}`;
     case 'has':
-      return `${name} has ${title || 'this item'}`;
+      return `${name} has ${movie_title || 'this item'}`;
     case 'doesnt have':
-      return `${name} doesn't have ${title || 'that item'}`;
+      return `${name} doesn't have ${movie_title || 'that item'}`;
     case 'commented on':
-      return `${name} commented on ${title || 'a movie'}`;
+      return `${name} commented on ${movie_title || 'a movie'}`;
     case 'replied to a comment':
-      return `${name} replied to a comment on ${title || 'a post'}`;
+      return `${name} replied to a comment on ${movie_title || 'a post'}`;
     case 'liked':
-      return `${name} liked ${title || 'a post'}`;
+      return `${name} liked ${movie_title || 'a post'}`;
+    case 'followed':
+      // 🟢 Show the followed user's name (stored in movie_title for social actions)
+      return `${name} followed ${movie_title || 'a user'}`;
+    case 'social':
+      return `${name} did something social`;
     default:
       return `${name} did something`;
   }
