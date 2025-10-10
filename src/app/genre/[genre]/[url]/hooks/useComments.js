@@ -87,18 +87,18 @@ const likeComment = async (id) => {
     const res = await fetch(`/api/comments/like?id=${id}`, {
       method: "POST",
       headers: {
-        "x-username": username,
+        "x-username": username,   // ✅ must be set!
       },
     });
 
     if (!res.ok) {
       console.error("❌ likeComment failed:", await res.text());
-      throw new Error("Failed to toggle like");
+      throw new Error("Failed to like comment");
     }
 
     const data = await res.json();
-    setComments((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, like_count: data.like_count } : c))
+    setComments(prev =>
+      prev.map(c => (c.id === id ? { ...c, like_count: data.like_count } : c))
     );
   } catch (err) {
     console.error("❌ likeComment error:", err);

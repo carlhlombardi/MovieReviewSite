@@ -1,3 +1,4 @@
+// app/api/comments/like/route.js
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 
@@ -11,14 +12,15 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing id or username" }, { status: 400 });
     }
 
-    // Check if user already liked this comment
+    // Check if already liked
     const existing = await sql`
-      SELECT * FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
+      SELECT 1 FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
     `;
 
     let like_count;
+
     if (existing.rows.length > 0) {
-      // Unlike: remove like record and decrement count
+      // Unlike
       await sql`
         DELETE FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
       `;
@@ -27,7 +29,7 @@ export async function POST(req) {
       `;
       like_count = rows[0].like_count;
     } else {
-      // Like: insert like record and increment count
+      // Like
       await sql`
         INSERT INTO comment_likes (comment_id, username) VALUES (${id}, ${username});
       `;
