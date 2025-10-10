@@ -3,15 +3,15 @@ import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Spinner, Alert } from 'react-bootstrap';
 
-import { useProfile } from './hooks/useProfile';
-import { useFollow } from './hooks/useFollow';
-import { useMovies } from './hooks/useMovies';
-import { useActivity } from './hooks/useActivity';
+import { useProfile } from './[username]/hooks/useProfile';
+import { useFollow } from './[username]/hooks/useFollow';
+import { useMovies } from './[username]/hooks/useMovies';
+import { useActivity } from './[username]/hooks/useActivity';
 
-import ProfileHeader from './components/ProfileHeader';
-import FollowTabs from './components/FollowTabs';
-import ActivityTabs from './components/ActivityTabs';
-import MovieTabs from './components/MovieTabs';
+import ProfileHeader from './[username]/components/ProfileHeader';
+import FollowTabs from './[username]/components/FollowTabs';
+import ActivityTabs from './[username]/components/ActivityTabs';
+import MovieTabs from './[username]/components/MovieTabs';
 
 export default function ProfilePage() {
   const router = useRouter();
