@@ -25,10 +25,10 @@ export async function POST(req) {
 
   if (!username) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await sql`
-    INSERT INTO comments (tmdb_id, username, content, parent_id)
-    VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null})
-  `;
+await sql`
+  INSERT INTO comments (tmdb_id, username, content, parent_id)
+  VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null})
+`;
 
 await sql`
   INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
