@@ -36,15 +36,10 @@ export default function useComments(tmdb_id, username) {
   // Post new comment
   // ───────────────────────────────
 const postComment = async (content, parent_id = null) => {
-  console.log("🟡 postComment called with:", {
-    tmdb_id,
-    username,
-    content,
-    parent_id,
-  });
+  alert(`🟡 DEBUG: tmdb_id=${tmdb_id}, username=${username}, content=${content}`);
 
   if (!content?.trim()) {
-    console.error("🚫 Empty comment text");
+    alert("🚫 Empty comment text");
     return;
   }
 
@@ -55,7 +50,7 @@ const postComment = async (content, parent_id = null) => {
   });
 
   const data = await res.json();
-  console.log("🟢 POST response:", res.status, data);
+  alert(`🟢 POST response: ${res.status} ${JSON.stringify(data)}`);
 };
 
 
