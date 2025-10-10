@@ -1,6 +1,6 @@
 "use client";
 import { Container, Alert, Spinner, Row, Col } from "react-bootstrap";
-import { useAuth } from "@/app/(auth)/contexts/AuthContext";
+import { useAuth } from "@/app/(auth)/context/AuthContext";
 import useMovieData from "./hooks/useMovieData";
 import useUserMovieData from "./hooks/useUserMovieData";
 import MovieDetailHeader from "./components/MovieDetailHeader";

@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "react-bootstrap";
-import { useAuth } from "@/app/(auth)/contexts/AuthContext";
+import { useAuth } from "@/app/(auth)/context/AuthContext";
 
 export default function LogoutPage() {
   const router = useRouter();

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Navbar, Container, Offcanvas, Dropdown } from "react-bootstrap";
-import { useAuth } from "@/app/(auth)/contexts/AuthContext";
+import { useAuth } from "@/app/(auth)/context/AuthContext";
 import Links from "@/app/components/navbar/links/Links.jsx";
 import Image from "next/image";
 import styles from "./navbar.module.css";

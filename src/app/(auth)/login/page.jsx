@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { useAuth } from '@/app/(auth)/contexts/AuthContext';
+import { useAuth } from '@/app/(auth)/context/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 

@@ -20,13 +20,13 @@ export async function GET(request) {
   }
 
   try {
-    // Verify token
+    // ✅ Verify token and extract matching fields
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-    const userId = decoded.userId;
+    const userId = decoded.id; // <-- match your login + middleware
 
-    // ✅ Fetch avatar_url as well
+    // ✅ Fetch user info
     const result = await sql`
-      SELECT username, email, avatar_url
+      SELECT id, username, email, avatar_url
       FROM users
       WHERE id = ${userId};
     `;
