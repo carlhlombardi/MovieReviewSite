@@ -23,20 +23,21 @@ export function useFollow() {
     }
   }, []);
 
-  const fetchFollowStatus = useCallback(async (username) => {
-    try {
-      const res = await fetch(`/api/users/${username}/follow-status`, {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setIsFollowing(data.following || false);
-      }
-    } catch (err) {
-      console.error('Error fetching follow status:', err);
+const fetchFollowStatus = useCallback(async (username) => {
+  try {
+    const res = await fetch(`/api/follow/status?username=${username}`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setIsFollowing(data.following || false);
     }
-  }, []);
+  } catch (err) {
+    console.error('Error fetching follow status:', err);
+  }
+}, []);
+
 
   const toggleFollow = useCallback(async (username, currentStatus) => {
     try {
