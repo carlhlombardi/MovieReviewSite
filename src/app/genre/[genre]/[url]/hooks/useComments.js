@@ -1,33 +1,28 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 export default function useComments(tmdb_id, username) {
   const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // ───────────────────────────────
-  // Fetch all comments
+  // Fetch all comments for a movie
   // ───────────────────────────────
   const fetchComments = useCallback(async () => {
     if (!tmdb_id) return;
-
+    setLoading(true);
     try {
-      const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`, {
-        credentials: "include", // ✅ send cookies
-        cache: "no-store", // ✅ always get fresh comments
-      });
-
+      const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch comments");
-
       setComments(data);
     } catch (err) {
-      console.error("❌ fetchComments error:", err);
+      console.error("Failed to fetch comments", err);
+    } finally {
+      setLoading(false);
     }
-  }, [tmdb_id]);
+  }, [tmdb_id]); // ✅ dependency here
 
-  // ───────────────────────────────
-  // Fetch comments on mount / id change
-  // ───────────────────────────────
+  // ✅ Safe, no ESLint warning now
   useEffect(() => {
     fetchComments();
   }, [fetchComments]);
@@ -35,98 +30,78 @@ export default function useComments(tmdb_id, username) {
   // ───────────────────────────────
   // Post new comment
   // ───────────────────────────────
-const postComment = async (content, parent_id = null) => {
-  try {
-    const payload = { tmdb_id, username, content, parent_id };
-    alert("Sending comment:\n" + JSON.stringify(payload, null, 2));
-
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
+  const postComment = async (content, parent_id = null) => {
+    console.log("🟡 DEBUG postComment payload:", {
+      tmdb_id,
+      content,
+      parent_id,
+      username,
     });
 
-    const data = await res.json();
-    alert(`Response: ${res.status}\n${JSON.stringify(data, null, 2)}`);
-  } catch (err) {
-    alert("Error sending comment: " + err.message);
-  }
-};
+    if (!tmdb_id) {
+      alert("❌ tmdb_id is missing before sending comment!");
+      return;
+    }
 
+    if (!content || content.trim() === "") {
+      alert("❌ content is missing before sending comment!");
+      return;
+    }
 
-  // ───────────────────────────────
-  // Edit comment
-  // ───────────────────────────────
-  const editComment = useCallback(
-    async (id, content) => {
-      try {
-        const res = await fetch("/api/comments", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ id, content }),
-        });
+    setLoading(true);
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tmdb_id, content, parent_id }),
+      });
 
-        if (!res.ok) throw new Error("Failed to edit comment");
-        await fetchComments();
-      } catch (err) {
-        console.error("❌ editComment error:", err);
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("❌ Comment failed:", data.error);
+        alert(`❌ Comment failed: ${data.error}`);
+        setLoading(false);
+        return;
       }
-    },
-    [fetchComments]
-  );
+
+      console.log("✅ Comment posted successfully:", data);
+      await fetchComments();
+    } catch (err) {
+      console.error("❌ postComment error:", err);
+      alert("❌ Comment failed: Network or unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ───────────────────────────────
   // Delete comment
   // ───────────────────────────────
-  const deleteComment = useCallback(
-    async (id) => {
-      try {
-        const res = await fetch(`/api/comments?id=${id}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-
-        if (!res.ok) throw new Error("Failed to delete comment");
-        await fetchComments();
-      } catch (err) {
-        console.error("❌ deleteComment error:", err);
-      }
-    },
-    [fetchComments]
-  );
-
-  // ───────────────────────────────
-  // Like comment
-  // ───────────────────────────────
-  const likeComment = useCallback(async (id) => {
+  const deleteComment = async (id) => {
+    if (!id) return;
     try {
-      const res = await fetch(`/api/comments/like?id=${id}`, {
-        method: "POST",
-        credentials: "include",
-      });
-
+      const res = await fetch(`/api/comments?id=${id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to like comment");
 
-      // ✅ Update like count in UI immediately
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === id ? { ...c, like_count: data.like_count } : c
-        )
-      );
+      if (!res.ok) {
+        console.error("❌ Delete failed:", data.error);
+        alert(`❌ Delete failed: ${data.error}`);
+        return;
+      }
+
+      setComments((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      console.error("❌ likeComment error:", err);
+      console.error("❌ deleteComment error:", err);
     }
-  }, []);
+  };
 
   return {
     comments,
-    fetchComments,
     postComment,
-    editComment,
     deleteComment,
-    likeComment,
+    fetchComments,
+    loading,
   };
 }
