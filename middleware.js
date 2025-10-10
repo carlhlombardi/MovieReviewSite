@@ -33,9 +33,11 @@ export async function middleware(req) {
 
 export const config = {
   matcher: [
-    "/api/comments/:path*",
-    "/api/users/:path*",
-    "/api/activity/:path*",
     "/profile/:path*",
+    "/api/users/:path*/follow-status",
+    "/api/users/:path*/follow",
+    "/api/activity/following/:path*",
+    "/api/comments/:path*", // ✅ needed for auth
+    "/api/protected/:path*",
   ],
 };

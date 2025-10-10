@@ -1,55 +1,59 @@
-import { sql } from '@vercel/postgres';
-import bcrypt from 'bcrypt';
+import { NextResponse } from "next/server";
+import { sql } from "@vercel/postgres";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    let { firstname, lastname, username, email, password } = await request.json();
+    const { username, password } = await req.json();
 
-    if (!firstname || !lastname || !username || !email || !password) {
-      return new Response(
-        JSON.stringify({ message: 'First Name, Last Name, User Name, email, and password are required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (!username || !password) {
+      return NextResponse.json({ error: "Missing username or password" }, { status: 400 });
     }
 
-    username = username.trim();
-    email = email.trim().toLowerCase();
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(JSON.stringify({ message: 'Invalid email format' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Check for duplicates
+    const existing = await sql`SELECT id FROM users WHERE username = ${username}`;
+    if (existing.rowCount > 0) {
+      return NextResponse.json({ error: "Username already exists" }, { status: 409 });
     }
 
-    // Check for existing username or email
-    const existing = await sql`SELECT 1 FROM users WHERE username=${username} OR email=${email};`;
-    if (existing.rows.length > 0) {
-      return new Response(
-        JSON.stringify({ message: 'Username or email already in use' }),
-        { status: 409, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert the user
-    await sql`
-      INSERT INTO users (firstname, lastname, username, email, password)
-      VALUES (${firstname}, ${lastname}, ${username}, ${email}, ${hashedPassword});
+    // Insert new user
+    const result = await sql`
+      INSERT INTO users (username, password)
+      VALUES (${username}, ${hashed})
+      RETURNING id, username;
     `;
 
-    return new Response(JSON.stringify({ message: 'User registered successfully' }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
+    const user = result.rows[0];
+
+    // ✅ Create JWT (same format as login)
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // ✅ Set secure cookie
+    const res = NextResponse.json({
+      success: true,
+      username: user.username,
+      id: user.id,
     });
-  } catch (error) {
-    console.error('Registration error:', error);
-    return new Response(JSON.stringify({ message: 'An error occurred during registration' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
     });
+
+    return res;
+  } catch (err) {
+    console.error("POST /api/auth/register error:", err);
+    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }
