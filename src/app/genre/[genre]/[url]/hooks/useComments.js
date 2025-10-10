@@ -60,9 +60,20 @@ export default function useComments(tmdb_id, username) {
   };
 
   const likeComment = async (id, delta) => {
-    await fetch(`/api/comments/like?id=${id}&delta=${delta}`, { method: "POST" });
-    fetchComments();
-  };
+  const res = await fetch(`/api/comments/like?id=${id}&delta=${delta}`, {
+    method: "POST",
+  });
+
+  if (!res.ok) return;
+
+  const data = await res.json();
+  setComments((prev) =>
+    prev.map((c) =>
+      c.id === id ? { ...c, like_count: data.like_count } : c
+    )
+  );
+};
+
 
   useEffect(() => {
     if (tmdb_id) fetchComments();
