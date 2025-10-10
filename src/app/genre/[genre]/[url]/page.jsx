@@ -7,6 +7,7 @@ import MovieDetailHeader from "./components/MovieDetailHeader";
 import MovieActions from "./components/MovieActions";
 import MovieReviewSection from "./components/MovieReviewSection";
 import MovieImage from "./components/MovieImage";
+import CommentSection from "./components/CommentSection"; // ✅ Import the new component
 
 export default function MoviePage({ params }) {
   const { genre, url } = params;
@@ -19,9 +20,28 @@ export default function MoviePage({ params }) {
     movieData?.tmdb_id
   );
 
-  if (isLoading) return <Spinner animation="border" role="status" className="d-block mx-auto my-5" />;
-  if (error) return <Alert variant="danger" className="my-5">{error}</Alert>;
-  if (!movieData) return <Alert variant="warning" className="my-5">Movie not found</Alert>;
+  if (isLoading)
+    return (
+      <Spinner
+        animation="border"
+        role="status"
+        className="d-block mx-auto my-5"
+      />
+    );
+
+  if (error)
+    return (
+      <Alert variant="danger" className="my-5">
+        {error}
+      </Alert>
+    );
+
+  if (!movieData)
+    return (
+      <Alert variant="warning" className="my-5">
+        Movie not found
+      </Alert>
+    );
 
   return (
     <Container className="my-5">
@@ -45,6 +65,16 @@ export default function MoviePage({ params }) {
           <MovieReviewSection
             my_rating={movieData.my_rating}
             review={movieData.review}
+          />
+        </Col>
+      </Row>
+
+      {/* 💬 Comment Section */}
+      <Row>
+        <Col>
+          <CommentSection
+            tmdb_id={movieData.tmdb_id}
+            username={user?.username ?? null}
           />
         </Col>
       </Row>
