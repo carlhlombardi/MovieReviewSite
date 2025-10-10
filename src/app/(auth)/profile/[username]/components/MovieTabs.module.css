@@ -8,7 +8,7 @@
 /* Shrink tab text on small screens */
 @media (max-width: 576px) {
   .responsiveTabs :global(.nav-link) {
-    font-size: 0.75rem !important;  /* Force override Bootstrap */
+    font-size: 0.8rem !important;  /* Force override Bootstrap */
     padding: 0.25rem 0.4rem !important;
   }
 
