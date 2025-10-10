@@ -98,11 +98,11 @@ export async function POST(req) {
 
       if (is_liked) action = "liked";
       if (is_seen) {
-        action = "watched";
+        action = "has seen";
         source = "seenit";
       }
       if (is_wanted) {
-        action = "added to watchlist";
+        action = "wants";
         source = "wantedforcollection";
       }
 
@@ -148,9 +148,10 @@ export async function DELETE(req) {
     const user = userRes.rows[0];
 
     if (movie && user) {
+      // 🟢 Log “removal” as “doesnt have” per constraint
       await sql`
         INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-        VALUES (${user.id}, ${username}, 'removed', ${movie.film}, 'mycollection', NOW());
+        VALUES (${user.id}, ${username}, 'doesnt have', ${movie.film}, 'mycollection', NOW());
       `;
     }
 

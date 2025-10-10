@@ -3,15 +3,15 @@ import { useState, useCallback } from 'react';
 
 // ✅ Allowed actions (must match DB constraint exactly)
 const ALLOWED_TYPES = [
-  'wants',
-  'doesnt want',
-  'has seen',
-  'hasnt seen',
-  'has',
-  'doesnt have',
-  'commented on',
-  'replied to a comment',
-  'liked'
+      'wants',
+      'doesnt want',
+      'has seen',
+      'hasnt seen',
+      'has',
+      'doesnt have',
+      'commented on',
+      'replied to a comment',
+      'liked'
 ];
 
 // ✅ Filter to only valid activity actions
