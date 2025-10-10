@@ -29,20 +29,6 @@ export default function MoviePage({ params }) {
       />
     );
 
-  if (error)
-    return (
-      <Alert variant="danger" className="my-5">
-        {error}
-      </Alert>
-    );
-
-  if (!movieData)
-    return (
-      <Alert variant="warning" className="my-5">
-        Movie not found
-      </Alert>
-    );
-
   return (
     <Container className="my-5">
       <Row>
