@@ -17,7 +17,7 @@ export default function CommentSection({ tmdb_id, username }) {
 
   return (
     <div className="mt-4">
-      <h4 className="mb-3">Comments</h4>
+      <h4 className="mb-3"> Comments</h4>
 
       {username ? (
         <CommentForm onSubmit={(text) => postComment(text)} />
