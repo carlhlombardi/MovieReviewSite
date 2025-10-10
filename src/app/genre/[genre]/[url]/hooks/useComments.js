@@ -4,13 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 export default function useComments(tmdb_id, username) {
   const [comments, setComments] = useState([]);
 
-  const fetchComments = useCallback(async () => {
-    const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`);
-    const data = await res.json();
-    setComments(buildTree(data));
-  }, [tmdb_id]);
-
-  const buildTree = (list) => {
+  // 🔹 Build nested tree structure
+  const buildTree = useCallback((list) => {
     const map = {};
     const roots = [];
 
@@ -23,57 +18,94 @@ export default function useComments(tmdb_id, username) {
       }
     });
     return roots;
-  };
+  }, []);
 
+  // 🔹 Fetch all comments
+  const fetchComments = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`);
+      if (!res.ok) throw new Error("Failed to fetch comments");
+      const data = await res.json();
+      setComments(buildTree(data));
+    } catch (err) {
+      console.error("❌ fetchComments error:", err);
+    }
+  }, [tmdb_id, buildTree]);
+
+  // 🔹 Post a new comment or reply
   const postComment = async (content, parent_id = null) => {
-    await fetch("/api/comments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-username": username,
-      },
-      body: JSON.stringify({ tmdb_id, content, parent_id }),
-    });
-    fetchComments();
+    try {
+      await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-username": username,
+        },
+        body: JSON.stringify({ tmdb_id, content, parent_id }),
+      });
+      fetchComments();
+    } catch (err) {
+      console.error("❌ postComment error:", err);
+    }
   };
 
+  // 🔹 Edit a comment
   const editComment = async (id, content) => {
-    await fetch("/api/comments", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-username": username,
-      },
-      body: JSON.stringify({ id, content }),
-    });
-    fetchComments();
+    try {
+      await fetch("/api/comments", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-username": username,
+        },
+        body: JSON.stringify({ id, content }),
+      });
+      fetchComments();
+    } catch (err) {
+      console.error("❌ editComment error:", err);
+    }
   };
 
+  // 🔹 Delete a comment
   const deleteComment = async (id) => {
-    await fetch(`/api/comments?id=${id}`, {
-      method: "DELETE",
-      headers: {
-        "x-username": username,
-      },
-    });
-    fetchComments();
+    try {
+      await fetch(`/api/comments?id=${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-username": username,
+        },
+      });
+      fetchComments();
+    } catch (err) {
+      console.error("❌ deleteComment error:", err);
+    }
   };
 
+  // 🔹 Like / unlike a comment (updates tree)
   const likeComment = async (id, delta) => {
-  const res = await fetch(`/api/comments/like?id=${id}&delta=${delta}`, {
-    method: "POST",
-  });
+    try {
+      const res = await fetch(`/api/comments/like?id=${id}&delta=${delta}`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to like comment");
+      const data = await res.json();
 
-  if (!res.ok) return;
+      const updateLikeInTree = (nodes) =>
+        nodes.map((node) => {
+          if (node.id === id) {
+            return { ...node, like_count: data.like_count };
+          }
+          if (node.replies?.length) {
+            return { ...node, replies: updateLikeInTree(node.replies) };
+          }
+          return node;
+        });
 
-  const data = await res.json();
-  setComments((prev) =>
-    prev.map((c) =>
-      c.id === id ? { ...c, like_count: data.like_count } : c
-    )
-  );
-};
-
+      setComments((prev) => updateLikeInTree(prev));
+    } catch (err) {
+      console.error("❌ likeComment error:", err);
+    }
+  };
 
   useEffect(() => {
     if (tmdb_id) fetchComments();
