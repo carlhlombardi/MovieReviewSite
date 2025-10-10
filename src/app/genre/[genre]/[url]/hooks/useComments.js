@@ -44,14 +44,14 @@ export default function useComments(tmdb_id, username) {
           credentials: "include",
           body: JSON.stringify({ tmdb_id, content, parent_id }),
         });
-
+console.log("🟡 Posting comment:", { tmdb_id, username, content, parent_id });
         if (!res.ok) throw new Error("Failed to post comment");
         await fetchComments();
       } catch (err) {
         console.error("❌ postComment error:", err);
       }
     },
-    [tmdb_id, fetchComments]
+    [tmdb_id, username, fetchComments]
   );
 
   // ───────────────────────────────
