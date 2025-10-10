@@ -6,7 +6,7 @@ export function useActivity() {
   const [followingActivity, setFollowingActivity] = useState([]);
 
   const fetchActivityFeed = useCallback(async (username) => {
-    const ALLOWED_TYPES = ['liked', 'wanted', 'seen'];
+    const ALLOWED_TYPES = ['has', 'wants', 'has seen'];
 
     const filterAllowed = (feed) => {
       if (!Array.isArray(feed)) return [];
