@@ -1,7 +1,7 @@
 "use client";
 import CommentItem from "./CommentItem";
 import CommentForm from "./CommentForm";
-import useComments from "./hooks/useComments";
+import useComments from "../hooks/useComments";
 
 export default function CommentSection({ tmdb_id, username }) {
   const { comments, postComment, editComment, deleteComment, likeComment } =
