@@ -3,18 +3,25 @@ import { sql } from "@vercel/postgres"; // works great with Neon too
 
 // 🟡 Get all comments for a movie
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const tmdb_id = searchParams.get("tmdb_id");
+  try {
+    const { searchParams } = new URL(req.url);
+    const tmdb_id = searchParams.get("tmdb_id");
 
-  if (!tmdb_id) return NextResponse.json([], { status: 400 });
+    if (!tmdb_id) {
+      return NextResponse.json([], { status: 400 });
+    }
 
-  const { rows } = await sql`
-    SELECT * FROM comments
-    WHERE tmdb_id = ${tmdb_id}
-    ORDER BY created_at ASC
-  `;
+    const { rows } = await sql`
+      SELECT * FROM comments
+      WHERE tmdb_id = ${tmdb_id}
+      ORDER BY created_at ASC
+    `;
 
-  return NextResponse.json(rows);
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error("❌ GET /api/comments failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
 // 🟢 Post new comment or reply
@@ -25,7 +32,10 @@ export async function POST(req) {
     const userIdHeader = req.headers.get("x-userid");
     const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
 
-    if (!username) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!username) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!content || content.trim() === "") {
       return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
     }
@@ -67,42 +77,64 @@ export async function POST(req) {
 
 // ✏️ Edit comment
 export async function PUT(req) {
-  const { id, content } = await req.json();
-  const user = req.headers.get("x-username");
+  try {
+    const { id, content } = await req.json();
+    const user = req.headers.get("x-username");
 
-  const { rowCount } = await sql`
-    UPDATE comments
-    SET content = ${content}, updated_at = NOW()
-    WHERE id = ${id} AND username = ${user}
-  `;
+    const { rowCount } = await sql`
+      UPDATE comments
+      SET content = ${content}, updated_at = NOW()
+      WHERE id = ${id} AND username = ${user}
+    `;
 
-  if (rowCount === 0) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-  return NextResponse.json({ success: true });
+    if (rowCount === 0) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("❌ PUT /api/comments failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
 // ❌ Delete comment (and replies cascade)
 export async function DELETE(req) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  const user = req.headers.get("x-username");
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const user = req.headers.get("x-username");
 
-  await sql`
-    DELETE FROM comments
-    WHERE id = ${id} AND username = ${user}
-  `;
+    await sql`
+      DELETE FROM comments
+      WHERE id = ${id} AND username = ${user}
+    `;
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("❌ DELETE /api/comments failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
 
-// ❤️ Like or unlike
+// ❤️ Like or unlike comment
 export async function PATCH(req) {
-  const { id, delta } = await req.json();
+  try {
+    const { id, delta } = await req.json();
 
-  await sql`
-    UPDATE comments
-    SET like_count = like_count + ${delta}
-    WHERE id = ${id}
-  `;
+    if (!id || typeof delta !== "number") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
 
-  return NextResponse.json({ success: true });
+    await sql`
+      UPDATE comments
+      SET like_count = like_count + ${delta}
+      WHERE id = ${id}
+    `;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("❌ PATCH /api/comments failed:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }
