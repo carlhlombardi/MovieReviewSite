@@ -9,18 +9,25 @@ export default function useComments(tmdb_id) {
   const [error, setError] = useState(null);
 
   // ── Fetch all comments (stable with useCallback) ──
-  const fetchComments = useCallback(async () => {
+ const fetchComments = useCallback(async () => {
     if (!tmdb_id) return;
+
     setLoading(true);
     setError(null);
 
     try {
       const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`, {
-        credentials: "include", // send cookie for auth
+        credentials: "include", // send cookies for user auth
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to fetch comments");
-      setComments(data);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to fetch comments");
+      }
+
+      // ✅ Defensive: ensure data is an array
+      setComments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("❌ fetchComments error:", err);
       setError(err.message || "Failed to fetch comments");
