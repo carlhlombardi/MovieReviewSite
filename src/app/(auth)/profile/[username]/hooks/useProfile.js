@@ -1,41 +1,39 @@
 'use client';
 import { useState, useCallback } from 'react';
 
-export function useProfile() {
-  const [profile, setProfile] = useState(null); // Profile being viewed
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export function useProfile(router) {
+  const [profile, setProfile] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  /**
-   * Fetch profile by username (always uses JWT for authentication)
-   * @param {string} username
-   */
   const fetchProfile = useCallback(async (username) => {
-    if (!username) return;
-
-    setLoading(true);
-    setError(null);
-
     try {
-      const url = `/api/auth/profile/${encodeURIComponent(username)}`;
+      setLoading(true);
+      setError('');
 
-      const res = await fetch(url, { cache: 'no-store' });
+      const authRes = await fetch('/api/auth/profile', { credentials: 'include' });
+      let authUser = null;
+      if (authRes.ok) authUser = await authRes.json();
+      setLoggedInUser(authUser);
 
-      if (!res.ok) {
-        if (res.status === 404) throw new Error('Profile not found.');
-        if (res.status === 401) throw new Error('Unauthorized. Please log in.');
-        throw new Error('Failed to fetch profile.');
-      }
+      const profileUrl =
+        authUser && username === authUser.username
+          ? '/api/auth/profile'
+          : `/api/users/${username}`;
+
+      const res = await fetch(profileUrl, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch profile');
 
       const data = await res.json();
       setProfile(data);
     } catch (err) {
-      console.error('❌ Error fetching profile:', err);
       setError(err.message);
+      router.replace('/login');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
-  return { profile, loading, error, fetchProfile };
+  return { profile, loggedInUser, error, loading, fetchProfile };
 }
