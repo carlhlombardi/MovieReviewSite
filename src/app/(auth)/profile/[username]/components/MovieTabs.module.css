@@ -1,23 +1,23 @@
-/* MovieTabs.module.css */
-.responsiveTabs .nav-link {
-  font-size: 1rem; /* Default size on desktop */
+/* Make sure your Tabs container uses styles.responsiveTabs */
+.responsiveTabs :global(.nav-link) {
+  font-size: 1rem;
   padding: 0.5rem 1rem;
   text-align: center;
 }
 
-/* On small screens — make the titles smaller */
+/* Shrink tab text on small screens */
 @media (max-width: 576px) {
-  .responsiveTabs .nav-link {
-    font-size: 0.8rem;       /* smaller text */
-    padding: 0.4rem 0.5rem;  /* tighter padding */
+  .responsiveTabs :global(.nav-link) {
+    font-size: 0.75rem !important;  /* Force override Bootstrap */
+    padding: 0.25rem 0.4rem !important;
   }
 
-  .responsiveTabs .nav-item {
-    flex: 1;                 /* each tab takes equal width */
+  .responsiveTabs :global(.nav-item) {
+    flex: 1;
     text-align: center;
   }
 
-  .responsiveTabs .nav {
+  .responsiveTabs :global(.nav) {
     display: flex;
     justify-content: space-between;
   }
