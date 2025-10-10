@@ -5,7 +5,7 @@ import useComments from "../hooks/useComments";
 
 export default function CommentSection({ tmdb_id, username }) {
   const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id, username);
+    useComments(tmdb_id);
 
   const handleReply = (parentId) => {
     const reply = prompt("Reply to this comment:");
