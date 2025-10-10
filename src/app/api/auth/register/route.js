@@ -5,38 +5,47 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req) {
   try {
-    const { username, password } = await req.json();
+    const { username, password, email, firstname, lastname } = await req.json();
 
     if (!username || !password) {
-      return NextResponse.json({ error: "Missing username or password" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Username and password are required" },
+        { status: 400 }
+      );
     }
 
-    // Check for duplicates
-    const existing = await sql`SELECT id FROM users WHERE username = ${username}`;
+    // ✅ Check if username or email already exists
+    const existing = await sql`
+      SELECT id FROM users WHERE username = ${username} OR email = ${email};
+    `;
+
     if (existing.rowCount > 0) {
-      return NextResponse.json({ error: "Username already exists" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Username or email already exists" },
+        { status: 409 }
+      );
     }
 
-    // Hash password
-    const hashed = await bcrypt.hash(password, 10);
+    // ✅ Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user
+    // ✅ Insert user record
     const result = await sql`
-      INSERT INTO users (username, password)
-      VALUES (${username}, ${hashed})
+      INSERT INTO users (username, password, email, firstname, lastname, date_joined, approved, is_admin)
+      VALUES (${username}, ${hashedPassword}, ${email || null}, ${firstname || null}, ${lastname || null}, NOW(), true, false)
       RETURNING id, username;
     `;
 
     const user = result.rows[0];
 
-    // ✅ Create JWT (same format as login)
+    // ✅ Create JWT (matches your login + middleware format)
     const token = jwt.sign(
       { id: user.id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // ✅ Set secure cookie
+    // ✅ Set token cookie
     const res = NextResponse.json({
       success: true,
       username: user.username,
@@ -54,6 +63,9 @@ export async function POST(req) {
     return res;
   } catch (err) {
     console.error("POST /api/auth/register error:", err);
-    return NextResponse.json({ error: "Registration failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Registration failed" },
+      { status: 500 }
+    );
   }
 }
