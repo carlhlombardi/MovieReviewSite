@@ -3,7 +3,7 @@ import { sql } from "@vercel/postgres";
 import jwt from "jsonwebtoken";
 
 // ───────────────────────────────
-// Helper: extract user info from JWT cookie
+// Helper: get user from cookie
 // ───────────────────────────────
 function getUserFromCookie(req) {
   const cookieHeader = req.headers.get("cookie") || "";
@@ -13,6 +13,7 @@ function getUserFromCookie(req) {
       return [name, decodeURIComponent(rest.join("="))];
     })
   );
+
   const token = cookies.token;
   if (!token) return null;
 
@@ -24,21 +25,21 @@ function getUserFromCookie(req) {
 }
 
 // ───────────────────────────────
-// GET → fetch comments for a movie
+// GET → fetch comments for movie
 // ───────────────────────────────
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const tmdb_id = searchParams.get("tmdb_id");
+
   if (!tmdb_id)
     return NextResponse.json({ error: "Missing tmdb_id" }, { status: 400 });
 
   try {
     const { rows } = await sql`
-      SELECT c.*, u.username, u.avatar_url
-      FROM comments c
-      JOIN users u ON c.user_id = u.id
-      WHERE c.tmdb_id = ${tmdb_id}
-      ORDER BY c.created_at DESC;
+      SELECT id, user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at
+      FROM comments
+      WHERE tmdb_id = ${tmdb_id}
+      ORDER BY created_at DESC;
     `;
     return NextResponse.json(rows);
   } catch (err) {
@@ -48,7 +49,7 @@ export async function GET(req) {
 }
 
 // ───────────────────────────────
-// POST → add a new comment
+// POST → add new comment
 // ───────────────────────────────
 export async function POST(req) {
   const user = getUserFromCookie(req);
@@ -56,13 +57,14 @@ export async function POST(req) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tmdb_id, content, parent_id = null } = await req.json();
+
   if (!tmdb_id || !content)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   try {
     await sql`
-      INSERT INTO comments (user_id, tmdb_id, content, parent_id)
-      VALUES (${user.id}, ${tmdb_id}, ${content}, ${parent_id});
+      INSERT INTO comments (user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at)
+      VALUES (${user.id}, ${user.username}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW());
     `;
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -72,7 +74,7 @@ export async function POST(req) {
 }
 
 // ───────────────────────────────
-// PUT → edit an existing comment
+// PUT → edit existing comment
 // ───────────────────────────────
 export async function PUT(req) {
   const user = getUserFromCookie(req);
@@ -86,7 +88,7 @@ export async function PUT(req) {
   try {
     const { rowCount } = await sql`
       UPDATE comments
-      SET content = ${content}
+      SET content = ${content}, updated_at = NOW()
       WHERE id = ${id} AND user_id = ${user.id};
     `;
     if (rowCount === 0)
@@ -100,7 +102,7 @@ export async function PUT(req) {
 }
 
 // ───────────────────────────────
-// DELETE → remove a comment
+// DELETE → remove comment
 // ───────────────────────────────
 export async function DELETE(req) {
   const user = getUserFromCookie(req);
@@ -109,6 +111,7 @@ export async function DELETE(req) {
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
+
   if (!id)
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
 

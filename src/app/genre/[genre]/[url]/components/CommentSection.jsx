@@ -4,37 +4,44 @@ import CommentForm from "./CommentForm";
 import useComments from "../hooks/useComments";
 
 export default function CommentSection({ tmdb_id, username }) {
+  // ✅ Pass both tmdb_id and username to the hook
   const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id);
+    useComments(tmdb_id, username);
 
   const handleReply = (parentId) => {
     const reply = prompt("Reply to this comment:");
-    if (reply) postComment(reply, parentId);
+    if (reply?.trim()) postComment(reply.trim(), parentId);
   };
 
   const handleEdit = (comment) => {
     const text = prompt("Edit your comment:", comment.content);
-    if (text) editComment(comment.id, text);
+    if (text?.trim()) editComment(comment.id, text.trim());
   };
 
   return (
     <div className="mt-4">
       <h4 className="mb-3">💬 Comments</h4>
 
-      {username && <CommentForm onSubmit={postComment} />}
+      {/* ✅ Only show form if user is logged in */}
+      {username ? (
+        <CommentForm onSubmit={postComment} />
+      ) : (
+        <p className="text-muted">Sign in to leave a comment.</p>
+      )}
 
+      {/* ✅ Display comments */}
       {comments.length === 0 ? (
-        <p className="text-muted">No comments yet. Be the first!</p>
+        <p className="text-muted mt-2">No comments yet. Be the first!</p>
       ) : (
         comments.map((comment) => (
           <CommentItem
             key={comment.id}
             comment={comment}
             username={username}
-            onLike={likeComment}
-            onEdit={handleEdit}
-            onDelete={deleteComment}
-            onReply={handleReply}
+            onLike={() => likeComment(comment.id)}
+            onEdit={() => handleEdit(comment)}
+            onDelete={() => deleteComment(comment.id)}
+            onReply={() => handleReply(comment.id)}
           />
         ))
       )}
