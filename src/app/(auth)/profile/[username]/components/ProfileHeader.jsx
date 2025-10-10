@@ -1,9 +1,9 @@
-"use client";
+'use client';
 import { Card } from "react-bootstrap";
 import Image from "next/image";
-import FollowButton from "./FollowButton"; // ✅ import the new component
+import FollowButton from "./FollowButton";
 
-export default function ProfileHeader({ profile, isSelf }) {
+export default function ProfileHeader({ profile, isSelf, isFollowing, onFollowToggle }) {
   if (!profile) return null;
 
   const { username, avatar_url, date_joined, bio } = profile;
@@ -41,8 +41,14 @@ export default function ProfileHeader({ profile, isSelf }) {
         <strong>Bio:</strong> {bio || "No bio yet."}
       </p>
 
-      {/* ✅ Only show follow button if viewing someone else’s profile */}
-      {!isSelf && username && <FollowButton username={username} />}
+      {/* Only show follow button if viewing someone else’s profile */}
+      {!isSelf && username && (
+        <FollowButton
+          username={username}
+          isFollowing={isFollowing}
+          onFollowToggle={onFollowToggle}
+        />
+      )}
     </Card>
   );
 }
