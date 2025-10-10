@@ -1,5 +1,5 @@
 "use client";
-import { Card, Stack, Button } from "react-bootstrap";
+import { useState } from "react";
 
 export default function CommentItem({
   comment,
@@ -9,75 +9,139 @@ export default function CommentItem({
   onDelete,
   onReply,
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
+  const [replyText, setReplyText] = useState("");
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    onEdit(comment.id, editText);
+    setIsEditing(false);
+  };
+
+  const handleReplySubmit = (e) => {
+    e.preventDefault();
+    onReply(replyText, comment.id);
+    setReplyText("");
+    setIsReplying(false);
+  };
+
   return (
-    <Card className="mb-2 ms-3 border shadow-sm">
-      <Card.Body>
-        <div className="d-flex justify-content-between align-items-start">
-          <div>
-            <Card.Title className="fs-6 mb-1">{comment.username}</Card.Title>
-            <Card.Subtitle className="text-muted small">
-              {new Date(comment.created_at).toLocaleString()}
-            </Card.Subtitle>
+    <div className="border rounded p-3 mb-3 bg-light">
+      <div className="d-flex justify-content-between">
+        <strong>{comment.username}</strong>
+        <small className="text-muted">
+          {new Date(comment.created_at).toLocaleString()}
+        </small>
+      </div>
+
+      {/* Comment content */}
+      {isEditing ? (
+        <form onSubmit={handleEditSubmit} className="mt-2">
+          <textarea
+            className="form-control mb-2"
+            rows="2"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+          />
+          <div className="d-flex gap-2">
+            <button type="submit" className="btn btn-sm btn-success">
+              Save
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </button>
           </div>
-        </div>
+        </form>
+      ) : (
+        <p className="mt-2 mb-2">{comment.content}</p>
+      )}
 
-        <Card.Text className="mt-2">{comment.content}</Card.Text>
+      {/* Comment actions */}
+      <div className="d-flex gap-3 small">
+        <button
+          className="btn btn-link btn-sm p-0"
+          onClick={onLike}
+          disabled={!username}
+        >
+          👍 {comment.likes || 0}
+        </button>
 
-        <Stack direction="horizontal" gap={2}>
-          <Button
-            size="sm"
-            variant="outline-primary"
-            onClick={() => onLike(comment.id, 1)}
-          >
-            👍 {comment.like_count}
-          </Button>
-
-          {username === comment.username && (
-            <>
-              <Button
-                size="sm"
-                variant="outline-secondary"
-                onClick={() => onEdit(comment)}
-              >
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline-danger"
-                onClick={() => onDelete(comment.id)}
-              >
-                Delete
-              </Button>
-            </>
-          )}
-
-          {username && (
-            <Button
-              size="sm"
-              variant="outline-success"
-              onClick={() => onReply(comment.id)}
+        {username && (
+          <>
+            <button
+              className="btn btn-link btn-sm p-0"
+              onClick={() => setIsReplying((v) => !v)}
             >
               Reply
-            </Button>
-          )}
-        </Stack>
+            </button>
 
-        {comment.replies?.length > 0 && (
-          <div className="ms-4 mt-3">
-            {comment.replies.map((r) => (
-              <CommentItem
-                key={r.id}
-                comment={r}
-                username={username}
-                onLike={onLike}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onReply={onReply}
-              />
-            ))}
-          </div>
+            {username === comment.username && (
+              <>
+                <button
+                  className="btn btn-link btn-sm p-0"
+                  onClick={() => setIsEditing((v) => !v)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-link btn-sm text-danger p-0"
+                  onClick={onDelete}
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </>
         )}
-      </Card.Body>
-    </Card>
+      </div>
+
+      {/* Inline reply form */}
+      {isReplying && (
+        <form onSubmit={handleReplySubmit} className="mt-2 ms-3">
+          <textarea
+            className="form-control mb-2"
+            rows="2"
+            placeholder="Write a reply..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+          />
+          <div className="d-flex gap-2">
+            <button type="submit" className="btn btn-sm btn-primary">
+              Reply
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => setIsReplying(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Nested replies */}
+      {comment.replies?.length > 0 && (
+        <div className="mt-3 ms-4">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              username={username}
+              onLike={() => onLike(reply.id)}
+              onEdit={onEdit}
+              onDelete={() => onDelete(reply.id)}
+              onReply={onReply}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
