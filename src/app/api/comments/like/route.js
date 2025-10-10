@@ -6,12 +6,14 @@ export async function POST(req) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const username = req.headers.get("x-username");
-    const userId = req.headers.get("x-userid");
+    const userIdHeader = req.headers.get("x-userid");
+    const userId = userIdHeader ? parseInt(userIdHeader, 10) : null;
 
-    if (!id || !username) {
-      return NextResponse.json({ error: "Missing id or username" }, { status: 400 });
+    if (!id || !username || !userId) {
+      return NextResponse.json({ error: "Missing id, username, or userId" }, { status: 400 });
     }
 
+    // check existing like
     const existing = await sql`
       SELECT 1 FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
     `;
@@ -20,9 +22,7 @@ export async function POST(req) {
 
     if (existing.rows.length > 0) {
       // Unlike
-      await sql`
-        DELETE FROM comment_likes WHERE comment_id = ${id} AND username = ${username};
-      `;
+      await sql`DELETE FROM comment_likes WHERE comment_id = ${id} AND username = ${username};`;
       const { rows } = await sql`
         UPDATE comments SET like_count = like_count - 1 WHERE id = ${id} RETURNING like_count;
       `;
@@ -37,10 +37,16 @@ export async function POST(req) {
       `;
       like_count = rows[0].like_count;
 
-      // Insert into activity
+      // Get movie info from comment
+      const commentInfo = await sql`
+        SELECT movie_title, source FROM comments WHERE id = ${id};
+      `;
+      const movie_title = commentInfo.rows[0]?.movie_title || null;
+      const source = commentInfo.rows[0]?.source || null;
+
       await sql`
-        INSERT INTO activity (user_id, username, action, created_at)
-        VALUES (${userId || null}, ${username}, 'liked a comment', NOW());
+        INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+        VALUES (${userId}, ${username}, 'liked a comment', ${movie_title}, ${source}, NOW())
       `;
     }
 
@@ -50,3 +56,4 @@ export async function POST(req) {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
