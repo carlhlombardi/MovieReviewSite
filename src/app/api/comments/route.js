@@ -60,6 +60,7 @@ export async function POST(req) {
 
   if (!tmdb_id || !content)
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  console.log("🟡 Posting comment:", { tmdb_id, username, content, parent_id });
 
   try {
     await sql`
