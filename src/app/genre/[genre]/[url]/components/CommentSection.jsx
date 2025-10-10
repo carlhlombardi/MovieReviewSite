@@ -7,19 +7,19 @@ export default function CommentSection({ tmdb_id, username }) {
   const { comments, postComment, editComment, deleteComment, likeComment } =
     useComments(tmdb_id);
 
-  const handleReply = (parentId) => {
-    const reply = prompt("Reply to this comment:");
-    if (reply?.trim()) postComment(reply.trim(), parentId);
+  // 🔹 Inline reply — CommentItem will call onReply(text, parentId)
+  const handleReply = (text, parentId) => {
+    if (text?.trim()) postComment(text.trim(), parentId);
   };
 
-  const handleEdit = (comment) => {
-    const text = prompt("Edit your comment:", comment.content);
-    if (text?.trim()) editComment(comment.id, text.trim());
+  // 🔹 Inline edit — CommentItem will call onEdit(id, text)
+  const handleEdit = (id, text) => {
+    if (text?.trim()) editComment(id, text.trim());
   };
 
   return (
     <div className="mt-4">
-      <h4 className="mb-3">💬 Comments</h4>
+      <h4 className="mb-3">Comments</h4>
 
       {username ? (
         <CommentForm onSubmit={postComment} />
@@ -36,9 +36,9 @@ export default function CommentSection({ tmdb_id, username }) {
             comment={comment}
             username={username}
             onLike={() => likeComment(comment.id)}
-            onEdit={() => handleEdit(comment)}
+            onEdit={handleEdit}        // ✅ passes edit handler with args
             onDelete={() => deleteComment(comment.id)}
-            onReply={() => handleReply(comment.id)}
+            onReply={handleReply}      // ✅ passes reply handler with args
           />
         ))
       )}

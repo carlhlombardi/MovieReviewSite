@@ -24,7 +24,7 @@ export default function CommentForm({ onSubmit }) {
             <Form.Control
               as="textarea"
               rows={3}
-              placeholder="💬 Write a comment..."
+              placeholder="Write a comment..."
               value={text}
               onChange={(e) => setText(e.target.value)}
               className="rounded-3 shadow-sm"
