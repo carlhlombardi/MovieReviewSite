@@ -10,7 +10,7 @@ export function useCollection(username) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!username) return;
+    if (!username) return; // 👈 prevent fetching if no username yet
 
     const fetchCollectionMovies = async () => {
       try {
@@ -33,7 +33,6 @@ export function useCollection(username) {
 
         const userMovies = await res.json();
         const collectionMovies = userMovies.filter((m) => m.is_liked === true);
-
         setMovies(collectionMovies);
       } catch (err) {
         console.error("Error fetching collection:", err);
