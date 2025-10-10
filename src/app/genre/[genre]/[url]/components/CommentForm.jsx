@@ -1,65 +1,47 @@
 "use client";
-import { useState } from "react";
-import { Button, Form } from "react-bootstrap";
+import CommentItem from "./CommentItem";
+import CommentForm from "./CommentForm";
+import useComments from "../hooks/useComments";
 
-export default function CommentForm({ tmdb_id, movie, onCommentPosted }) {
-  const [text, setText] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
+export default function CommentSection({ tmdb_id, username }) {
+  const { comments, postComment, editComment, deleteComment, likeComment } =
+    useComments(tmdb_id);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!text.trim()) return;
+  const handleReply = (parentId) => {
+    const reply = prompt("Reply to this comment:");
+    if (reply?.trim()) postComment(reply.trim(), parentId);
+  };
 
-    try {
-      setIsPosting(true);
-      const res = await fetch("/api/comments", {
-        method: "POST",
-        credentials: "include", // ✅ important for cookies
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tmdb_id,
-          content: text.trim(),
-          movie_title: movie?.title || null,
-          source: "movie-page",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("❌ Comment failed:", data.error);
-        alert(data.error || "Failed to post comment.");
-      } else {
-        console.log("✅ Comment posted:", data);
-        setText("");
-        onCommentPosted?.(data);
-      }
-    } catch (err) {
-      console.error("❌ Comment submit error:", err);
-    } finally {
-      setIsPosting(false);
-    }
+  const handleEdit = (comment) => {
+    const text = prompt("Edit your comment:", comment.content);
+    if (text?.trim()) editComment(comment.id, text.trim());
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="mb-4">
-      <Form.Group>
-        <Form.Control
-          as="textarea"
-          rows={3}
-          placeholder="Write a comment..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={isPosting}
-        />
-      </Form.Group>
-      <div className="mt-2 d-flex justify-content-end">
-        <Button type="submit" variant="primary" disabled={isPosting}>
-          {isPosting ? "Posting..." : "Post"}
-        </Button>
-      </div>
-    </Form>
+    <div className="mt-4">
+      <h4 className="mb-3">💬 Comments</h4>
+
+      {username ? (
+        <CommentForm onSubmit={postComment} />
+      ) : (
+        <p className="text-muted">Sign in to leave a comment.</p>
+      )}
+
+      {comments.length === 0 ? (
+        <p className="text-muted mt-2">No comments yet. Be the first!</p>
+      ) : (
+        comments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            username={username}
+            onLike={() => likeComment(comment.id)}
+            onEdit={() => handleEdit(comment)}
+            onDelete={() => deleteComment(comment.id)}
+            onReply={() => handleReply(comment.id)}
+          />
+        ))
+      )}
+    </div>
   );
 }
