@@ -7,14 +7,12 @@ export default function CommentSection({ tmdb_id, username }) {
   const { comments, postComment, editComment, deleteComment, likeComment } =
     useComments(tmdb_id, username);
 
-  const handleReply = (parentId) => {
-    const reply = prompt("Reply to this comment:");
-    if (reply) postComment(reply, parentId);
+  const handleReply = async (parentId, text) => {
+    await postComment(text, parentId);
   };
 
-  const handleEdit = (comment) => {
-    const text = prompt("Edit your comment:", comment.content);
-    if (text) editComment(comment.id, text);
+  const handleEdit = async (comment, text) => {
+    await editComment(comment.id, text);
   };
 
   return (
