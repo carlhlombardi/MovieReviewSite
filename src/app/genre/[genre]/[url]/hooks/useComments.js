@@ -35,23 +35,30 @@ export default function useComments(tmdb_id, username) {
   // ───────────────────────────────
   // Post new comment
   // ───────────────────────────────
-  const postComment = useCallback(
-    async (content, parent_id = null) => {
-      try {
-        const res = await fetch("/api/comments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ tmdb_id, content, parent_id }),
-        });
-        if (!res.ok) throw new Error("Failed to post comment");
-        await fetchComments();
-      } catch (err) {
-        console.error("❌ postComment error:", err);
-      }
-    },
-    [tmdb_id, fetchComments]
-  );
+  const postComment = async (content, parent_id = null) => {
+  if (!content.trim()) return;
+
+  console.log("🟡 Posting comment:", { tmdb_id, username, content, parent_id });
+
+  const res = await fetch("/api/comments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tmdb_id,
+      username,
+      content,
+      parent_id,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("❌ Comment post failed:", err);
+  } else {
+    console.log("✅ Comment posted successfully");
+  }
+};
+
 
   // ───────────────────────────────
   // Edit comment
