@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCollection } from "@/hooks/useCollection";
+import { useCollection } from "./hooks/useCollection";
 import Image from "next/image";
 
 export default function CollectionPage() {
