@@ -80,27 +80,28 @@ export async function GET(req, { params }) {
       let text = '';
 
       switch (source) {
-        case 'mycollection':
-          text =
-            item.action === 'add'
-              ? `added "${item.movie_title}" to My Collection`
-              : `removed "${item.movie_title}" from My Collection`;
-          break;
-        case 'wantedforcollection':
-          text =
-            item.action === 'want'
-              ? `added "${item.movie_title}" to Wanted List`
-              : `removed "${item.movie_title}" from Wanted List`;
-          break;
-        case 'seenit':
-          text =
-            item.action === 'seen'
-              ? `marked "${item.movie_title}" as Seen`
-              : `removed "${item.movie_title}" from Seen List`;
-          break;
-        default:
-          text = `did something with "${item.movie_title}"`;
-      }
+  case 'mycollection':
+    text =
+      item.action === 'has'
+        ? `added "${item.movie_title}" to My Collection`
+        : `removed "${item.movie_title}" from My Collection`;
+    break;
+  case 'wantedforcollection':
+    text =
+      item.action === 'wants'
+        ? `added "${item.movie_title}" to Wanted List`
+        : `removed "${item.movie_title}" from Wanted List`;
+    break;
+  case 'seenit':
+    text =
+      item.action === 'has seen'
+        ? `marked "${item.movie_title}" as Seen`
+        : `removed "${item.movie_title}" from Seen List`;
+    break;
+  default:
+    text = `did something with "${item.movie_title}"`;
+}
+
 
       return {
         user_id: item.user_id,

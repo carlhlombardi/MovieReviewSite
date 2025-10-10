@@ -1,18 +1,18 @@
 'use client';
 import { useState, useCallback } from 'react';
 
+const ALLOWED_TYPES = ['has', 'wants', 'has seen'];
+
+const filterAllowed = (feed) => {
+  if (!Array.isArray(feed)) return [];
+  return feed.filter((item) => ALLOWED_TYPES.includes(item.action));
+};
+
 export function useActivity() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [followingActivity, setFollowingActivity] = useState([]);
 
   const fetchActivityFeed = useCallback(async (username) => {
-    const ALLOWED_TYPES = ['has', 'wants', 'has seen'];
-
-    const filterAllowed = (feed) => {
-      if (!Array.isArray(feed)) return [];
-      return feed.filter((item) => ALLOWED_TYPES.includes(item.type));
-    };
-
     try {
       const [recentRes, followingRes] = await Promise.all([
         fetch(`/api/activity/feed/${username}?limit=5`, { cache: 'no-store' }),

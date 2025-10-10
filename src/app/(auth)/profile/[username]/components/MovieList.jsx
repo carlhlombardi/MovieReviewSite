@@ -19,7 +19,7 @@ export default function MovieList({ movies = [] }) {
         >
           <Link
             href={`/genre/${movie.genre}/${encodeURIComponent(movie.url)}`}
-            className="text-decoration-none"
+            className={`${styles.cardLink} text-decoration-none d-block h-100`}
           >
             <div className={styles.imageWrapper}>
               <Image
@@ -34,6 +34,7 @@ export default function MovieList({ movies = [] }) {
                 className="img-fluid rounded"
               />
             </div>
+            <p className="mt-2 text-light small">{movie.film}</p>
           </Link>
         </Col>
       ))}
