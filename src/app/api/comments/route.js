@@ -30,17 +30,17 @@ export async function POST(req) {
     VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null}, ${movie_title}, ${source})
   `;
 
-  await sql`
-    INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-    VALUES (
-      ${userId || null},
-      ${username},
-      ${parent_id ? 'replied to a comment' : 'commented on'},
-      ${movie_title},
-      ${source},
-      NOW()
-    );
-  `;
+await sql`
+  INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+  VALUES (
+    ${userId || null},
+    ${username},
+    ${parent_id ? 'replied to a comment' : 'commented on'},
+    ${movie_title},
+    ${source},
+    NOW()
+  )
+`;
 
   return NextResponse.json({ success: true });
 }
