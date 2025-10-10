@@ -19,14 +19,27 @@ export async function GET(req) {
 
 // 🟢 Post new comment or reply
 export async function POST(req) {
-  const { tmdb_id, content, parent_id } = await req.json();
-  const user = req.headers.get("x-username");
+  const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
+  const username = req.headers.get("x-username");
+  const userId = req.headers.get("x-userid"); // optional
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!username) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await sql`
-    INSERT INTO comments (tmdb_id, username, content, parent_id)
-    VALUES (${tmdb_id}, ${user}, ${content}, ${parent_id || null})
+    INSERT INTO comments (tmdb_id, username, content, parent_id, movie_title, source)
+    VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null}, ${movie_title}, ${source})
+  `;
+
+  await sql`
+    INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
+    VALUES (
+      ${userId || null},
+      ${username},
+      ${parent_id ? 'replied to a comment' : 'commented on'},
+      ${movie_title},
+      ${source},
+      NOW()
+    );
   `;
 
   return NextResponse.json({ success: true });
