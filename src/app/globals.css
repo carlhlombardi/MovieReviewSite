@@ -94,3 +94,20 @@ small {
     background-color: white;
     color: var(--bg);
   }
+
+  .comment-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.comment-item:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+textarea.form-control {
+  font-size: 0.95rem;
+}
+
+button.btn-link:hover {
+  text-decoration: underline !important;
+}
