@@ -2,25 +2,22 @@
 import { useState, useCallback } from 'react';
 
 export function useProfile() {
-  const [profile, setProfile] = useState(null);      // Profile being viewed
-  const [loggedInUser, setLoggedInUser] = useState(null); // Logged-in user info from JWT
+  const [profile, setProfile] = useState(null); // Profile being viewed
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   /**
-   * Fetch profile
-   * @param {string} username - optional, if omitted fetches logged-in user's profile
+   * Fetch profile by username (always uses JWT for authentication)
+   * @param {string} username
    */
   const fetchProfile = useCallback(async (username) => {
+    if (!username) return;
+
     setLoading(true);
     setError(null);
 
     try {
-      // If username provided, fetch that user's public profile
-      // Otherwise fetch logged-in user's profile using JWT
-      const url = username
-        ? `/api/auth/profile/${encodeURIComponent(username)}`
-        : `/api/auth/profile`;
+      const url = `/api/auth/profile/${encodeURIComponent(username)}`;
 
       const res = await fetch(url, { cache: 'no-store' });
 
@@ -31,10 +28,6 @@ export function useProfile() {
       }
 
       const data = await res.json();
-
-      // If fetching logged-in user (no username), store in loggedInUser
-      if (!username) setLoggedInUser(data);
-
       setProfile(data);
     } catch (err) {
       console.error('❌ Error fetching profile:', err);
@@ -44,5 +37,5 @@ export function useProfile() {
     }
   }, []);
 
-  return { profile, loggedInUser, loading, error, fetchProfile };
+  return { profile, loading, error, fetchProfile };
 }
