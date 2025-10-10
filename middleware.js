@@ -2,46 +2,40 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
 export async function middleware(req) {
-  const cookie = req.cookies.get("token");
+  // Allow all GET requests through
+  if (req.method === "GET") {
+    return NextResponse.next();
+  }
 
-  // 🚫 No token → redirect to login
+  const cookie = req.cookies.get("token");
   if (!cookie) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    // ✅ Verify and decode token (must match login payload)
     const decoded = jwt.verify(cookie.value, process.env.JWT_SECRET);
-
     if (!decoded?.id || !decoded?.username) {
-      console.error("❌ Token missing required fields");
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ Attach user info to headers for API routes
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-userid", decoded.id.toString());
     requestHeaders.set("x-username", decoded.username);
 
-    // ✅ Continue with modified request
     return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
+      request: { headers: requestHeaders },
     });
   } catch (err) {
-    console.error("❌ Invalid or expired token:", err.message);
-    return NextResponse.redirect(new URL("/login", req.url));
+    console.error("❌ Invalid token:", err.message);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
 
 export const config = {
   matcher: [
+    "/api/comments/:path*",
+    "/api/users/:path*",
+    "/api/activity/:path*",
     "/profile/:path*",
-    "/api/users/:path*/follow-status",
-    "/api/users/:path*/follow",
-    "/api/activity/following/:path*",
-    "/api/comments/:path*", // ✅ Protect all comment actions
-    "/api/protected/:path*",
   ],
 };

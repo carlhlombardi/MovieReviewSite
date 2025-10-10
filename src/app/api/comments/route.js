@@ -23,7 +23,10 @@ export async function GET(req) {
     return NextResponse.json(result.rows);
   } catch (err) {
     console.error("GET /api/comments error:", err);
-    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch comments" },
+      { status: 500 }
+    );
   }
 }
 
@@ -34,14 +37,21 @@ export async function POST(req) {
   try {
     const { username, userId } = getAuthHeaders(req);
 
-    if (!username || !userId)
+    if (!username || !userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const { tmdb_id, content, parent_id = null, movie_title = null, source = "movie-page" } =
-      await req.json();
+    const {
+      tmdb_id,
+      content,
+      parent_id = null,
+      movie_title = null,
+      source = "movie-page",
+    } = await req.json();
 
-    if (!tmdb_id || !content)
+    if (!tmdb_id || !content) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
 
     const result = await sql`
       INSERT INTO comments (user_id, username, tmdb_id, content, parent_id, movie_title, source)
@@ -56,7 +66,10 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error("POST /api/comments error:", err);
-    return NextResponse.json({ error: "Failed to post comment" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to post comment" },
+      { status: 500 }
+    );
   }
 }
 
@@ -73,16 +86,26 @@ export async function PUT(req) {
     if (!id || !content)
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-    await sql`
+    const result = await sql`
       UPDATE comments
       SET content = ${content}
-      WHERE id = ${id} AND username = ${username};
+      WHERE id = ${id} AND username = ${username}
+      RETURNING id;
     `;
+
+    if (result.rowCount === 0)
+      return NextResponse.json(
+        { error: "Not found or unauthorized" },
+        { status: 404 }
+      );
 
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("PUT /api/comments error:", err);
-    return NextResponse.json({ error: "Failed to edit comment" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to edit comment" },
+      { status: 500 }
+    );
   }
 }
 
@@ -100,13 +123,24 @@ export async function DELETE(req) {
     if (!id)
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    await sql`
-      DELETE FROM comments WHERE id = ${id} AND username = ${username};
+    const result = await sql`
+      DELETE FROM comments
+      WHERE id = ${id} AND username = ${username}
+      RETURNING id;
     `;
+
+    if (result.rowCount === 0)
+      return NextResponse.json(
+        { error: "Not found or unauthorized" },
+        { status: 404 }
+      );
 
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/comments error:", err);
-    return NextResponse.json({ error: "Failed to delete comment" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete comment" },
+      { status: 500 }
+    );
   }
 }
