@@ -4,22 +4,23 @@ import { Button, Form } from "react-bootstrap";
 
 export default function CommentForm({ tmdb_id, movie, onCommentPosted }) {
   const [text, setText] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
 
     try {
+      setIsPosting(true);
       const res = await fetch("/api/comments", {
         method: "POST",
+        credentials: "include", // ✅ important for cookies
         headers: {
           "Content-Type": "application/json",
-          "x-username": localStorage.getItem("username"), // ✅ send auth headers
-          "x-userid": localStorage.getItem("userId"),
         },
         body: JSON.stringify({
           tmdb_id,
-          content: text,
+          content: text.trim(),
           movie_title: movie?.title || null,
           source: "movie-page",
         }),
@@ -33,10 +34,12 @@ export default function CommentForm({ tmdb_id, movie, onCommentPosted }) {
       } else {
         console.log("✅ Comment posted:", data);
         setText("");
-        onCommentPosted?.(data); // refresh comment list if needed
+        onCommentPosted?.(data);
       }
     } catch (err) {
       console.error("❌ Comment submit error:", err);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -49,11 +52,12 @@ export default function CommentForm({ tmdb_id, movie, onCommentPosted }) {
           placeholder="Write a comment..."
           value={text}
           onChange={(e) => setText(e.target.value)}
+          disabled={isPosting}
         />
       </Form.Group>
       <div className="mt-2 d-flex justify-content-end">
-        <Button type="submit" variant="primary">
-          Post
+        <Button type="submit" variant="primary" disabled={isPosting}>
+          {isPosting ? "Posting..." : "Post"}
         </Button>
       </div>
     </Form>

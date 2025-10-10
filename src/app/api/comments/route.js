@@ -2,144 +2,111 @@ import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import { getAuthHeaders } from "../../utils/getAuthHeaders";
 
-// 🟡 Get all comments for a movie
+// ───────────────────────────────
+// GET — Fetch all comments for a movie
+// ───────────────────────────────
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const tmdb_id = searchParams.get("tmdb_id");
 
-    if (!tmdb_id) {
-      return NextResponse.json([], { status: 400 });
-    }
+    if (!tmdb_id)
+      return NextResponse.json({ error: "Missing tmdb_id" }, { status: 400 });
 
-    const { rows } = await sql`
-      SELECT * FROM comments
+    const result = await sql`
+      SELECT id, user_id, username, tmdb_id, content, parent_id, like_count, created_at
+      FROM comments
       WHERE tmdb_id = ${tmdb_id}
-      ORDER BY created_at ASC
+      ORDER BY created_at ASC;
     `;
 
-    return NextResponse.json(rows);
+    return NextResponse.json(result.rows);
   } catch (err) {
-    console.error("❌ GET /api/comments failed:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("GET /api/comments error:", err);
+    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
   }
 }
 
-// 🟢 Post new comment or reply
+// ───────────────────────────────
+// POST — Create new comment or reply
+// ───────────────────────────────
 export async function POST(req) {
   try {
-    const { tmdb_id, content, parent_id, movie_title, source } = await req.json();
     const { username, userId } = getAuthHeaders(req);
 
-    if (!username || !userId) {
+    if (!username || !userId)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
-    if (!content || content.trim() === "") {
-      return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 });
-    }
+    const { tmdb_id, content, parent_id = null, movie_title = null, source = "movie-page" } =
+      await req.json();
 
-    const safeMovieTitle = movie_title?.trim() || null;
-    const safeSource = source?.trim() || null;
+    if (!tmdb_id || !content)
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-    // Insert the comment
-    const { rows } = await sql`
-      INSERT INTO comments (tmdb_id, username, content, parent_id, movie_title, source)
-      VALUES (${tmdb_id}, ${username}, ${content}, ${parent_id || null}, ${safeMovieTitle}, ${safeSource})
-      RETURNING *;
-    `;
-    const newComment = rows[0];
-
-    // Insert activity
-    await sql`
-      INSERT INTO activity (user_id, username, action, movie_title, source, created_at)
-      VALUES (${userId}, ${username}, ${parent_id ? "replied to a comment" : "commented on"}, ${safeMovieTitle}, ${safeSource}, NOW());
+    const result = await sql`
+      INSERT INTO comments (user_id, username, tmdb_id, content, parent_id, movie_title, source)
+      VALUES (${userId}, ${username}, ${tmdb_id}, ${content}, ${parent_id}, ${movie_title}, ${source})
+      RETURNING id, created_at;
     `;
 
-    return NextResponse.json(newComment);
+    return NextResponse.json({
+      success: true,
+      id: result.rows[0].id,
+      created_at: result.rows[0].created_at,
+    });
   } catch (err) {
-    console.error("❌ POST /api/comments failed:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("POST /api/comments error:", err);
+    return NextResponse.json({ error: "Failed to post comment" }, { status: 500 });
   }
 }
 
-// ✏️ Edit comment
+// ───────────────────────────────
+// PUT — Edit a comment (must match user)
+// ───────────────────────────────
 export async function PUT(req) {
   try {
+    const { username } = getAuthHeaders(req);
     const { id, content } = await req.json();
-    const { username, userId } = getAuthHeaders(req);
 
-    if (!username || !userId) {
+    if (!username)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { rowCount } = await sql`
-      UPDATE comments
-      SET content = ${content}, updated_at = NOW()
-      WHERE id = ${id} AND username = ${username}
-    `;
-
-    if (rowCount === 0) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("❌ PUT /api/comments failed:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
-
-// ❌ Delete comment (and replies cascade)
-export async function DELETE(req) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    const { username, userId } = getAuthHeaders(req);
-
-    if (!username || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { rowCount } = await sql`
-      DELETE FROM comments
-      WHERE id = ${id} AND username = ${username}
-    `;
-
-    if (rowCount === 0) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("❌ DELETE /api/comments failed:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
-  }
-}
-
-// ❤️ Like or unlike comment
-export async function PATCH(req) {
-  try {
-    const { id, delta } = await req.json();
-    const { username, userId } = getAuthHeaders(req);
-
-    if (!id || typeof delta !== "number") {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-    }
-
-    if (!username || !userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!id || !content)
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
     await sql`
       UPDATE comments
-      SET like_count = like_count + ${delta}
-      WHERE id = ${id}
+      SET content = ${content}
+      WHERE id = ${id} AND username = ${username};
     `;
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("❌ PATCH /api/comments failed:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("PUT /api/comments error:", err);
+    return NextResponse.json({ error: "Failed to edit comment" }, { status: 500 });
+  }
+}
+
+// ───────────────────────────────
+// DELETE — Delete comment (must match user)
+// ───────────────────────────────
+export async function DELETE(req) {
+  try {
+    const { username } = getAuthHeaders(req);
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!username)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!id)
+      return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    await sql`
+      DELETE FROM comments WHERE id = ${id} AND username = ${username};
+    `;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/comments error:", err);
+    return NextResponse.json({ error: "Failed to delete comment" }, { status: 500 });
   }
 }
