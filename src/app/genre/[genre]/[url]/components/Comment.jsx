@@ -25,11 +25,9 @@ export default function Comment({ comment, username, postComment, editComment, d
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
     await deleteComment(comment.id);
   };
 
-  // Replies to display initially
   const visibleReplies = showAllReplies ? replies : replies.slice(0, 1);
   const hiddenReplyCount = replies.length - visibleReplies.length;
 
@@ -65,7 +63,7 @@ export default function Comment({ comment, username, postComment, editComment, d
           )}
 
           <div className="d-flex gap-2">
-            {replies.length > 0 && hiddenReplyCount > 0 && (
+            {replies.length > 1 && !showAllReplies && (
               <button
                 className="btn btn-sm btn-link p-0"
                 onClick={() => setShowAllReplies(true)}
@@ -73,6 +71,7 @@ export default function Comment({ comment, username, postComment, editComment, d
                 View {hiddenReplyCount} more {hiddenReplyCount === 1 ? "reply" : "replies"}
               </button>
             )}
+
             {isOwner && !editing && (
               <>
                 <button
@@ -93,33 +92,32 @@ export default function Comment({ comment, username, postComment, editComment, d
         </div>
       </div>
 
-      {visibleReplies.length > 0 && (
-        <div className="ms-5 mt-2">
-          {visibleReplies.map(r => (
-            <Comment
-              key={r.id}
-              comment={r}
-              username={username}
-              postComment={postComment}
-              editComment={editComment}
-              deleteComment={deleteComment}
-            />
-          ))}
+      {/* Reply input always shows */}
+      <div className="ms-5 mt-2">
+        {visibleReplies.map(r => (
+          <Comment
+            key={r.id}
+            comment={r}
+            username={username}
+            postComment={postComment}
+            editComment={editComment}
+            deleteComment={deleteComment}
+          />
+        ))}
 
-          <div className="d-flex mt-2">
-            <input
-              type="text"
-              className="form-control form-control-sm me-2"
-              placeholder="Reply..."
-              value={replyText}
-              onChange={e => setReplyText(e.target.value)}
-            />
-            <button className="btn btn-primary btn-sm" onClick={handleReply}>
-              Reply
-            </button>
-          </div>
+        <div className="d-flex mt-2">
+          <input
+            type="text"
+            className="form-control form-control-sm me-2"
+            placeholder="Reply..."
+            value={replyText}
+            onChange={e => setReplyText(e.target.value)}
+          />
+          <button className="btn btn-primary btn-sm" onClick={handleReply}>
+            Reply
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
