@@ -46,37 +46,53 @@ export default function useComments(tmdb_id) {
     fetchComments();
   }, [fetchComments]);
 
-  const postComment = async (content, parent_id = null) => {
-    try {
-      const res = await fetch("/api/comments", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tmdb_id, content, parent_id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to post comment");
+// ── Post a new comment ──
+const postComment = async (content, parent_id = null) => {
+  if (!content) return;
 
-      // Insert new comment locally without refetch
-      setComments(prev => {
-        const newComment = { ...data.comment, replies: [] };
-        if (!parent_id) return [newComment, ...prev];
-        
-        const addReply = (list) =>
-          list.map(c =>
-            c.id === parent_id
-              ? { ...c, replies: [...c.replies, newComment] }
-              : { ...c, replies: addReply(c.replies) }
-          );
-        return addReply(prev);
-      });
+  try {
+    const res = await fetch("/api/comments", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdb_id, content, parent_id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
-      return data;
-    } catch (err) {
-      console.error("❌ postComment error:", err);
-      throw err;
+    // ── Optimistic update ──
+    const newComment = {
+      id: data.id,           // make sure backend returns the new comment id
+      content,
+      username: data.username || "You",
+      created_at: new Date().toISOString(),
+      replies: [],
+      like_count: 0,
+      likedByUser: false,
+      parent_id: parent_id || null,
+    };
+
+    if (parent_id) {
+      // Add as a reply to parent
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === parent_id
+            ? { ...c, replies: [...(c.replies || []), newComment] }
+            : c
+        )
+      );
+    } else {
+      // Add as a top-level comment
+      setComments((prev) => [newComment, ...prev]);
     }
-  };
+
+    return newComment;
+  } catch (err) {
+    console.error("❌ postComment error:", err);
+    throw err;
+  }
+};
+
 
   const editComment = async (id, content) => {
     try {
