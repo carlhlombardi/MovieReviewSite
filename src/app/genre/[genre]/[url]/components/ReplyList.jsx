@@ -4,14 +4,16 @@ import useReplies from "../hooks/useReplies";
 import { Button } from "react-bootstrap";
 
 export default function ReplyList({
-  replies: initialReplies,
+  replies = [], // ✅ default to empty array
   username,
   onLike,
   onReply,
   onEdit,
   onDelete,
 }) {
-  const { visibleReplies, hasMore, loadMore } = useReplies(initialReplies || []);
+  const { visibleReplies, hasMore, loadMore } = useReplies(replies);
+
+  if (!replies.length) return null;
 
   return (
     <div>
@@ -28,12 +30,7 @@ export default function ReplyList({
       ))}
 
       {hasMore && (
-        <Button
-          variant="link"
-          size="sm"
-          className="ps-0"
-          onClick={loadMore}
-        >
+        <Button variant="link" size="sm" className="ps-0" onClick={loadMore}>
           View more replies
         </Button>
       )}

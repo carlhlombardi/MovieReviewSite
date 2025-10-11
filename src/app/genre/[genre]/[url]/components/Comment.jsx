@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Button, Image } from "react-bootstrap";
-import Link from "next/link";
-import CommentForm from "./CommentForm";
+import { Card, Button, Form, Image } from "react-bootstrap";
 import ReplyList from "./ReplyList";
 
 export default function Comment({
@@ -13,91 +11,97 @@ export default function Comment({
   onEdit,
   onDelete,
 }) {
-  const [replying, setReplying] = useState(false);
-  const [showReplies, setShowReplies] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [editText, setEditText] = useState(comment.content);
+
+  const handleReply = async () => {
+    if (!replyText.trim()) return;
+    await onReply(replyText.trim(), comment.id);
+    setReplyText("");
+    setIsReplying(false);
+  };
+
+  const handleEdit = async () => {
+    if (!editText.trim()) return;
+    await onEdit(comment.id, editText.trim());
+    setIsEditing(false);
+  };
 
   return (
-    <div className="mb-3">
-      <div className="d-flex">
-        <Link href={`/user/${comment.username}`}>
-          <Image
-            src={comment.url_avatar || "/default-avatar.png"}
-            alt="avatar"
-            roundedCircle
-            width={40}
-            height={40}
-            className="me-2 flex-shrink-0"
-          />
-        </Link>
+    <Card className="mb-2 shadow-sm rounded-3">
+      <Card.Body className="d-flex gap-2">
+        <Image
+          src={comment.url_avatar || "/default-avatar.png"}
+          roundedCircle
+          width={40}
+          height={40}
+          alt={comment.username}
+        />
         <div className="flex-grow-1">
-          <strong>{comment.username}</strong>
-          <p>{comment.content}</p>
-          <div className="d-flex gap-2 mb-1">
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={() => onLike(comment.id)}
-            >
-              👍 {comment.like_count}
+          <div className="d-flex justify-content-between align-items-start">
+            <strong>{comment.username}</strong>
+            <small className="text-muted">
+              {new Date(comment.created_at).toLocaleString()}
+            </small>
+          </div>
+
+          {isEditing ? (
+            <Form.Control
+              as="textarea"
+              rows={2}
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="my-2"
+            />
+          ) : (
+            <p className="my-2">{comment.content}</p>
+          )}
+
+          <div className="d-flex gap-2">
+            <Button size="sm" variant={comment.likedByUser ? "primary" : "outline-primary"} onClick={() => onLike(comment.id)}>
+              👍 {comment.like_count || 0}
             </Button>
-            <Button variant="link" size="sm" onClick={() => setReplying(!replying)}>
-              Reply
-            </Button>
+
+            <Button size="sm" variant="link" onClick={() => setIsReplying(!isReplying)}>Reply</Button>
+
             {username === comment.username && (
               <>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => {
-                    const updated = prompt("Edit comment", comment.content);
-                    if (updated?.trim()) onEdit(comment.id, updated);
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button variant="link" size="sm" onClick={() => onDelete(comment.id)}>
-                  Delete
-                </Button>
+                <Button size="sm" variant="outline-success" onClick={() => setIsEditing(!isEditing)}>Edit</Button>
+                <Button size="sm" variant="outline-danger" onClick={() => onDelete(comment.id)}>Delete</Button>
               </>
+            )}
+
+            {isEditing && (
+              <Button size="sm" variant="success" onClick={handleEdit}>Save</Button>
             )}
           </div>
 
-          {replying && (
-            <CommentForm
-              onSubmit={(text) => {
-                onReply(text, comment.id);
-                setReplying(false);
-                setShowReplies(true);
-              }}
-              placeholder="Write a reply..."
+          {isReplying && (
+            <Form className="mt-2 d-flex gap-2">
+              <Form.Control
+                as="textarea"
+                rows={1}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              <Button size="sm" variant="primary" onClick={handleReply}>Reply</Button>
+            </Form>
+          )}
+
+          {comment.replies?.length > 0 && (
+            <ReplyList
+              replies={comment.replies}
+              username={username}
+              onLike={onLike}
+              onReply={onReply}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           )}
-
-          {comment.replies.length > 0 && (
-            <Button
-              variant="link"
-              size="sm"
-              className="ps-0"
-              onClick={() => setShowReplies(!showReplies)}
-            >
-              {showReplies ? "Hide replies" : `View ${comment.replies.length} replies`}
-            </Button>
-          )}
-
-          {showReplies && (
-            <div className="ms-5 mt-2 border-start ps-3">
-              <ReplyList
-                replies={comment.replies}
-                username={username}
-                onLike={onLike}
-                onReply={onReply}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            </div>
-          )}
         </div>
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   );
 }

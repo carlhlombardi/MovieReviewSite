@@ -1,29 +1,16 @@
-"use client";
 import { useState } from "react";
 
-export default function useReplies(initialReplies = [], batchSize = 3) {
-  const [visibleCount, setVisibleCount] = useState(batchSize);
-  const [replies, setReplies] = useState(initialReplies);
-
-  const visibleReplies = replies.slice(0, visibleCount);
-  const hasMore = replies.length > visibleCount;
+// Hook to manage showing limited replies, "View more" style
+export default function useReplies(initial) {
+  initial = initial || []; // ✅ default to empty array
+  const [visibleReplies, setVisibleReplies] = useState(initial.slice(0, 2));
+  const [hasMore, setHasMore] = useState(initial.length > 2);
 
   const loadMore = () => {
-    setVisibleCount((prev) => prev + batchSize);
+    const next = initial.slice(0, visibleReplies.length + 2);
+    setVisibleReplies(next);
+    setHasMore(next.length < initial.length);
   };
 
-  const addReply = (newReply) => {
-    setReplies((prev) => [newReply, ...prev]);
-  };
-
-  const updateReplies = (updated) => setReplies(updated);
-
-  return {
-    replies,
-    visibleReplies,
-    hasMore,
-    loadMore,
-    addReply,
-    updateReplies,
-  };
+  return { visibleReplies, hasMore, loadMore };
 }
