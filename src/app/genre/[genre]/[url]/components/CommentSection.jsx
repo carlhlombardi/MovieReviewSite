@@ -1,36 +1,18 @@
 "use client";
+import { useState } from "react";
 import CommentItem from "./CommentItem";
-import CommentForm from "./CommentForm";
 import useComments from "../hooks/useComments";
+import { Form, Button } from "react-bootstrap";
 
 export default function CommentSection({ tmdb_id, username }) {
-  const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id);
+  const { comments, postComment, editComment, deleteComment, likeComment } = useComments(tmdb_id);
+  const [newComment, setNewComment] = useState("");
 
-  // Inline reply
-  const handleReply = async (text, parentId) => {
-    if (!text?.trim()) return;
-
-    // Optimistic update
-    await postComment(text.trim(), parentId);
-  };
-
-  // Inline edit
-  const handleEdit = async (id, text) => {
-    if (!text?.trim()) return;
-
-    // Optimistic update
-    await editComment(id, text.trim());
-  };
-
-  // Inline delete
-  const handleDelete = async (id) => {
-    await deleteComment(id);
-  };
-
-  // Inline like/unlike
-  const handleLike = async (id) => {
-    await likeComment(id);
+  const handlePost = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    await postComment(newComment.trim());
+    setNewComment("");
   };
 
   return (
@@ -38,7 +20,17 @@ export default function CommentSection({ tmdb_id, username }) {
       <h4 className="mb-3">Comments</h4>
 
       {username ? (
-        <CommentForm onSubmit={(text) => postComment(text)} />
+        <Form onSubmit={handlePost} className="mb-3">
+          <Form.Control
+            as="textarea"
+            rows={2}
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="mb-2"
+          />
+          <Button type="submit" size="sm">Post Comment</Button>
+        </Form>
       ) : (
         <p className="text-muted">Sign in to leave a comment.</p>
       )}
@@ -51,10 +43,10 @@ export default function CommentSection({ tmdb_id, username }) {
             key={comment.id}
             comment={comment}
             username={username}
-            onLike={() => handleLike(comment.id)}
-            onEdit={handleEdit}
-            onDelete={() => handleDelete(comment.id)}
-            onReply={handleReply}
+            onLike={() => likeComment(comment.id)}
+            onEdit={editComment}
+            onDelete={() => deleteComment(comment.id)}
+            onReply={postComment}
           />
         ))
       )}
