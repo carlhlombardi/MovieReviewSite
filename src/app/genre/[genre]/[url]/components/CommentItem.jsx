@@ -10,14 +10,13 @@ export default function CommentItem({
   onEdit,
   onDelete,
   onReply,
-  level = 0, // nesting level
+  level = 0,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [replyText, setReplyText] = useState("");
 
-  // ── Submit edit ──
   const handleEditSubmit = (e) => {
     e.preventDefault();
     if (editText?.trim()) {
@@ -26,7 +25,6 @@ export default function CommentItem({
     }
   };
 
-  // ── Submit reply ──
   const handleReplySubmit = (e) => {
     e.preventDefault();
     if (replyText?.trim()) {
@@ -36,20 +34,13 @@ export default function CommentItem({
     }
   };
 
-  // ── Max indentation ──
-  const indent = Math.min(level, 5) * 15; // max 75px
+  // Maximum indent
+  const indent = Math.min(level, 4) * 20; // max 80px
 
   return (
-    <div
-      style={{
-        borderLeft: "2px solid #ddd",
-        paddingLeft: `${10 + indent}px`,
-        marginTop: "10px",
-      }}
-    >
+    <div style={{ paddingLeft: `${indent}px`, width: "100%" }}>
       <Card className="mb-2 border-0 shadow-sm bg-light rounded-3">
         <Card.Body>
-          {/* Header */}
           <div className="d-flex justify-content-between align-items-center">
             <strong>{comment.username}</strong>
             <small className="text-muted">
@@ -57,7 +48,6 @@ export default function CommentItem({
             </small>
           </div>
 
-          {/* Content */}
           {isEditing ? (
             <Form onSubmit={handleEditSubmit} className="mt-2">
               <Form.Control
@@ -85,7 +75,6 @@ export default function CommentItem({
             <Card.Text className="mt-2 mb-1">{comment.content}</Card.Text>
           )}
 
-          {/* Actions */}
           <div className="d-flex flex-wrap gap-2 small mt-2">
             <Button
               variant={comment.likedByUser ? "primary" : "outline-primary"}
@@ -128,7 +117,6 @@ export default function CommentItem({
             )}
           </div>
 
-          {/* Reply form */}
           {isReplying && (
             <Form onSubmit={handleReplySubmit} className="mt-2">
               <Form.Control
