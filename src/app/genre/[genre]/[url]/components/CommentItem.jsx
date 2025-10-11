@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { Card, Button, Form } from "react-bootstrap";
 
-export default function CommentItem({ comment, username, onEdit, onDelete, onLike, onReply, level = 0 }) {
+export default function CommentItem({
+  comment,
+  username,
+  onLike,
+  onEdit,
+  onDelete,
+  onReply,
+  level = 0, // nesting level
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [replyText, setReplyText] = useState("");
 
+  // ── Submit edit ──
   const handleEditSubmit = (e) => {
     e.preventDefault();
     if (editText?.trim()) {
@@ -17,6 +26,7 @@ export default function CommentItem({ comment, username, onEdit, onDelete, onLik
     }
   };
 
+  // ── Submit reply ──
   const handleReplySubmit = (e) => {
     e.preventDefault();
     if (replyText?.trim()) {
@@ -26,15 +36,28 @@ export default function CommentItem({ comment, username, onEdit, onDelete, onLik
     }
   };
 
+  // ── Max indentation ──
+  const indent = Math.min(level, 5) * 15; // max 75px
+
   return (
-    <div style={{ marginLeft: `${level * 20}px` }}>
-      <Card className="mb-3 shadow-sm bg-light rounded-3">
+    <div
+      style={{
+        borderLeft: "2px solid #ddd",
+        paddingLeft: `${10 + indent}px`,
+        marginTop: "10px",
+      }}
+    >
+      <Card className="mb-2 border-0 shadow-sm bg-light rounded-3">
         <Card.Body>
-          <div className="d-flex justify-content-between">
+          {/* Header */}
+          <div className="d-flex justify-content-between align-items-center">
             <strong>{comment.username}</strong>
-            <small>{new Date(comment.created_at).toLocaleString()}</small>
+            <small className="text-muted">
+              {new Date(comment.created_at).toLocaleString()}
+            </small>
           </div>
 
+          {/* Content */}
           {isEditing ? (
             <Form onSubmit={handleEditSubmit} className="mt-2">
               <Form.Control
@@ -42,66 +65,111 @@ export default function CommentItem({ comment, username, onEdit, onDelete, onLik
                 rows={2}
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="mb-2"
+                className="mb-2 rounded-3 shadow-sm"
               />
               <div className="d-flex gap-2">
-                <Button type="submit" size="sm" variant="success">Save</Button>
-                <Button type="button" size="sm" variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+                <Button type="submit" size="sm" variant="success">
+                  Save
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </Button>
               </div>
             </Form>
           ) : (
-            <p className="mt-2">{comment.content}</p>
+            <Card.Text className="mt-2 mb-1">{comment.content}</Card.Text>
           )}
 
-          <div className="d-flex gap-2 mt-2">
-            <Button size="sm" variant={comment.likedByUser ? "primary" : "outline-primary"} onClick={onLike} disabled={!username}>
+          {/* Actions */}
+          <div className="d-flex flex-wrap gap-2 small mt-2">
+            <Button
+              variant={comment.likedByUser ? "primary" : "outline-primary"}
+              size="sm"
+              onClick={onLike}
+              disabled={!username}
+            >
               👍 {comment.like_count || 0}
             </Button>
 
             {username && (
               <>
-                <Button size="sm" variant="outline-secondary" onClick={() => setIsReplying(v => !v)}>Reply</Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => setIsReplying((v) => !v)}
+                >
+                  Reply
+                </Button>
+
                 {username === comment.username && (
                   <>
-                    <Button size="sm" variant="outline-success" onClick={() => setIsEditing(v => !v)}>Edit</Button>
-                    <Button size="sm" variant="outline-danger" onClick={onDelete}>Delete</Button>
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      onClick={() => setIsEditing((v) => !v)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={onDelete}
+                    >
+                      Delete
+                    </Button>
                   </>
                 )}
               </>
             )}
           </div>
 
+          {/* Reply form */}
           {isReplying && (
-            <Form onSubmit={handleReplySubmit} className="mt-2 ms-3">
+            <Form onSubmit={handleReplySubmit} className="mt-2">
               <Form.Control
                 as="textarea"
                 rows={2}
                 placeholder="Write a reply..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                className="mb-2"
+                className="mb-2 rounded-3 shadow-sm"
               />
               <div className="d-flex gap-2">
-                <Button type="submit" size="sm" variant="primary">Reply</Button>
-                <Button type="button" size="sm" variant="secondary" onClick={() => setIsReplying(false)}>Cancel</Button>
+                <Button type="submit" size="sm" variant="primary">
+                  Reply
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsReplying(false)}
+                >
+                  Cancel
+                </Button>
               </div>
             </Form>
           )}
-
-          {comment.replies?.length > 0 &&
-            comment.replies.map((r) => (
-              <CommentItem
-                key={r.id}
-                comment={r}
-                username={username}
-                onEdit={onEdit}
-                onDelete={() => onDelete(r.id)}
-                onLike={() => onLike(r.id)}
-                onReply={onReply}
-                level={level + 1}
-              />
-            ))}
         </Card.Body>
+
+        {/* Nested replies */}
+        {comment.replies?.length > 0 &&
+          comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              username={username}
+              onLike={() => onLike(reply.id)}
+              onEdit={onEdit}
+              onDelete={() => onDelete(reply.id)}
+              onReply={onReply}
+              level={level + 1}
+            />
+          ))}
       </Card>
     </div>
   );
