@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
 
 export default function Comment({ comment, username, postComment, editComment, deleteComment }) {
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
@@ -12,19 +13,23 @@ export default function Comment({ comment, username, postComment, editComment, d
   const isOwner = comment.username === username;
   const replies = comment.replies || [];
 
+  // Post a reply
   const handleReply = async () => {
     if (!replyText.trim()) return;
     await postComment(replyText, comment.id);
     setReplyText("");
+    setShowReplyInput(false);
     setShowAllReplies(true);
   };
 
+  // Save edited comment
   const handleEdit = async () => {
     if (!editText.trim()) return;
     await editComment(comment.id, editText);
     setEditing(false);
   };
 
+  // Delete comment
   const handleDelete = async () => {
     await deleteComment(comment.id);
   };
@@ -43,71 +48,70 @@ export default function Comment({ comment, username, postComment, editComment, d
           height={36}
         />
         <div className="flex-grow-1">
-          <strong>{comment.username}</strong>
+          <div className="d-flex align-items-center justify-content-between">
+            <strong>{comment.username}</strong>
+            {isOwner && !editing && (
+              <div className="d-flex gap-2">
+                <Button size="sm" variant="link" onClick={() => setEditing(true)}>Edit</Button>
+                <Button size="sm" variant="link" className="text-danger" onClick={handleDelete}>Delete</Button>
+              </div>
+            )}
+          </div>
+
           {!editing ? (
-            <p>{comment.content}</p>
+            <p className="mb-1">{comment.content}</p>
           ) : (
-            <div className="d-flex gap-2">
-              <input
+            <div className="d-flex gap-2 mb-1">
+              <Form.Control
                 type="text"
-                className="form-control form-control-sm"
+                size="sm"
                 value={editText}
                 onChange={e => setEditText(e.target.value)}
               />
-              <Button size="sm" variant="success" onClick={handleEdit}>
-                Save
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>
-                Cancel
-              </Button>
+              <Button size="sm" variant="success" onClick={handleEdit}>Save</Button>
+              <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
             </div>
           )}
 
-          <div className="d-flex gap-2 mt-1">
-            {replies.length > 1 && !showAllReplies && (
-              <Button size="sm" variant="link" onClick={() => setShowAllReplies(true)}>
+          <div className="d-flex gap-2 mb-1">
+            <Button size="sm" variant="link" onClick={() => setShowReplyInput(prev => !prev)}>Reply</Button>
+            {hiddenReplyCount > 0 && !showAllReplies && (
+              <Button
+                size="sm"
+                variant="link"
+                onClick={() => setShowAllReplies(true)}
+              >
                 View {hiddenReplyCount} more {hiddenReplyCount === 1 ? "reply" : "replies"}
               </Button>
             )}
-
-            {isOwner && !editing && (
-              <>
-                <Button size="sm" variant="link" onClick={() => setEditing(true)}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="link" className="text-danger" onClick={handleDelete}>
-                  Delete
-                </Button>
-              </>
-            )}
           </div>
-        </div>
-      </div>
 
-      {/* Reply input always shows */}
-      <div className="ms-5 mt-2">
-        {visibleReplies.map(r => (
-          <Comment
-            key={r.id}
-            comment={r}
-            username={username}
-            postComment={postComment}
-            editComment={editComment}
-            deleteComment={deleteComment}
-          />
-        ))}
+          {showReplyInput && (
+            <div className="d-flex gap-2 mb-2">
+              <Form.Control
+                type="text"
+                size="sm"
+                placeholder="Write a reply..."
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+              />
+              <Button size="sm" variant="primary" onClick={handleReply}>Reply</Button>
+            </div>
+          )}
 
-        <div className="d-flex mt-2">
-          <input
-            type="text"
-            className="form-control form-control-sm me-2"
-            placeholder="Reply..."
-            value={replyText}
-            onChange={e => setReplyText(e.target.value)}
-          />
-          <Button size="sm" variant="primary" onClick={handleReply}>
-            Reply
-          </Button>
+          {/* Nested replies */}
+          <div className="ms-4">
+            {visibleReplies.map(r => (
+              <Comment
+                key={r.id}
+                comment={r}
+                username={username}
+                postComment={postComment}
+                editComment={editComment}
+                deleteComment={deleteComment}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
