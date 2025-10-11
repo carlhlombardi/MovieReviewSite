@@ -11,11 +11,14 @@ export default function CommentItem({
   onDelete,
   onReply,
   level = 0,
+  maxLevel = 4, // cap the nesting
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [replyText, setReplyText] = useState("");
+
+  const indent = level > maxLevel ? maxLevel * 20 : level * 20;
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
@@ -34,12 +37,9 @@ export default function CommentItem({
     }
   };
 
-  // Maximum indent
-  const indent = Math.min(level, 4) * 20; // max 80px
-
   return (
-    <div style={{ paddingLeft: `${indent}px`, width: "100%" }}>
-      <Card className="mb-2 border-0 shadow-sm bg-light rounded-3">
+    <div style={{ paddingLeft: `${indent}px` }}>
+      <Card className="mb-3 border-0 shadow-sm bg-light rounded-3">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center">
             <strong>{comment.username}</strong>
@@ -55,7 +55,7 @@ export default function CommentItem({
                 rows={2}
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="mb-2 rounded-3 shadow-sm"
+                className="mb-2"
               />
               <div className="d-flex gap-2">
                 <Button type="submit" size="sm" variant="success">
@@ -72,9 +72,10 @@ export default function CommentItem({
               </div>
             </Form>
           ) : (
-            <Card.Text className="mt-2 mb-1">{comment.content}</Card.Text>
+            <Card.Text className="mt-2">{comment.content}</Card.Text>
           )}
 
+          {/* Actions */}
           <div className="d-flex flex-wrap gap-2 small mt-2">
             <Button
               variant={comment.likedByUser ? "primary" : "outline-primary"}
@@ -117,6 +118,7 @@ export default function CommentItem({
             )}
           </div>
 
+          {/* Reply form */}
           {isReplying && (
             <Form onSubmit={handleReplySubmit} className="mt-2">
               <Form.Control
@@ -125,7 +127,7 @@ export default function CommentItem({
                 placeholder="Write a reply..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                className="mb-2 rounded-3 shadow-sm"
+                className="mb-2"
               />
               <div className="d-flex gap-2">
                 <Button type="submit" size="sm" variant="primary">
@@ -142,22 +144,23 @@ export default function CommentItem({
               </div>
             </Form>
           )}
-        </Card.Body>
 
-        {/* Nested replies */}
-        {comment.replies?.length > 0 &&
-          comment.replies.map((reply) => (
-            <CommentItem
-              key={reply.id}
-              comment={reply}
-              username={username}
-              onLike={() => onLike(reply.id)}
-              onEdit={onEdit}
-              onDelete={() => onDelete(reply.id)}
-              onReply={onReply}
-              level={level + 1}
-            />
-          ))}
+          {/* Nested replies */}
+          {comment.replies?.length > 0 &&
+            comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                username={username}
+                onLike={() => onLike(reply.id)}
+                onEdit={(id, content) => onEdit(id, content)}
+                onDelete={() => onDelete(reply.id)}
+                onReply={(text, parentId) => onReply(text, parentId)}
+                level={level + 1}
+                maxLevel={maxLevel}
+              />
+            ))}
+        </Card.Body>
       </Card>
     </div>
   );
