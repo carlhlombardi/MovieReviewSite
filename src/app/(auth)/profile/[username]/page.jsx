@@ -31,11 +31,12 @@ export default function ProfilePage() {
     fetchProfile(username);
     fetchMovieLists(username);
     fetchFollowLists(username);
-    fetchFollowStatus(username);
+    
 
     // Only fetch follow/activity if viewing own profile
     if (isSelf) {
       fetchActivityFeed(username);
+      fetchFollowStatus(username);
     }
   }, [
     username,
