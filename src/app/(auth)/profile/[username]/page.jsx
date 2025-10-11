@@ -24,23 +24,28 @@ export default function ProfilePage() {
 
   const isSelf = loggedInUser && profile && loggedInUser.username === profile.username;
 
-useEffect(() => {
-  if (!username) return;
+  useEffect(() => {
+    if (!username) return;
 
-  fetchProfile(username);
-  fetchFollowLists(username);
-  fetchFollowStatus(username);
-  fetchMovieLists(username);
-  fetchActivityFeed(username);
-}, [
-  username,
-  fetchProfile,
-  fetchFollowLists,
-  fetchFollowStatus,
-  fetchMovieLists,
-  fetchActivityFeed
-]);
+    // Always fetch profile and movie lists
+    fetchProfile(username);
+    fetchMovieLists(username);
 
+    // Only fetch follow/activity if viewing own profile
+    if (isSelf) {
+      fetchFollowLists(username);
+      fetchFollowStatus(username);
+      fetchActivityFeed(username);
+    }
+  }, [
+    username,
+    isSelf,
+    fetchProfile,
+    fetchFollowLists,
+    fetchFollowStatus,
+    fetchMovieLists,
+    fetchActivityFeed
+  ]);
 
   if (loading) return <div className="text-center mt-5"><Spinner animation="border" /></div>;
   if (error) return <Alert variant="danger" className="mt-5">{error}</Alert>;
