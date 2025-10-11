@@ -28,11 +28,16 @@ export async function POST(req) {
     }
 
     // ✅ Create JWT
-    const token = jwt.sign(
-      { id: user.id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+const token = jwt.sign(
+  { 
+    id: user.id, 
+    username: user.username, 
+    avatar_url: user.avatar_url   // <-- add this
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
 
     // ✅ Set cookie with correct flags
     const res = NextResponse.json({
