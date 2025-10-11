@@ -71,9 +71,10 @@ export default function useComments(tmdb_id) {
     return data;
   };
 
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
+useEffect(() => {
+  fetchComments();
+}, [fetchComments]); // ✅ include it
+
 
   return {
     comments,
