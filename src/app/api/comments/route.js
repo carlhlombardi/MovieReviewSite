@@ -53,13 +53,10 @@ export async function GET(req) {
 // ───────────────────────────────
 export async function POST(req) {
   const user = getUserFromCookie(req);
-  if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tmdb_id, content, parent_id = null } = await req.json();
-
-  if (!tmdb_id || !content)
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (!tmdb_id || !content) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   try {
     const { rows } = await sql`
@@ -67,7 +64,6 @@ export async function POST(req) {
       VALUES (${user.id}, ${user.username}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW())
       RETURNING id, user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at;
     `;
-
     return NextResponse.json(rows[0]);
   } catch (err) {
     console.error("POST /api/comments error:", err);
