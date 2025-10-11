@@ -33,14 +33,15 @@ export default function CommentSection({ tmdb_id, username }) {
       {error && <p className="text-danger">{error}</p>}
 
       {comments.map(c => (
-        <Comment
-          key={c.id}
-          comment={c}
-          username={username}
-          postComment={postComment}
-          editComment={editComment}
-          deleteComment={deleteComment}
-        />
+      <Comment
+  key={c.id}
+  comment={c}
+  username={username}
+  postComment={postComment}
+  editComment={editComment}
+  deleteComment={deleteComment}
+  replies={comments} // pass all comments so each comment can find its children
+/>
       ))}
     </div>
   );

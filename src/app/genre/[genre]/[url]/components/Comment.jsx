@@ -3,11 +3,12 @@ import Image from "next/image";
 import { useState } from "react";
 import { Button, Form, InputGroup } from "react-bootstrap";
 
-export default function Comment({ comment, username, postComment, editComment, deleteComment }) {
+export default function Comment({ comment, username, postComment, editComment, deleteComment, replies = [] }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
+  const [showReplies, setShowReplies] = useState(true);
 
   const isOwner = comment.username === username;
 
@@ -16,6 +17,7 @@ export default function Comment({ comment, username, postComment, editComment, d
     await postComment(replyText, comment.id);
     setReplyText("");
     setShowReplyInput(false);
+    setShowReplies(true);
   };
 
   const handleEdit = async () => {
@@ -29,6 +31,9 @@ export default function Comment({ comment, username, postComment, editComment, d
     await deleteComment(comment.id);
   };
 
+  // Filter replies that belong to this comment
+  const childReplies = replies.filter(r => r.parent_id === comment.id);
+
   return (
     <div className={`mb-3 ${comment.isReply ? "ms-4" : ""}`}>
       <div className="d-flex align-items-start">
@@ -40,6 +45,7 @@ export default function Comment({ comment, username, postComment, editComment, d
         />
         <div className="flex-grow-1">
           <strong>{comment.username}</strong>
+
           {!editing ? (
             <p>{comment.content}</p>
           ) : (
@@ -50,7 +56,7 @@ export default function Comment({ comment, username, postComment, editComment, d
             </InputGroup>
           )}
 
-          <div className="d-flex gap-2">
+          <div className="d-flex gap-2 mb-2">
             {!editing && (
               <>
                 <Button
@@ -69,6 +75,15 @@ export default function Comment({ comment, username, postComment, editComment, d
                 )}
               </>
             )}
+            {childReplies.length > 0 && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setShowReplies(prev => !prev)}
+              >
+                {showReplies ? "Hide Replies" : `Show ${childReplies.length} Replies`}
+              </Button>
+            )}
           </div>
 
           {showReplyInput && (
@@ -81,6 +96,18 @@ export default function Comment({ comment, username, postComment, editComment, d
               <Button variant="primary" size="sm" onClick={handleReply}>Post</Button>
             </InputGroup>
           )}
+
+          {showReplies && childReplies.map(r => (
+            <Comment
+              key={r.id}
+              comment={r}
+              username={username}
+              postComment={postComment}
+              editComment={editComment}
+              deleteComment={deleteComment}
+              replies={replies} // pass all replies so nested replies are handled flat
+            />
+          ))}
         </div>
       </div>
     </div>
