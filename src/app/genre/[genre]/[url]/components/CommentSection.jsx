@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import Comment from "./Comment";
 import useComments from "../hooks/useComments";
+import Comment from "./Comment";
 
 export default function CommentSection({ tmdb_id, username }) {
   const { comments, loading, error, postComment, editComment, deleteComment } = useComments(tmdb_id);
@@ -13,9 +13,7 @@ export default function CommentSection({ tmdb_id, username }) {
     try {
       await postComment(newComment);
       setNewComment("");
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   return (
@@ -23,6 +21,7 @@ export default function CommentSection({ tmdb_id, username }) {
       <Form.Group className="mb-3">
         <Form.Control
           as="textarea"
+          rows={2}
           placeholder="Add a comment..."
           value={newComment}
           onChange={e => setNewComment(e.target.value)}

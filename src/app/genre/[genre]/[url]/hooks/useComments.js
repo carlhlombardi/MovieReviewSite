@@ -1,30 +1,34 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
+// Helper to build flat comments with replies grouped
+function buildFlatComments(data) {
+  const topLevel = data.filter(c => !c.parent_id);
+  const replies = data.filter(c => c.parent_id);
+
+  // Attach replies to their parent id in a map
+  const repliesMap = {};
+  replies.forEach(r => {
+    if (!repliesMap[r.parent_id]) repliesMap[r.parent_id] = [];
+    repliesMap[r.parent_id].push(r);
+  });
+
+  // Flattened array: top-level comment followed by its replies
+  const flat = [];
+  topLevel.forEach(c => {
+    flat.push({ ...c, isReply: false });
+    if (repliesMap[c.id]) {
+      repliesMap[c.id].forEach(r => flat.push({ ...r, isReply: true }));
+    }
+  });
+
+  return flat;
+}
+
 export default function useComments(tmdb_id) {
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Build tree of comments (for replies)
-  const buildCommentTree = useCallback((flatComments) => {
-    const map = {};
-    const roots = [];
-
-    flatComments.forEach(c => {
-      map[c.id] = { ...c, replies: [] };
-    });
-
-    flatComments.forEach(c => {
-      if (c.parent_id && map[c.parent_id]) {
-        map[c.parent_id].replies.push(map[c.id]);
-      } else if (!c.parent_id) {
-        roots.push(map[c.id]);
-      }
-    });
-
-    return roots;
-  }, []);
 
   const fetchComments = useCallback(async () => {
     setLoading(true);
@@ -32,7 +36,7 @@ export default function useComments(tmdb_id) {
       const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`);
       if (!res.ok) throw new Error("Failed to fetch comments");
       const data = await res.json();
-      setComments(buildCommentTree(data));
+      setComments(buildFlatComments(data));
       setError("");
     } catch (err) {
       console.error(err);
@@ -40,56 +44,53 @@ export default function useComments(tmdb_id) {
     } finally {
       setLoading(false);
     }
-  }, [tmdb_id, buildCommentTree]);
-
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
-
-  // Flatten comments + replies for easier rerender
-  const flattenComments = useCallback((commentTree) => {
-    const result = [];
-    commentTree.forEach(c => {
-      result.push(c);
-      if (c.replies?.length) result.push(...flattenComments(c.replies));
-    });
-    return result;
-  }, []);
+  }, [tmdb_id]);
 
   const postComment = async (content, parent_id = null) => {
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tmdb_id, content, parent_id })
-    });
-    if (!res.ok) throw new Error("Failed to add comment");
-    await fetchComments(); // refresh
+    try {
+      const res = await fetch(`/api/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tmdb_id, content, parent_id }),
+      });
+      if (!res.ok) throw new Error("Failed to post comment");
+      const newComment = await res.json();
+      setComments(prev => buildFlatComments([...prev, newComment]));
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
   const editComment = async (id, content) => {
-    const res = await fetch("/api/comments", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, content })
-    });
-    if (!res.ok) throw new Error("Failed to edit comment");
-    await fetchComments();
+    try {
+      const res = await fetch(`/api/comments`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, content }),
+      });
+      if (!res.ok) throw new Error("Failed to edit comment");
+      setComments(prev =>
+        prev.map(c => (c.id === id ? { ...c, content } : c))
+      );
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
-  const deleteComment = async (id) => {
-    const res = await fetch(`/api/comments?id=${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Failed to delete comment");
-    await fetchComments();
+  const deleteComment = async id => {
+    try {
+      const res = await fetch(`/api/comments?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete comment");
+      setComments(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
-  return {
-    comments,
-    loading,
-    error,
-    fetchComments,
-    postComment,
-    editComment,
-    deleteComment,
-    flattenComments
-  };
+  useEffect(() => { fetchComments(); }, [fetchComments]);
+
+  return { comments, loading, error, postComment, editComment, deleteComment };
 }
