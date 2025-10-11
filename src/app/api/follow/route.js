@@ -100,27 +100,34 @@ export async function GET(req) {
       return new Response(JSON.stringify({ following: result.rowCount > 0 }), { status: 200 });
     }
 
-    // ────────────── Followers ──────────────
-    if (type === "followers") {
-      if (!username) return new Response(JSON.stringify({ users: [] }), { status: 200 });
-      const { rows } = await sql`
-        SELECT follower_username AS username
-        FROM follows
-        WHERE following_username = ${username};
-      `;
-      return new Response(JSON.stringify({ users: rows }), { status: 200 });
-    }
+   // ────────────── Followers ──────────────
+if (type === "followers") {
+  if (!username) return new Response(JSON.stringify({ users: [] }), { status: 200 });
 
-    // ────────────── Following ──────────────
-    if (type === "following") {
-      if (!username) return new Response(JSON.stringify({ users: [] }), { status: 200 });
-      const { rows } = await sql`
-        SELECT following_username AS username
-        FROM follows
-        WHERE follower_username = ${username};
-      `;
-      return new Response(JSON.stringify({ users: rows }), { status: 200 });
-    }
+  const { rows } = await sql`
+    SELECT u.username, u.avatar_url
+    FROM follows f
+    JOIN users u ON f.follower_username = u.username
+    WHERE f.following_username = ${username};
+  `;
+
+  return new Response(JSON.stringify({ users: rows }), { status: 200 });
+}
+
+// ────────────── Following ──────────────
+if (type === "following") {
+  if (!username) return new Response(JSON.stringify({ users: [] }), { status: 200 });
+
+  const { rows } = await sql`
+    SELECT u.username, u.avatar_url
+    FROM follows f
+    JOIN users u ON f.following_username = u.username
+    WHERE f.follower_username = ${username};
+  `;
+
+  return new Response(JSON.stringify({ users: rows }), { status: 200 });
+}
+
 
     return new Response(JSON.stringify({ message: "Invalid type" }), { status: 400 });
   } catch (err) {
