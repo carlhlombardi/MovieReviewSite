@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 
 export default function useComments(tmdb_id) {
@@ -6,34 +7,46 @@ export default function useComments(tmdb_id) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Helper: nest flat comments into a tree ──
-  const nestComments = (flat) => {
-    const map = {};
-    flat.forEach(c => (map[c.id] = { ...c, replies: [] }));
-    const nested = [];
-    flat.forEach(c => {
-      if (c.parent_id) {
-        if (map[c.parent_id]) map[c.parent_id].replies.push(map[c.id]);
-      } else {
-        nested.push(map[c.id]);
-      }
+  // ── Helper: add/update/delete recursively for nested replies ──
+  const updateCommentTree = (list, id, updater) =>
+    list.map((c) => {
+      if (c.id === id) return updater(c);
+      if (c.replies?.length) return { ...c, replies: updateCommentTree(c.replies, id, updater) };
+      return c;
     });
-    return nested;
-  };
 
+  const removeCommentFromTree = (list, id) =>
+    list
+      .filter((c) => c.id !== id)
+      .map((c) => (c.replies?.length ? { ...c, replies: removeCommentFromTree(c.replies, id) } : c));
+
+  // ── Fetch all comments ──
   const fetchComments = useCallback(async () => {
     if (!tmdb_id) return;
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`, {
-        credentials: "include",
-      });
+      const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`, { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to fetch comments");
 
-      setComments(Array.isArray(data) ? nestComments(data) : []);
+      // Build nested tree structure
+      const map = {};
+      const tree = [];
+      data.forEach((c) => {
+        c.replies = [];
+        map[c.id] = c;
+      });
+      data.forEach((c) => {
+        if (c.parent_id) {
+          map[c.parent_id]?.replies.push(c);
+        } else {
+          tree.push(c);
+        }
+      });
+
+      setComments(tree);
     } catch (err) {
       console.error("❌ fetchComments error:", err);
       setError(err.message || "Failed to fetch comments");
@@ -46,54 +59,46 @@ export default function useComments(tmdb_id) {
     fetchComments();
   }, [fetchComments]);
 
-// ── Post a new comment ──
-const postComment = async (content, parent_id = null) => {
-  if (!content) return;
+  // ── Post a comment or reply ──
+  const postComment = async (content, parent_id = null) => {
+    if (!content) return;
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tmdb_id, content, parent_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
-  try {
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tmdb_id, content, parent_id }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to post comment");
+      const newComment = {
+        id: data.id,
+        user_id: data.user_id,
+        username: data.username,
+        tmdb_id,
+        content,
+        parent_id: parent_id || null,
+        like_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        replies: [],
+      };
 
-    // ── Optimistic update ──
-    const newComment = {
-      id: data.id,           // make sure backend returns the new comment id
-      content,
-      username: data.username || "You",
-      created_at: new Date().toISOString(),
-      replies: [],
-      like_count: 0,
-      likedByUser: false,
-      parent_id: parent_id || null,
-    };
+      if (parent_id) {
+        setComments((prev) => updateCommentTree(prev, parent_id, (c) => ({ ...c, replies: [...c.replies, newComment] })));
+      } else {
+        setComments((prev) => [newComment, ...prev]);
+      }
 
-    if (parent_id) {
-      // Add as a reply to parent
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === parent_id
-            ? { ...c, replies: [...(c.replies || []), newComment] }
-            : c
-        )
-      );
-    } else {
-      // Add as a top-level comment
-      setComments((prev) => [newComment, ...prev]);
+      return newComment;
+    } catch (err) {
+      console.error("❌ postComment error:", err);
+      throw err;
     }
+  };
 
-    return newComment;
-  } catch (err) {
-    console.error("❌ postComment error:", err);
-    throw err;
-  }
-};
-
-
+  // ── Edit comment ──
   const editComment = async (id, content) => {
     try {
       const res = await fetch("/api/comments", {
@@ -105,15 +110,7 @@ const postComment = async (content, parent_id = null) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to edit comment");
 
-      // Update local state
-      const update = (list) =>
-        list.map(c =>
-          c.id === id
-            ? { ...c, content }
-            : { ...c, replies: update(c.replies) }
-        );
-      setComments(prev => update(prev));
-
+      setComments((prev) => updateCommentTree(prev, id, (c) => ({ ...c, content, updated_at: new Date().toISOString() })));
       return data;
     } catch (err) {
       console.error("❌ editComment error:", err);
@@ -121,22 +118,14 @@ const postComment = async (content, parent_id = null) => {
     }
   };
 
+  // ── Delete comment ──
   const deleteComment = async (id) => {
     try {
-      const res = await fetch(`/api/comments?id=${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await fetch(`/api/comments?id=${id}`, { method: "DELETE", credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to delete comment");
 
-      // Remove locally
-      const remove = (list) =>
-        list
-          .filter(c => c.id !== id)
-          .map(c => ({ ...c, replies: remove(c.replies) }));
-      setComments(prev => remove(prev));
-
+      setComments((prev) => removeCommentFromTree(prev, id));
       return data;
     } catch (err) {
       console.error("❌ deleteComment error:", err);
@@ -144,23 +133,16 @@ const postComment = async (content, parent_id = null) => {
     }
   };
 
+  // ── Like / Unlike ──
   const likeComment = async (id) => {
     try {
-      const res = await fetch(`/api/comments/like?id=${id}`, {
-        method: "POST",
-        credentials: "include",
-      });
+      const res = await fetch(`/api/comments/like?id=${id}`, { method: "POST", credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to like comment");
 
-      const update = (list) =>
-        list.map(c =>
-          c.id === id
-            ? { ...c, like_count: data.like_count, likedByUser: data.likedByUser }
-            : { ...c, replies: update(c.replies) }
-        );
-      setComments(prev => update(prev));
-
+      setComments((prev) =>
+        updateCommentTree(prev, id, (c) => ({ ...c, like_count: data.like_count, likedByUser: data.likedByUser }))
+      );
       return data;
     } catch (err) {
       console.error("❌ likeComment error:", err);
