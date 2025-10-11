@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import { Button } from "react-bootstrap";
 
 export default function Comment({ comment, username, postComment, editComment, deleteComment }) {
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -53,39 +54,30 @@ export default function Comment({ comment, username, postComment, editComment, d
                 value={editText}
                 onChange={e => setEditText(e.target.value)}
               />
-              <button className="btn btn-sm btn-success" onClick={handleEdit}>
+              <Button size="sm" variant="success" onClick={handleEdit}>
                 Save
-              </button>
-              <button className="btn btn-sm btn-secondary" onClick={() => setEditing(false)}>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>
                 Cancel
-              </button>
+              </Button>
             </div>
           )}
 
-          <div className="d-flex gap-2">
+          <div className="d-flex gap-2 mt-1">
             {replies.length > 1 && !showAllReplies && (
-              <button
-                className="btn btn-sm btn-link p-0"
-                onClick={() => setShowAllReplies(true)}
-              >
+              <Button size="sm" variant="link" onClick={() => setShowAllReplies(true)}>
                 View {hiddenReplyCount} more {hiddenReplyCount === 1 ? "reply" : "replies"}
-              </button>
+              </Button>
             )}
 
             {isOwner && !editing && (
               <>
-                <button
-                  className="btn btn-sm btn-link p-0"
-                  onClick={() => setEditing(true)}
-                >
+                <Button size="sm" variant="link" onClick={() => setEditing(true)}>
                   Edit
-                </button>
-                <button
-                  className="btn btn-sm btn-link p-0 text-danger"
-                  onClick={handleDelete}
-                >
+                </Button>
+                <Button size="sm" variant="link" className="text-danger" onClick={handleDelete}>
                   Delete
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -113,9 +105,9 @@ export default function Comment({ comment, username, postComment, editComment, d
             value={replyText}
             onChange={e => setReplyText(e.target.value)}
           />
-          <button className="btn btn-primary btn-sm" onClick={handleReply}>
+          <Button size="sm" variant="primary" onClick={handleReply}>
             Reply
-          </button>
+          </Button>
         </div>
       </div>
     </div>
