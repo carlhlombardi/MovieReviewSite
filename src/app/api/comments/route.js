@@ -35,7 +35,6 @@ export async function GET(req) {
     return NextResponse.json({ error: "Missing tmdb_id" }, { status: 400 });
 
   try {
-    // Join comments with users to get avatar_url and username
     const { rows } = await sql`
       SELECT c.id, c.user_id, u.username, u.avatar_url, c.tmdb_id, c.content, c.parent_id, c.like_count, c.created_at, c.updated_at
       FROM comments c
@@ -54,32 +53,34 @@ export async function GET(req) {
 // POST → add a new comment
 // ───────────────────────────────
 export async function POST(req) {
+  const user = getUserFromCookie(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { tmdb_id, content, parent_id = null } = await req.json();
+  if (!tmdb_id || !content) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
   try {
-    const user = getUserFromCookie(req);
-    console.log("POST user:", user);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const { tmdb_id, content, parent_id = null } = await req.json();
-    console.log("POST payload:", { tmdb_id, content, parent_id });
-    if (!tmdb_id || !content) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-
     const { rows } = await sql`
       INSERT INTO comments (user_id, tmdb_id, content, parent_id, like_count, created_at, updated_at)
       VALUES (${user.id}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW())
       RETURNING *
     `;
 
+    // Fetch avatar_url from users table
+    const { rows: userRows } = await sql`
+      SELECT username, avatar_url FROM users WHERE id = ${user.id}
+    `;
+
     return NextResponse.json({
       ...rows[0],
-      username: user.username,
-      avatar_url: user.avatar_url
+      username: userRows[0].username,
+      avatar_url: userRows[0].avatar_url
     });
   } catch (err) {
     console.error("POST /api/comments error:", err);
     return NextResponse.json({ error: "Failed to add comment" }, { status: 500 });
   }
 }
-
 
 // ───────────────────────────────
 // PUT → edit comment
@@ -97,7 +98,6 @@ export async function PUT(req) {
       SET content = ${content}, updated_at = NOW()
       WHERE id = ${id} AND user_id = ${user.id}
     `;
-
     if (rowCount === 0) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
     return NextResponse.json({ success: true });
@@ -123,7 +123,6 @@ export async function DELETE(req) {
       DELETE FROM comments
       WHERE id = ${id} AND user_id = ${user.id}
     `;
-
     if (rowCount === 0) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
 
     return NextResponse.json({ success: true });
