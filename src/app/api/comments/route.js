@@ -62,16 +62,19 @@ export async function POST(req) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
   try {
-    await sql`
+    const { rows } = await sql`
       INSERT INTO comments (user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at)
-      VALUES (${user.id}, ${user.username}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW());
+      VALUES (${user.id}, ${user.username}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW())
+      RETURNING id, user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at;
     `;
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json(rows[0]);
   } catch (err) {
     console.error("POST /api/comments error:", err);
     return NextResponse.json({ error: "Failed to add comment" }, { status: 500 });
   }
 }
+
 
 // ───────────────────────────────
 // PUT → edit existing comment
