@@ -3,47 +3,38 @@ import { useState, useEffect } from "react";
 import { Button, Spinner } from "react-bootstrap";
 
 export default function FollowButton({ username }) {
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(null); // null = unknown
   const [loading, setLoading] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(true);
 
   // ─────────────────────────────
   // Fetch initial follow status
   // ─────────────────────────────
   useEffect(() => {
-    async function fetchStatus() {
-      if (!username) return;
+    if (!username) return;
 
-      setStatusLoading(true);
-      try {
-        const res = await fetch(`/api/follow?type=status&username=${username}`, {
-          credentials: "include",
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch follow status");
-
-        const data = await res.json();
-        setIsFollowing(data.following);
-      } catch (err) {
+    fetch(`/api/follow?type=status&username=${username}`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => setIsFollowing(data.following))
+      .catch((err) => {
         console.error("Error fetching follow status:", err);
-      } finally {
-        setStatusLoading(false);
-      }
-    }
-
-    fetchStatus();
+        setIsFollowing(false); // fallback
+      });
   }, [username]);
 
   // ─────────────────────────────
-  // Toggle follow/unfollow
+  // Toggle follow/unfollow (optimistic)
   // ─────────────────────────────
   const onFollowToggle = async () => {
-    if (!username) return;
+    if (isFollowing === null) return; // don't toggle until we know status
+
+    const newStatus = !isFollowing;
+    setIsFollowing(newStatus); // optimistic update
+    setLoading(true);
 
     try {
-      setLoading(true);
-      const method = isFollowing ? "DELETE" : "POST";
-
+      const method = newStatus ? "POST" : "DELETE";
       const res = await fetch("/api/follow", {
         method,
         credentials: "include",
@@ -52,10 +43,9 @@ export default function FollowButton({ username }) {
       });
 
       if (!res.ok) throw new Error("Follow toggle failed");
-
-      setIsFollowing(!isFollowing);
     } catch (err) {
       console.error("Follow toggle failed:", err);
+      setIsFollowing(!newStatus); // revert on error
     } finally {
       setLoading(false);
     }
@@ -64,10 +54,17 @@ export default function FollowButton({ username }) {
   // ─────────────────────────────
   // Render button
   // ─────────────────────────────
-  if (statusLoading) {
+  if (isFollowing === null) {
+    // still loading initial status, show skeleton
     return (
       <Button className="mt-3" disabled>
-        <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+        <Spinner
+          as="span"
+          animation="border"
+          size="sm"
+          role="status"
+          aria-hidden="true"
+        />
         {" "}Loading...
       </Button>
     );
