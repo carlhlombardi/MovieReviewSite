@@ -1,6 +1,6 @@
 "use client";
 import CommentList from "./CommentList";
-import useComments from "./useComments";
+import useComments from "../hooks/useComments";
 import { useAuth } from "@/app/(auth)/context/AuthContext";
 
 export default function CommentSection({ tmdb_id }) {
