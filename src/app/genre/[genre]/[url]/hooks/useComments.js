@@ -60,43 +60,35 @@ export default function useComments(tmdb_id) {
   }, [fetchComments]);
 
   // ── Post a comment or reply ──
-  const postComment = async (content, parent_id = null) => {
-    if (!content) return;
-    try {
-      const res = await fetch("/api/comments", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tmdb_id, content, parent_id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to post comment");
+ const postComment = async (content, parent_id = null) => {
+  if (!content) return;
+  try {
+    const res = await fetch("/api/comments", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdb_id, content, parent_id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
-      const newComment = {
-        id: data.id,
-        user_id: data.user_id,
-        username: data.username,
-        tmdb_id,
-        content,
-        parent_id: parent_id || null,
-        like_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        replies: [],
-      };
+    // use the returned comment object directly
+    const newComment = { ...data, replies: [] };
 
-      if (parent_id) {
-        setComments((prev) => updateCommentTree(prev, parent_id, (c) => ({ ...c, replies: [...c.replies, newComment] })));
-      } else {
-        setComments((prev) => [newComment, ...prev]);
-      }
-
-      return newComment;
-    } catch (err) {
-      console.error("❌ postComment error:", err);
-      throw err;
+    if (parent_id) {
+      setComments((prev) =>
+        updateCommentTree(prev, parent_id, (c) => ({ ...c, replies: [...c.replies, newComment] }))
+      );
+    } else {
+      setComments((prev) => [newComment, ...prev]);
     }
-  };
+
+    return newComment;
+  } catch (err) {
+    console.error("❌ postComment error:", err);
+    throw err;
+  }
+};
 
   // ── Edit comment ──
   const editComment = async (id, content) => {
