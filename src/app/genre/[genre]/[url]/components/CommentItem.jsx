@@ -21,6 +21,10 @@ export default function CommentItem({
     setIsEditing(false);
   };
 
+  const handleEdit = (id, content) => {
+  if (content?.trim()) editComment(id, content.trim());
+};
+
   const handleReplySubmit = (e) => {
     e.preventDefault();
     onReply(replyText, comment.id);
