@@ -28,7 +28,7 @@ export default function CommentItem({
   const handleReplySubmit = (e) => {
     e.preventDefault();
     if (replyText?.trim()) {
-      onReply(replyText.trim());
+      onReply(replyText.trim(), comment.id); // pass parent_id
       setReplyText("");
       setIsReplying(false);
     }
@@ -139,6 +139,21 @@ export default function CommentItem({
               </div>
             </Form>
           )}
+
+          {/* 🔹 Nested replies */}
+          {comment.replies?.length > 0 &&
+            comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                username={username}
+                onLike={() => onLike(reply.id)}
+                onEdit={onEdit}
+                onDelete={() => onDelete(reply.id)}
+                onReply={onReply}
+                level={level + 1} // increase indentation
+              />
+            ))}
         </Card.Body>
       </Card>
     </div>
