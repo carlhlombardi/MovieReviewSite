@@ -54,32 +54,32 @@ export async function GET(req) {
 // POST → add a new comment
 // ───────────────────────────────
 export async function POST(req) {
-  const user = getUserFromCookie(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { tmdb_id, content, parent_id = null } = await req.json();
-  if (!tmdb_id || !content) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-
   try {
+    const user = getUserFromCookie(req);
+    console.log("POST user:", user);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { tmdb_id, content, parent_id = null } = await req.json();
+    console.log("POST payload:", { tmdb_id, content, parent_id });
+    if (!tmdb_id || !content) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
     const { rows } = await sql`
       INSERT INTO comments (user_id, tmdb_id, content, parent_id, like_count, created_at, updated_at)
       VALUES (${user.id}, ${tmdb_id}, ${content}, ${parent_id}, 0, NOW(), NOW())
       RETURNING *
     `;
 
-    // Attach username and avatar_url
-    const comment = {
+    return NextResponse.json({
       ...rows[0],
       username: user.username,
       avatar_url: user.avatar_url
-    };
-
-    return NextResponse.json(comment);
+    });
   } catch (err) {
     console.error("POST /api/comments error:", err);
     return NextResponse.json({ error: "Failed to add comment" }, { status: 500 });
   }
 }
+
 
 // ───────────────────────────────
 // PUT → edit comment
