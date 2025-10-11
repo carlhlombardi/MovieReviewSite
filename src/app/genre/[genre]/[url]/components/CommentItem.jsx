@@ -84,7 +84,7 @@ export default function CommentItem({
             >
               👍
             </span>
-            <span>{comment.likes || 0}</span>
+            <span>{comment.like_count || 0}</span>
           </Button>
 
           {username && (

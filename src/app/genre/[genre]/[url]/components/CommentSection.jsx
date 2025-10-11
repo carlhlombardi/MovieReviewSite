@@ -7,14 +7,30 @@ export default function CommentSection({ tmdb_id, username }) {
   const { comments, postComment, editComment, deleteComment, likeComment } =
     useComments(tmdb_id);
 
-  // 🔹 Inline reply — CommentItem will call onReply(text, parentId)
-  const handleReply = (text, parentId) => {
-    if (text?.trim()) postComment(text.trim(), parentId);
+  // Inline reply
+  const handleReply = async (text, parentId) => {
+    if (!text?.trim()) return;
+
+    // Optimistic update
+    await postComment(text.trim(), parentId);
   };
 
-  // 🔹 Inline edit — CommentItem will call onEdit(id, text)
-  const handleEdit = (id, text) => {
-    if (text?.trim()) editComment(id, text.trim());
+  // Inline edit
+  const handleEdit = async (id, text) => {
+    if (!text?.trim()) return;
+
+    // Optimistic update
+    await editComment(id, text.trim());
+  };
+
+  // Inline delete
+  const handleDelete = async (id) => {
+    await deleteComment(id);
+  };
+
+  // Inline like/unlike
+  const handleLike = async (id) => {
+    await likeComment(id);
   };
 
   return (
@@ -22,7 +38,7 @@ export default function CommentSection({ tmdb_id, username }) {
       <h4 className="mb-3">Comments</h4>
 
       {username ? (
-        <CommentForm onSubmit={postComment} />
+        <CommentForm onSubmit={(text) => postComment(text)} />
       ) : (
         <p className="text-muted">Sign in to leave a comment.</p>
       )}
@@ -35,10 +51,10 @@ export default function CommentSection({ tmdb_id, username }) {
             key={comment.id}
             comment={comment}
             username={username}
-            onLike={() => likeComment(comment.id)}
-            onEdit={handleEdit}        // ✅ passes edit handler with args
-            onDelete={() => deleteComment(comment.id)}
-            onReply={handleReply}      // ✅ passes reply handler with args
+            onLike={() => handleLike(comment.id)}
+            onEdit={handleEdit}
+            onDelete={() => handleDelete(comment.id)}
+            onReply={handleReply}
           />
         ))
       )}
