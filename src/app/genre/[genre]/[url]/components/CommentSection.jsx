@@ -1,23 +1,42 @@
 "use client";
-import CommentList from "./CommentList";
+import { Spinner } from "react-bootstrap";
 import useComments from "../hooks/useComments";
-import { useAuth } from "@/app/(auth)/context/AuthContext";
+import CommentForm from "./CommentForm";
+import CommentList from "./CommentList";
 
-export default function CommentSection({ tmdb_id }) {
-  const { isLoggedIn, user } = useAuth();
-  const { comments, loading, error, postComment, editComment, deleteComment, likeComment } = useComments(tmdb_id);
-
-  if (loading) return <p>Loading comments...</p>;
-  if (error) return <p className="text-danger">Error: {error}</p>;
+export default function CommentSection({ tmdb_id, username }) {
+  const {
+    comments,
+    loading,
+    addComment,
+    likeComment,
+    editComment,
+    deleteComment,
+  } = useComments(tmdb_id);
 
   return (
-    <CommentList
-      comments={comments}
-      username={user?.username}
-      onPost={postComment}
-      onEdit={editComment}
-      onDelete={deleteComment}
-      onLike={likeComment}
-    />
+    <div>
+      <h5 className="mb-3">Comments</h5>
+
+      <CommentForm
+        onSubmit={(content) => addComment(content)}
+        placeholder="Add a comment..."
+      />
+
+      {loading ? (
+        <div className="d-flex justify-content-center mt-3">
+          <Spinner animation="border" />
+        </div>
+      ) : (
+        <CommentList
+          comments={comments}
+          username={username}
+          onLike={likeComment}
+          onReply={addComment}
+          onEdit={editComment}
+          onDelete={deleteComment}
+        />
+      )}
+    </div>
   );
 }
