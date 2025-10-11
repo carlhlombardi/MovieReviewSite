@@ -11,7 +11,7 @@ export default function ReplyList({
   onEdit,
   onDelete,
 }) {
-  const { visibleReplies, hasMore, loadMore } = useReplies(initialReplies);
+  const { visibleReplies, hasMore, loadMore } = useReplies(initialReplies || []);
 
   return (
     <div>
