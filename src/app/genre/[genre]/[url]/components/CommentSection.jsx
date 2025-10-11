@@ -1,38 +1,80 @@
 "use client";
-import { Spinner } from "react-bootstrap";
+import { useState, useEffect } from "react";
 import Comment from "./Comment";
-import useComments from "../hooks/useComments";
+import CommentForm from "./CommentForm";
 
 export default function CommentSection({ tmdb_id, username }) {
-  const { comments, loading, postComment, editComment, deleteComment, likeComment, setComments } = useComments(tmdb_id);
+  const [comments, setComments] = useState([]);
 
-  const handleReply = async (content, parent_id) => {
-    const newComment = await postComment(content, parent_id);
-    if (parent_id) {
-      setComments(prev =>
-        prev.map(c => c.id === parent_id
-          ? { ...c, replies: [...(c.replies || []), newComment] }
-          : c
-        )
-      );
-    } else {
-      setComments(prev => [newComment, ...prev]);
-    }
+  // Fetch comments
+  const fetchComments = async () => {
+    const res = await fetch(`/api/comments?tmdb_id=${tmdb_id}`, { credentials: "include" });
+    const data = await res.json();
+    setComments(data || []);
   };
 
-  if (loading) return <Spinner animation="border" />;
+  useEffect(() => {
+    fetchComments();
+  }, [tmdb_id]);
+
+  // Post new comment
+  const postComment = async (content, parent_id = null) => {
+    const res = await fetch("/api/comments", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tmdb_id, content, parent_id }),
+    });
+    const data = await res.json();
+    if (!parent_id) setComments([data, ...comments]);
+    else fetchComments(); // simple approach for replies
+  };
+
+  const handleLike = async (id) => {
+    const res = await fetch(`/api/comments/like?id=${id}`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const data = await res.json();
+    fetchComments();
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/comments?id=${id}`, { method: "DELETE", credentials: "include" });
+    fetchComments();
+  };
+
+  const handleEdit = async (id) => {
+    const newContent = prompt("Edit your comment:");
+    if (!newContent) return;
+    await fetch("/api/comments", {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, content: newContent }),
+    });
+    fetchComments();
+  };
+
+  const handleReply = async (parent_id) => {
+    const reply = prompt("Write your reply:");
+    if (!reply) return;
+    await postComment(reply, parent_id);
+  };
 
   return (
     <div>
-      {comments.map(comment => (
+      <CommentForm username={username} onSubmit={postComment} />
+
+      {comments.map((c) => (
         <Comment
-          key={comment.id}
-          comment={comment}
+          key={c.id}
+          comment={c}
           username={username}
-          onLike={likeComment}
+          onLike={handleLike}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
           onReply={handleReply}
-          onEdit={editComment}
-          onDelete={deleteComment}
         />
       ))}
     </div>

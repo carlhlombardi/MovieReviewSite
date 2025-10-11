@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Form, Button } from "react-bootstrap";
 
-export default function CommentForm({ onSubmit, placeholder = "Write a comment..." }) {
+export default function CommentForm({ username, onSubmit, placeholder = "Add a comment..." }) {
   const [text, setText] = useState("");
 
   const handleSubmit = (e) => {
@@ -22,7 +22,7 @@ export default function CommentForm({ onSubmit, placeholder = "Write a comment..
         onChange={(e) => setText(e.target.value)}
         className="mb-2"
       />
-      <Button type="submit" variant="primary" size="sm">
+      <Button type="submit" disabled={!username || !text.trim()}>
         Post
       </Button>
     </Form>
