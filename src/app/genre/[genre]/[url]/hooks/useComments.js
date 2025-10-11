@@ -61,23 +61,41 @@ export default function useComments(tmdb_id) {
 
   // ── Post a comment or reply ──
  const postComment = async (content, parent_id = null) => {
-  if (!content) return;
+  if (!content?.trim()) return;
+
   try {
     const res = await fetch("/api/comments", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tmdb_id, content, parent_id }),
+      body: JSON.stringify({ tmdb_id, content: content.trim(), parent_id }),
     });
+
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
-    // use the returned comment object directly
-    const newComment = { ...data, replies: [] };
+    // ✅ Ensure the API returned the full comment object
+    const newComment = {
+      id: data.id,
+      user_id: data.user_id,
+      username: data.username,
+      tmdb_id: data.tmdb_id,
+      content: data.content,
+      parent_id: data.parent_id,
+      like_count: data.like_count ?? 0,
+      likedByUser: false,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      replies: [],
+    };
 
+    // Add to tree
     if (parent_id) {
       setComments((prev) =>
-        updateCommentTree(prev, parent_id, (c) => ({ ...c, replies: [...c.replies, newComment] }))
+        updateCommentTree(prev, parent_id, (c) => ({
+          ...c,
+          replies: [...c.replies, newComment],
+        }))
       );
     } else {
       setComments((prev) => [newComment, ...prev]);
@@ -89,6 +107,7 @@ export default function useComments(tmdb_id) {
     throw err;
   }
 };
+
 
   // ── Edit comment ──
   const editComment = async (id, content) => {
