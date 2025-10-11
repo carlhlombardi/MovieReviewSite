@@ -30,18 +30,31 @@ function getUserFromCookie(req) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const tmdb_id = searchParams.get("tmdb_id");
-
-  if (!tmdb_id)
-    return NextResponse.json({ error: "Missing tmdb_id" }, { status: 400 });
+  if (!tmdb_id) return NextResponse.json({ error: "Missing tmdb_id" }, { status: 400 });
 
   try {
+    // Join with users table to get url_avatar
     const { rows } = await sql`
-      SELECT id, user_id, username, tmdb_id, content, parent_id, like_count, created_at, updated_at
-      FROM comments
-      WHERE tmdb_id = ${tmdb_id}
-      ORDER BY created_at DESC;
+      SELECT c.id, c.user_id, c.username, c.tmdb_id, c.content, c.parent_id, c.like_count, c.created_at, u.url_avatar
+      FROM comments c
+      LEFT JOIN users u ON u.id = c.user_id
+      WHERE c.tmdb_id = ${tmdb_id}
+      ORDER BY c.created_at DESC;
     `;
-    return NextResponse.json(rows);
+
+    // Build nested replies tree
+    const map = {};
+    const tree = [];
+    rows.forEach((c) => {
+      c.replies = [];
+      map[c.id] = c;
+    });
+    rows.forEach((c) => {
+      if (c.parent_id) map[c.parent_id]?.replies.push(c);
+      else tree.push(c);
+    });
+
+    return NextResponse.json(tree);
   } catch (err) {
     console.error("GET /api/comments error:", err);
     return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
