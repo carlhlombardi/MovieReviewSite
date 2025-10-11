@@ -1,35 +1,37 @@
 "use client";
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function Comment({ comment, username, postComment, editComment, deleteComment }) {
-  const [showReplies, setShowReplies] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
 
   const isOwner = comment.username === username;
+  const replies = comment.replies || [];
 
-  // Post a reply
   const handleReply = async () => {
     if (!replyText.trim()) return;
     await postComment(replyText, comment.id);
     setReplyText("");
-    setShowReplies(true);
+    setShowAllReplies(true);
   };
 
-  // Save edited comment
   const handleEdit = async () => {
     if (!editText.trim()) return;
     await editComment(comment.id, editText);
     setEditing(false);
   };
 
-  // Delete comment
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
     await deleteComment(comment.id);
   };
+
+  // Replies to display initially
+  const visibleReplies = showAllReplies ? replies : replies.slice(0, 1);
+  const hiddenReplyCount = replies.length - visibleReplies.length;
 
   return (
     <div className="mb-2">
@@ -63,12 +65,12 @@ export default function Comment({ comment, username, postComment, editComment, d
           )}
 
           <div className="d-flex gap-2">
-            {comment.replies.length > 0 && (
+            {replies.length > 0 && hiddenReplyCount > 0 && (
               <button
                 className="btn btn-sm btn-link p-0"
-                onClick={() => setShowReplies(prev => !prev)}
+                onClick={() => setShowAllReplies(true)}
               >
-                {comment.replies.length} {comment.replies.length === 1 ? "Reply" : "Replies"}
+                View {hiddenReplyCount} more {hiddenReplyCount === 1 ? "reply" : "replies"}
               </button>
             )}
             {isOwner && !editing && (
@@ -91,9 +93,9 @@ export default function Comment({ comment, username, postComment, editComment, d
         </div>
       </div>
 
-      {showReplies && (
+      {visibleReplies.length > 0 && (
         <div className="ms-5 mt-2">
-          {comment.replies.map(r => (
+          {visibleReplies.map(r => (
             <Comment
               key={r.id}
               comment={r}
