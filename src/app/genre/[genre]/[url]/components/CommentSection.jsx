@@ -1,39 +1,37 @@
 "use client";
 import { useState } from "react";
-import useComments from "../hooks/useComments";
 import Comment from "./Comment";
+import useComments from "../hooks/useComments";
+import { Button, Form } from "react-bootstrap";
 
 export default function CommentSection({ tmdb_id, username }) {
-  const {
-    comments,
-    loading,
-    error,
-    postComment,
-    editComment,
-    deleteComment
-  } = useComments(tmdb_id);
-
+  const { comments, loading, error, postComment } = useComments(tmdb_id);
   const [newComment, setNewComment] = useState("");
 
   const handlePost = async () => {
     if (!newComment.trim()) return;
-    await postComment(newComment);
-    setNewComment("");
+    try {
+      await postComment(newComment);
+      setNewComment("");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div>
-      <div className="mb-3">
-        <textarea
-          className="form-control"
+      <Form.Group className="mb-3">
+        <Form.Control
+          as="textarea"
+          rows={2}
           placeholder="Add a comment..."
           value={newComment}
-          onChange={e => setNewComment(e.target.value)}
+          onChange={(e) => setNewComment(e.target.value)}
         />
-        <button className="btn btn-primary mt-2" onClick={handlePost}>
+        <Button className="mt-2" onClick={handlePost} variant="primary">
           Comment
-        </button>
-      </div>
+        </Button>
+      </Form.Group>
 
       {loading && <p>Loading comments...</p>}
       {error && <p className="text-danger">{error}</p>}
@@ -44,8 +42,8 @@ export default function CommentSection({ tmdb_id, username }) {
           comment={c}
           username={username}
           postComment={postComment}
-          editComment={editComment}
-          deleteComment={deleteComment}
+          editComment={() => {}}
+          deleteComment={() => {}}
         />
       ))}
     </div>
