@@ -164,7 +164,7 @@ export default function CommentItem({
   onLike={() => likeComment(comment.id)}
   onEdit={handleEdit}
   onDelete={() => deleteComment(comment.id)}
-  onReply={handleReply}
+  onReply={handleReplySubmit}
 />
 
             ))}
