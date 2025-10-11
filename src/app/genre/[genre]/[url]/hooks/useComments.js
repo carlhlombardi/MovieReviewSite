@@ -15,15 +15,23 @@ export default function useComments(tmdb_id) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to fetch comments");
 
-      // Build top-level comments only (YouTube style)
-      setComments(data.filter(c => !c.parent_id));
+      // Separate root comments and replies
+      const roots = [];
+      const map = {};
+      data.forEach(c => { c.replies = []; map[c.id] = c; });
+      data.forEach(c => {
+        if (c.parent_id) map[c.parent_id]?.replies.push(c);
+        else roots.push(c);
+      });
+
+      setComments(roots);
     } catch (err) {
       console.error(err);
       setError(err.message || "Failed to fetch comments");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [tmdb_id]);
+
+  useEffect(() => { fetchComments(); }, [fetchComments]);
 
   const postComment = async (content, parent_id = null) => {
     if (!content) return;
@@ -36,6 +44,14 @@ export default function useComments(tmdb_id) {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
+    data.replies = [];
+    if (parent_id) {
+      setComments(prev =>
+        prev.map(c => c.id === parent_id ? { ...c, replies: [...c.replies, data] } : c)
+      );
+    } else {
+      setComments(prev => [data, ...prev]);
+    }
     return data;
   };
 
@@ -48,43 +64,22 @@ export default function useComments(tmdb_id) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Failed to edit comment");
+    setComments(prev => prev.map(c => c.id === id ? { ...c, content } : {
+      ...c, replies: c.replies.map(r => r.id === id ? { ...r, content } : r)
+    }));
     return data;
   };
 
   const deleteComment = async (id) => {
     const res = await fetch(`/api/comments?id=${id}`, {
       method: "DELETE",
-      credentials: "include",
+      credentials: "include"
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Failed to delete comment");
+    setComments(prev => prev.filter(c => c.id !== id).map(c => ({ ...c, replies: c.replies.filter(r => r.id !== id) })));
     return data;
   };
 
-  const likeComment = async (id) => {
-    const res = await fetch(`/api/comments/like?id=${id}`, {
-      method: "POST",
-      credentials: "include",
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to like comment");
-    return data;
-  };
-
-useEffect(() => {
-  fetchComments();
-}, [fetchComments]); // ✅ include it
-
-
-  return {
-    comments,
-    loading,
-    error,
-    fetchComments,
-    postComment,
-    editComment,
-    deleteComment,
-    likeComment,
-    setComments,
-  };
+  return { comments, loading, error, fetchComments, postComment, editComment, deleteComment };
 }

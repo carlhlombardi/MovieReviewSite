@@ -1,75 +1,81 @@
 "use client";
 import { useState } from "react";
-import { Card, Button } from "react-bootstrap";
 import Image from "next/image";
 import ReplyList from "./ReplyList";
-import CommentForm from "./CommentForm";
+import useComments from "../hooks/useComments";
 
-export default function Comment({ comment, username, onLike, onEdit, onDelete, onReply }) {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [showReplies, setShowReplies] = useState(false);
+export default function Comment({ comment, username }) {
+  const { postComment, editComment, deleteComment } = useComments(comment.tmdb_id);
+  const [replyText, setReplyText] = useState("");
+  const [showReply, setShowReply] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
 
-  const handleReplySubmit = async (text) => {
-    await onReply(text, comment.id);
-    setShowReplyForm(false);
-    setShowReplies(true);
+  const handleReply = async () => {
+    if (!replyText.trim()) return;
+    try {
+      await postComment(replyText, comment.id);
+      setReplyText("");
+      setShowReply(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleEdit = async () => {
+    if (!editText.trim()) return;
+    try {
+      await editComment(comment.id, editText);
+      setIsEditing(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDelete = async () => {
+    try { await deleteComment(comment.id); } catch (err) { console.error(err); }
   };
 
   return (
-    <Card className="mb-2">
-      <Card.Body className="d-flex gap-2">
+    <div className="mb-3 ps-0">
+      <div className="d-flex align-items-start">
         <Image
-          src={comment.url_avatar || "/default-avatar.png"}
+          src={comment.avatar_url || "/default-avatar.png"}
           alt={comment.username}
-          width={40}
-          height={40}
-          className="rounded-circle"
+          className="rounded-circle me-2"
+          style={{ width: 40, height: 40 }}
         />
         <div className="flex-grow-1">
           <strong>{comment.username}</strong>
-          <small className="text-muted ms-2">
-            {new Date(comment.created_at).toLocaleString()}
-          </small>
-          <p>{comment.content}</p>
-
-          <div className="d-flex gap-2 small">
-            <Button size="sm" variant={comment.likedByUser ? "primary" : "outline-primary"} onClick={() => onLike(comment.id)}>
-              👍 {comment.like_count || 0}
-            </Button>
-
-            <Button size="sm" variant="link" onClick={() => setShowReplyForm((v) => !v)}>Reply</Button>
-
+          {isEditing ? (
+            <div>
+              <textarea className="form-control" value={editText} onChange={e => setEditText(e.target.value)} />
+              <button className="btn btn-sm btn-primary mt-1 me-1" onClick={handleEdit}>Save</button>
+              <button className="btn btn-sm btn-secondary mt-1" onClick={() => setIsEditing(false)}>Cancel</button>
+            </div>
+          ) : (
+            <p>{comment.content}</p>
+          )}
+          <div>
+            <button className="btn btn-link btn-sm" onClick={() => setShowReply(!showReply)}>Reply</button>
             {username === comment.username && (
               <>
-                <Button size="sm" variant="link" onClick={() => onEdit(comment.id)}>Edit</Button>
-                <Button size="sm" variant="link" onClick={() => onDelete(comment.id)}>Delete</Button>
+                <button className="btn btn-link btn-sm" onClick={() => setIsEditing(true)}>Edit</button>
+                <button className="btn btn-link btn-sm text-danger" onClick={handleDelete}>Delete</button>
               </>
             )}
           </div>
 
-          {showReplyForm && <CommentForm username={username} onSubmit={handleReplySubmit} placeholder="Write a reply..." />}
+          {showReply && (
+            <div className="ms-5 mt-2">
+              <textarea className="form-control" value={replyText} onChange={e => setReplyText(e.target.value)} />
+              <button className="btn btn-primary btn-sm mt-1" onClick={handleReply}>Reply</button>
+            </div>
+          )}
 
-          {comment.replies?.length > 0 && (
-            <div className="ms-5">
-              {!showReplies && (
-                <Button size="sm" variant="link" onClick={() => setShowReplies(true)}>
-                  See {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
-                </Button>
-              )}
-              {showReplies && (
-                <ReplyList
-                  replies={comment.replies}
-                  username={username}
-                  onLike={onLike}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onReply={onReply}
-                />
-              )}
+          {comment.replies && comment.replies.length > 0 && (
+            <div className="ms-5 mt-2">
+              <ReplyList replies={comment.replies} username={username} />
             </div>
           )}
         </div>
-      </Card.Body>
-    </Card>
+      </div>
+    </div>
   );
 }
