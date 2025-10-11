@@ -141,19 +141,18 @@ export default function CommentItem({
           )}
 
           {/* 🔹 Nested replies */}
-          {comment.replies?.length > 0 &&
-            comment.replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                username={username}
-                onLike={() => onLike(reply.id)}
-                onEdit={onEdit}
-                onDelete={() => onDelete(reply.id)}
-                onReply={onReply}
-                level={level + 1} // increase indentation
-              />
-            ))}
+        {comment.replies?.map((reply) => (
+  <CommentItem
+    key={reply.id}               // use the reply’s id
+    comment={reply}              // pass the reply itself
+    username={username}
+    onLike={() => onLike(reply.id)}
+    onEdit={(id, content) => onEdit(id, content)}
+    onDelete={() => onDelete(reply.id)}
+    onReply={(text, parentId) => onReply(text, reply.id)}
+    level={level + 1}            // increase nesting
+  />
+))}
         </Card.Body>
       </Card>
     </div>
