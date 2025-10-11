@@ -1,49 +1,50 @@
 "use client";
 
+import { useState } from "react";
 import CommentItem from "./CommentItem";
-import CommentForm from "./CommentForm";
-import useComments from "../hooks/useComments";
+import { Form, Button, Spinner } from "react-bootstrap";
 
-export default function CommentSection({ tmdb_id, username }) {
-  const { comments, postComment, editComment, deleteComment, likeComment } =
-    useComments(tmdb_id);
+export default function CommentSection({ tmdb_id, username, useCommentsHook }) {
+  const { comments, loading, postComment, editComment, deleteComment, likeComment } = useCommentsHook(tmdb_id);
+  const [newComment, setNewComment] = useState("");
 
-  // Flatten tree with levels for indentation
-  const flattenComments = (list, level = 0) => {
-    return list.flatMap(c => [
-      { ...c, level },
-      ...(c.replies ? flattenComments(c.replies, level + 1) : []),
-    ]);
+  const handlePost = async (content, parent_id = null) => {
+    await postComment(content, parent_id);
+    setNewComment("");
   };
 
-  const flatComments = flattenComments(comments);
+  if (loading) return <Spinner animation="border" className="d-block mx-auto my-3" />;
 
   return (
-    <div className="mt-4">
-      <h4 className="mb-3">Comments</h4>
-
-      {username ? (
-        <CommentForm onSubmit={(text) => postComment(text)} />
-      ) : (
-        <p className="text-muted">Sign in to leave a comment.</p>
-      )}
-
-      {flatComments.length === 0 ? (
-        <p className="text-muted mt-2">No comments yet. Be the first!</p>
-      ) : (
-        flatComments.map((comment) => (
-          <CommentItem
-            key={comment.id}
-            comment={comment}
-            username={username}
-            onLike={() => likeComment(comment.id)}
-            onEdit={editComment}
-            onDelete={() => deleteComment(comment.id)}
-            onReply={(text) => postComment(text, comment.id)}
-            level={comment.level} // pass indentation level
+    <div>
+      {/* New top-level comment */}
+      {username && (
+        <Form onSubmit={(e) => { e.preventDefault(); handlePost(newComment); }}>
+          <Form.Control
+            as="textarea"
+            rows={2}
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="mb-2"
           />
-        ))
+          <Button type="submit" size="sm">Post</Button>
+        </Form>
       )}
+
+      {/* Comments tree */}
+      {comments.map((c) => (
+        <CommentItem
+          key={c.id}
+          comment={c}
+          username={username}
+          onLike={() => likeComment(c.id)}
+          onEdit={editComment}
+          onDelete={() => deleteComment(c.id)}
+          onReply={(text, parent_id) => handlePost(text, parent_id)}
+          level={0} // top-level
+        />
+      ))}
     </div>
   );
 }

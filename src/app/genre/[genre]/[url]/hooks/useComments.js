@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 
 export default function useComments(tmdb_id) {
@@ -6,16 +7,20 @@ export default function useComments(tmdb_id) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // ── Helpers to manage nested tree ──
   const updateCommentTree = (list, id, updater) =>
-    list.map(c => {
+    list.map((c) => {
       if (c.id === id) return updater(c);
       if (c.replies?.length) return { ...c, replies: updateCommentTree(c.replies, id, updater) };
       return c;
     });
 
   const removeCommentFromTree = (list, id) =>
-    list.filter(c => c.id !== id).map(c => c.replies?.length ? { ...c, replies: removeCommentFromTree(c.replies, id) } : c);
+    list
+      .filter((c) => c.id !== id)
+      .map((c) => (c.replies?.length ? { ...c, replies: removeCommentFromTree(c.replies, id) } : c));
 
+  // ── Fetch comments from API ──
   const fetchComments = useCallback(async () => {
     if (!tmdb_id) return;
     setLoading(true);
@@ -26,11 +31,20 @@ export default function useComments(tmdb_id) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to fetch comments");
 
-      // build nested tree
+      // Build nested tree
       const map = {};
       const tree = [];
-      data.forEach(c => { c.replies = []; map[c.id] = c; });
-      data.forEach(c => c.parent_id ? map[c.parent_id]?.replies.push(c) : tree.push(c));
+      data.forEach((c) => {
+        c.replies = [];
+        map[c.id] = c;
+      });
+      data.forEach((c) => {
+        if (c.parent_id) {
+          map[c.parent_id]?.replies.push(c);
+        } else {
+          tree.push(c);
+        }
+      });
 
       setComments(tree);
     } catch (err) {
@@ -41,10 +55,14 @@ export default function useComments(tmdb_id) {
     }
   }, [tmdb_id]);
 
-  useEffect(() => { fetchComments(); }, [fetchComments]);
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
+  // ── Post comment or reply ──
   const postComment = async (content, parent_id = null) => {
-    if (!content) return;
+    if (!content?.trim()) return;
+
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
@@ -55,12 +73,14 @@ export default function useComments(tmdb_id) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to post comment");
 
-      // append returned comment
       const newComment = { ...data, replies: [] };
+
       if (parent_id) {
-        setComments(prev => updateCommentTree(prev, parent_id, c => ({ ...c, replies: [...c.replies, newComment] })));
+        setComments((prev) =>
+          updateCommentTree(prev, parent_id, (c) => ({ ...c, replies: [...c.replies, newComment] }))
+        );
       } else {
-        setComments(prev => [newComment, ...prev]);
+        setComments((prev) => [newComment, ...prev]);
       }
 
       return newComment;
@@ -70,36 +90,67 @@ export default function useComments(tmdb_id) {
     }
   };
 
+  // ── Edit comment ──
   const editComment = async (id, content) => {
-    const res = await fetch("/api/comments", {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, content }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to edit comment");
+    if (!content?.trim()) return;
+    try {
+      const res = await fetch("/api/comments", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to edit comment");
 
-    setComments(prev => updateCommentTree(prev, id, c => ({ ...c, content, updated_at: new Date().toISOString() })));
-    return data;
+      setComments((prev) =>
+        updateCommentTree(prev, id, (c) => ({ ...c, content, updated_at: new Date().toISOString() }))
+      );
+
+      return data;
+    } catch (err) {
+      console.error("❌ editComment error:", err);
+      throw err;
+    }
   };
 
+  // ── Delete comment ──
   const deleteComment = async (id) => {
-    const res = await fetch(`/api/comments?id=${id}`, { method: "DELETE", credentials: "include" });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to delete comment");
+    try {
+      const res = await fetch(`/api/comments?id=${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to delete comment");
 
-    setComments(prev => removeCommentFromTree(prev, id));
-    return data;
+      setComments((prev) => removeCommentFromTree(prev, id));
+      return data;
+    } catch (err) {
+      console.error("❌ deleteComment error:", err);
+      throw err;
+    }
   };
 
+  // ── Like / Unlike ──
   const likeComment = async (id) => {
-    const res = await fetch(`/api/comments/like?id=${id}`, { method: "POST", credentials: "include" });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to like comment");
+    try {
+      const res = await fetch(`/api/comments/like?id=${id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to like comment");
 
-    setComments(prev => updateCommentTree(prev, id, c => ({ ...c, like_count: data.like_count, likedByUser: data.likedByUser })));
-    return data;
+      setComments((prev) =>
+        updateCommentTree(prev, id, (c) => ({ ...c, like_count: data.like_count, likedByUser: data.likedByUser }))
+      );
+
+      return data;
+    } catch (err) {
+      console.error("❌ likeComment error:", err);
+      throw err;
+    }
   };
 
   return { comments, loading, error, fetchComments, postComment, editComment, deleteComment, likeComment };
