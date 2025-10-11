@@ -30,11 +30,11 @@ export default function ProfilePage() {
     // Always fetch profile and movie lists
     fetchProfile(username);
     fetchMovieLists(username);
+    fetchFollowLists(username);
+    fetchFollowStatus(username);
 
     // Only fetch follow/activity if viewing own profile
     if (isSelf) {
-      fetchFollowLists(username);
-      fetchFollowStatus(username);
       fetchActivityFeed(username);
     }
   }, [
