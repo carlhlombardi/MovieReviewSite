@@ -11,14 +11,12 @@ export default function CommentItem({
   onDelete,
   onReply,
   level = 0,
-  maxLevel = 4, // cap the nesting
+  maxLevel = 4,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [replyText, setReplyText] = useState("");
-
-  const indent = level > maxLevel ? maxLevel * 20 : level * 20;
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
@@ -37,15 +35,23 @@ export default function CommentItem({
     }
   };
 
+  // Visual nesting indicator without shrinking
+  const borderColor = ["#dee2e6", "#ced4da", "#adb5bd", "#868e96", "#495057"][level] || "#495057";
+
   return (
-    <div style={{ paddingLeft: `${indent}px` }}>
-      <Card className="mb-3 border-0 shadow-sm bg-light rounded-3">
+    <div style={{ position: "relative", marginBottom: "1rem" }}>
+      <Card
+        className="shadow-sm"
+        style={{
+          borderLeft: `4px solid ${borderColor}`,
+          maxWidth: "100%", // ensures card width stays full
+          wordBreak: "break-word",
+        }}
+      >
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center">
             <strong>{comment.username}</strong>
-            <small className="text-muted">
-              {new Date(comment.created_at).toLocaleString()}
-            </small>
+            <small className="text-muted">{new Date(comment.created_at).toLocaleString()}</small>
           </div>
 
           {isEditing ? (
@@ -152,9 +158,9 @@ export default function CommentItem({
                 key={reply.id}
                 comment={reply}
                 username={username}
-                onLike={() => onLike(reply.id)}
+                onLike={(id) => onLike(id)}
                 onEdit={(id, content) => onEdit(id, content)}
-                onDelete={() => onDelete(reply.id)}
+                onDelete={(id) => onDelete(id)}
                 onReply={(text, parentId) => onReply(text, parentId)}
                 level={level + 1}
                 maxLevel={maxLevel}
