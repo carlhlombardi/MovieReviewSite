@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import CommentItem from "./CommentItem";
+import useComments from "./useComments";
+import { useState } from "react";
 import { Form, Button, Spinner } from "react-bootstrap";
 
-export default function CommentSection({ tmdb_id, username, useCommentsHook }) {
-  const { comments, loading, postComment, editComment, deleteComment, likeComment } = useCommentsHook(tmdb_id);
+export default function CommentSection({ tmdb_id, username }) {
+  const { comments, loading, postComment, editComment, deleteComment, likeComment } = useComments(tmdb_id);
   const [newComment, setNewComment] = useState("");
 
-  const handlePost = async (content, parent_id = null) => {
-    await postComment(content, parent_id);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment?.trim()) return;
+    await postComment(newComment.trim());
     setNewComment("");
   };
 
@@ -17,32 +20,28 @@ export default function CommentSection({ tmdb_id, username, useCommentsHook }) {
 
   return (
     <div>
-      {/* New top-level comment */}
-      {username && (
-        <Form onSubmit={(e) => { e.preventDefault(); handlePost(newComment); }}>
-          <Form.Control
-            as="textarea"
-            rows={2}
-            placeholder="Write a comment..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="mb-2"
-          />
-          <Button type="submit" size="sm">Post</Button>
-        </Form>
-      )}
+      <Form onSubmit={handleSubmit} className="mb-3">
+        <Form.Control
+          as="textarea"
+          rows={2}
+          placeholder="Write a comment..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          className="mb-2"
+        />
+        <Button type="submit" size="sm" variant="primary">Post Comment</Button>
+      </Form>
 
-      {/* Comments tree */}
       {comments.map((c) => (
         <CommentItem
           key={c.id}
           comment={c}
           username={username}
-          onLike={() => likeComment(c.id)}
           onEdit={editComment}
           onDelete={() => deleteComment(c.id)}
-          onReply={(text, parent_id) => handlePost(text, parent_id)}
-          level={0} // top-level
+          onLike={() => likeComment(c.id)}
+          onReply={(content, parentId) => postComment(content, parentId)}
+          level={0}
         />
       ))}
     </div>

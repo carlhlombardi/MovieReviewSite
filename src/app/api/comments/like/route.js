@@ -24,23 +24,20 @@ function getUserFromCookie(req) {
 export async function POST(req) {
   try {
     const user = getUserFromCookie(req);
-    if (!user)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const comment_id = searchParams.get("id");
+    if (!comment_id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-    if (!comment_id)
-      return NextResponse.json({ error: "Missing id" }, { status: 400 });
-
-    const existing = await sql`
+    const { rows: existingRows } = await sql`
       SELECT 1 FROM comment_likes
       WHERE comment_id = ${comment_id} AND username = ${user.username};
     `;
 
     let like_count;
 
-    if (existing.rows.length > 0) {
+    if (existingRows.length > 0) {
       // Unlike
       await sql`
         DELETE FROM comment_likes
@@ -53,6 +50,7 @@ export async function POST(req) {
         RETURNING like_count;
       `;
       like_count = rows[0]?.like_count ?? 0;
+      return NextResponse.json({ like_count, likedByUser: false });
     } else {
       // Like
       await sql`
@@ -66,9 +64,8 @@ export async function POST(req) {
         RETURNING like_count;
       `;
       like_count = rows[0]?.like_count ?? 1;
+      return NextResponse.json({ like_count, likedByUser: true });
     }
-
-    return NextResponse.json({ like_count });
   } catch (err) {
     console.error("POST /api/comments/like error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

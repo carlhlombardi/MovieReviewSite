@@ -1,16 +1,9 @@
 "use client";
+
 import { useState } from "react";
 import { Card, Button, Form } from "react-bootstrap";
 
-export default function CommentItem({
-  comment,
-  username,
-  onLike = () => {},
-  onEdit = () => {},
-  onDelete = () => {},
-  onReply = () => {},
-  level = 0,
-}) {
+export default function CommentItem({ comment, username, onEdit, onDelete, onLike, onReply, level = 0 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [editText, setEditText] = useState(comment.content);
@@ -35,21 +28,21 @@ export default function CommentItem({
 
   return (
     <div style={{ marginLeft: `${level * 20}px` }}>
-      <Card className="mb-3 border-0 shadow-sm bg-light rounded-3">
+      <Card className="mb-3 shadow-sm bg-light rounded-3">
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center">
+          <div className="d-flex justify-content-between">
             <strong>{comment.username}</strong>
-            <small className="text-muted">{new Date(comment.created_at).toLocaleString()}</small>
+            <small>{new Date(comment.created_at).toLocaleString()}</small>
           </div>
 
           {isEditing ? (
-            <Form onSubmit={handleEditSubmit} className="mt-3">
+            <Form onSubmit={handleEditSubmit} className="mt-2">
               <Form.Control
                 as="textarea"
                 rows={2}
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="mb-2 rounded-3 shadow-sm"
+                className="mb-2"
               />
               <div className="d-flex gap-2">
                 <Button type="submit" size="sm" variant="success">Save</Button>
@@ -57,21 +50,21 @@ export default function CommentItem({
               </div>
             </Form>
           ) : (
-            <Card.Text className="mt-3 mb-2">{comment.content}</Card.Text>
+            <p className="mt-2">{comment.content}</p>
           )}
 
-          <div className="d-flex flex-wrap gap-3 small mt-2">
-            <Button variant={comment.likedByUser ? "primary" : "outline-primary"} size="sm" onClick={onLike} disabled={!username}>
+          <div className="d-flex gap-2 mt-2">
+            <Button size="sm" variant={comment.likedByUser ? "primary" : "outline-primary"} onClick={onLike} disabled={!username}>
               👍 {comment.like_count || 0}
             </Button>
 
             {username && (
               <>
-                <Button variant="outline-secondary" size="sm" onClick={() => setIsReplying((v) => !v)}>Reply</Button>
+                <Button size="sm" variant="outline-secondary" onClick={() => setIsReplying(v => !v)}>Reply</Button>
                 {username === comment.username && (
                   <>
-                    <Button variant="outline-success" size="sm" onClick={() => setIsEditing((v) => !v)}>Edit</Button>
-                    <Button variant="outline-danger" size="sm" onClick={onDelete}>Delete</Button>
+                    <Button size="sm" variant="outline-success" onClick={() => setIsEditing(v => !v)}>Edit</Button>
+                    <Button size="sm" variant="outline-danger" onClick={onDelete}>Delete</Button>
                   </>
                 )}
               </>
@@ -79,14 +72,14 @@ export default function CommentItem({
           </div>
 
           {isReplying && (
-            <Form onSubmit={handleReplySubmit} className="mt-3 ms-3">
+            <Form onSubmit={handleReplySubmit} className="mt-2 ms-3">
               <Form.Control
                 as="textarea"
                 rows={2}
                 placeholder="Write a reply..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                className="mb-2 rounded-3 shadow-sm"
+                className="mb-2"
               />
               <div className="d-flex gap-2">
                 <Button type="submit" size="sm" variant="primary">Reply</Button>
@@ -95,18 +88,19 @@ export default function CommentItem({
             </Form>
           )}
 
-          {comment.replies?.length > 0 && comment.replies.map((r) => (
-            <CommentItem
-              key={r.id}
-              comment={r}
-              username={username}
-              onLike={() => onLike(r.id)}
-              onEdit={onEdit}
-              onDelete={() => onDelete(r.id)}
-              onReply={onReply}
-              level={level + 1}
-            />
-          ))}
+          {comment.replies?.length > 0 &&
+            comment.replies.map((r) => (
+              <CommentItem
+                key={r.id}
+                comment={r}
+                username={username}
+                onEdit={onEdit}
+                onDelete={() => onDelete(r.id)}
+                onLike={() => onLike(r.id)}
+                onReply={onReply}
+                level={level + 1}
+              />
+            ))}
         </Card.Body>
       </Card>
     </div>
